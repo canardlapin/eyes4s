@@ -1,0 +1,244 @@
+{
+  "schema": 1,
+  "recordedUtc": "2026-10-28T17:52:29.138898+00:00",
+  "status": "source-qualified; release acceptance remains scoped",
+  "candidate": "d49b7e40def474a4c45d5e98938c63fc3c00bafa",
+  "tree": "3a1739acb32d0019bdc1a64f7b60aa0fb8bc9199",
+  "canonicalGate": {
+    "status": "passed",
+    "logs": {
+      "landing-release-driver.log": "258e33455580f2fb9601b0e712e24812659124461d6da432a79aaf6d7e883a03",
+      "studio-release.log": "180f4ae56e54c2ba1052d9cba2b82fd5e8d7719fa1570412e9315a7536b57bd4",
+      "docs-release.log": "2c361b3134a9d907efc164d64eba6db153ea8713c6c83f0ae8b91cf351b2dc1f",
+      "site-mima-release.log": "6f51db9040ea364344a68d612b0a2078cea6ce416d6c69ea84dfa99898ed8bde",
+      "e2e-release.log": "62b977be6204f3ebb8f583fe95a7427ba0683902aa2670eb6905f6fd17b2fe73",
+      "visual-release.log": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+    }
+  },
+  "hosted": {
+    "Checks": 40728360264,
+    "Studio": 40728360296,
+    "Clean": 40728360356,
+    "allJobs": "success"
+  },
+  "visual": {
+    "linuxStates": 30,
+    "linuxSnapshots": 60,
+    "allHashesAndBaselineRepeatChecksVerified": true,
+    "sourceFingerprint": "79eeb4bdacc9fea48caa03483cb3707ab7c738f451f9366f62ebb7b198799122",
+    "reviews": [
+      {
+        "state": "t3-Figures-dark",
+        "reviewSha256": "29de7e71c522aa380f045d010520fb55713066fe1edbc121e21711458002b20f",
+        "captures": 2
+      },
+      {
+        "state": "t1-Data-light",
+        "reviewSha256": "86e21bf573d74d2c086a643a6a71fec3eeef6845ce9f1e8e835f903a030d81d7",
+        "captures": 2
+      },
+      {
+        "state": "t2-Compare-dark",
+        "reviewSha256": "7dc7453fa67875eb0fa1b703f478d4528b5e58914acb6fe472e4a917e1bebc95",
+        "captures": 2
+      },
+      {
+        "state": "t1-Data-dark",
+        "reviewSha256": "ab32f4d6967863939b0689a17f655f143585d0b7362d6ec6290f8cb539b488e0",
+        "captures": 2
+      },
+      {
+        "state": "t2-Figures-dark",
+        "reviewSha256": "ac9b6258dab1abf3fef8c9667e74cb3fe7564bf9d82e72f1db5101b77bcef8ab",
+        "captures": 2
+      },
+      {
+        "state": "t1-Explore-dark",
+        "reviewSha256": "fef7d31ca77c8ab7f144df51291896d8f38bdbec52bf585e8be5728287b3f989",
+        "captures": 2
+      },
+      {
+        "state": "t3-Compare-dark",
+        "reviewSha256": "d44215633ddbb5b687a6f6d5c9dc27345e493fa076c1db2f0fc56108d3065194",
+        "captures": 2
+      },
+      {
+        "state": "t1-Explore-light",
+        "reviewSha256": "40476db92b31f015045a2af2bb950fff13043b0e0414596952c63891564c0958",
+        "captures": 2
+      },
+      {
+        "state": "t3-Figures-light",
+        "reviewSha256": "337cc211ad5299f25b4362eb939669a70ecf4e224b8e08514a4a1450819253dd",
+        "captures": 2
+      },
+      {
+        "state": "t3-Data-light",
+        "reviewSha256": "dc1668b6e3aa1b0bd0cd2429c08f44c8730faa75cced64f5d5650bbf50173fe8",
+        "captures": 2
+      },
+      {
+        "state": "t2-Compare-light",
+        "reviewSha256": "c2de9e7757403012abae1e10bb2d33bfecc199e06cf8416a9de937154061a9d8",
+        "captures": 2
+      },
+      {
+        "state": "t2-Explore-light",
+        "reviewSha256": "db52b91a287ca6e99cdafd889d4abecd85b498e79ac8a47238a296395e52d898",
+        "captures": 2
+      },
+      {
+        "state": "t3-Analysis-dark",
+        "reviewSha256": "250bf1f892839cdcc541459fb54f3f287d924ac67611e6261fd9da37bccc10f6",
+        "captures": 2
+      },
+      {
+        "state": "t1-Compare-light",
+        "reviewSha256": "2bea5e6146ba893b941916018c61937d00b019fe66373d598f2e5210a19b833c",
+        "captures": 2
+      },
+      {
+        "state": "t3-Analysis-light",
+        "reviewSha256": "d8d51ddf20247784082633ce05aa461e16bf52d5ae17b7d350d2110da14a75c1",
+        "captures": 2
+      },
+      {
+        "state": "t1-Figures-light",
+        "reviewSha256": "34dcf428658bd280a0ec40486eca22a5ac2ff936a822fbc103f5fb16c6f59e34",
+        "captures": 2
+      },
+      {
+        "state": "t2-Analysis-dark",
+        "reviewSha256": "7d941efca3e3931364d4bbc33b7569b9db48edb64c32a6a1e72c40f0e33c3297",
+        "captures": 2
+      },
+      {
+        "state": "t3-Data-dark",
+        "reviewSha256": "22e380e5ba812a2235d7ec642aece3e45bea96f4e9f4b7f37addaa391d48593e",
+        "captures": 2
+      },
+      {
+        "state": "t3-Explore-light",
+        "reviewSha256": "b2813fe0922c69fd4adf14b198e1d8c665538babfb9eac43046aa8b2db15ed3a",
+        "captures": 2
+      },
+      {
+        "state": "t3-Compare-light",
+        "reviewSha256": "721968a7fd749e4bd26ce5f29e4de10cf82cfcaa1c36875e6be5560ecf3f020e",
+        "captures": 2
+      },
+      {
+        "state": "t2-Figures-light",
+        "reviewSha256": "4a65487bf9b28bf56308e40df48b94c36da8ad3eea84702af6dc897875660348",
+        "captures": 2
+      },
+      {
+        "state": "t1-Analysis-dark",
+        "reviewSha256": "388becd74a36b5ffa53657edb91555e8d41c156fb9dc80204beea23431cbcb14",
+        "captures": 2
+      },
+      {
+        "state": "t2-Analysis-light",
+        "reviewSha256": "5898db3bd00ccce5ebbcf58e8ef04ad9cb77179455ff8b9803ec56203c14ae08",
+        "captures": 2
+      },
+      {
+        "state": "t3-Explore-dark",
+        "reviewSha256": "602512771d5b1dddab6088bf9e2b045b98d2a0342e41478987e44ea0ea8749eb",
+        "captures": 2
+      },
+      {
+        "state": "t2-Data-dark",
+        "reviewSha256": "39958c512d761a881061bfba28dcf5b2775d02ba4da664a65d43e512fff00d3f",
+        "captures": 2
+      },
+      {
+        "state": "t1-Compare-dark",
+        "reviewSha256": "a4c0380341472f76f66ceba16d6bbacf5f2399073b01a1e2178481614dace751",
+        "captures": 2
+      },
+      {
+        "state": "t2-Data-light",
+        "reviewSha256": "86815af9e8a70243c82c5e33200169c9c5c0cd618648574d9dd27485f6b18f64",
+        "captures": 2
+      },
+      {
+        "state": "t2-Explore-dark",
+        "reviewSha256": "595851d10e700f0fd7569c42c8c1cf34b1830980c58030666dfcad58d8014add",
+        "captures": 2
+      },
+      {
+        "state": "t1-Figures-dark",
+        "reviewSha256": "81f178bc3d838d9d47db2634a2c6b707392f313e80991a72539c4df2b11a1ea7",
+        "captures": 2
+      },
+      {
+        "state": "t1-Analysis-light",
+        "reviewSha256": "67206e4e4bdd0f5bc352390b2e740f118614be0b19a36675334f49cf58f19dd0",
+        "captures": 2
+      }
+    ],
+    "changedBaselines": "four explicitly reviewed t2 Explore PNGs; see visual-review.json",
+    "thresholdsChanged": false,
+    "nativeGTK2": "passed analytic and full functional courts",
+    "macOS": "passed functional court; physical Retina not claimed"
+  },
+  "privateCourt": {
+    "status": "passed",
+    "candidate": "d49b7e40def474a4c45d5e98938c63fc3c00bafa",
+    "compiledFilesAndJarsUnchanged": true,
+    "generatedBuildCommitMatches": true,
+    "archiveFiles": 12,
+    "archiveFilesByteIdenticalToPriorQualification": true,
+    "exportBundlesByteIdentical": 3,
+    "exportFilesPerBundle": 6,
+    "all2997MapFailureObjectsByteIdentical": true,
+    "queryRowsByteIdentical": true,
+    "oldArchiveOpenedWithNewCode": true,
+    "capacity20ExpectedRefusal": true,
+    "maxBytesUnchanged": 268435456,
+    "exactEncodedLowerBound": 418680955
+  },
+  "twentyParticipantApi": {
+    "status": "passed",
+    "candidate": "d49b7e40def474a4c45d5e98938c63fc3c00bafa",
+    "reference": "earlier hardening20p API, source4466; not a new eyesim oracle run",
+    "observedTrials": 11970,
+    "allMapFailureObjectsByteIdentical": true,
+    "allQueryRowsByteIdentical": true,
+    "nativeArchiveCapacityQualified": false
+  },
+  "package": {
+    "source": {
+      "commit": "d49b7e40def474a4c45d5e98938c63fc3c00bafa",
+      "tree": "3a1739acb32d0019bdc1a64f7b60aa0fb8bc9199",
+      "dirty": false,
+      "files_sha256": "815104fa9e1811881c9eb275f0669fcbd1b8a2d1fbeb9469348cabe6088d7ace"
+    },
+    "architecture": "arm64",
+    "signing": "ad-hoc only; no Developer ID or notarization",
+    "archive": {
+      "file": "Eyes-Studio-arm64-d49b7e40def4.zip",
+      "bytes": 130639601,
+      "sha256": "1c6d46add5660e2b7b539b33c4c5f73c84522e5a965413dd84810ab9e0c2349e"
+    },
+    "bundledRuntimeSelfCheck": "passed; JAVA_HOME removed and restricted PATH",
+    "distribution": "local only"
+  },
+  "ownerDecisions": {
+    "manualVoiceOver": "deferred beyond v1; a11y-voiceover-post-v1",
+    "archiveCapacity": "compact storage under existing numeric limits; g2-archive-scaling stays open"
+  },
+  "limits": [
+    "No whole-cohort single native archive qualified; row/cell/entry/byte limits unchanged.",
+    "Legacy20p archive still refuses418680955-byte lower bound against268435456-byte limit.",
+    "Raw clocks preserved; no event-relative, calibrated-angle or biological inference qualified.",
+    "Installed native UI, Finder dispatch, clean-no-JDK macOS, Gatekeeper, physical Retina and researcher usability remain unqualified.",
+    "MiMa tasks pass with no prior artifacts configured; rel-mima remains open. No Central publication or public signing claimed."
+  ],
+  "supersededAttempts": [
+    "Initial full library gate passed4466d578, then review found signed-zero cache-readback edge; its evidence is preserved and does not qualify this source.",
+    "InitialStudio failed stale board capture pose and two intentional timeline goldens; correction reviewed without threshold changes.",
+    "Root formatter omitted Studio; the separate Studio formatter/style gate now passes."
+  ]
+}

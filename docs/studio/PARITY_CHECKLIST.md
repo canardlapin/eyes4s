@@ -156,8 +156,9 @@ The [2026-10-28 hardening](evidence/20261028-hardening/README.md) implements obs
 viewport/playback for undeclared extents, including raw timestamps near600000 ms.
 Unknown-extent examples begin at their first observed onset; this deliberate board
 deviation avoids implying coverage before the observations. Declared trial windows
-retain their origin and tail. Targeted JVM/JS and headless native checks pass;
-combined release qualification is pending. Event-relative timing remains unqualified.
+retain their origin and tail. The [source qualification](evidence/20261028-hardening/qualification.json) passes
+JVM/JS, headless native, all30 Linux golden states, native GTK2 and macOS functional
+courts. The four changed Explore PNGs were explicitly reviewed; thresholds stay unchanged. Event-relative timing remains unqualified.
 Manual VoiceOver acceptance is deferred beyond v1 by the owner decision of2026-10-28
 (`a11y-voiceover-post-v1`); automated accessibility requirements remain.
 

@@ -23,6 +23,15 @@ visible, 3.2.4 consistent identification, 4.1.2 name and role).
 | Keyboard-only E2E-01 | Passes, byte-identical to the headless route; 4 findings fixed, 2 to beads | `KeyboardJourneySuite` |
 | VoiceOver on macOS | Deferred beyond v1; not performed | `a11y-voiceover-post-v1`; script below |
 
+## Owner-defined v1 acceptance, 2026-10-28
+
+The [hardening qualification](evidence/20261028-hardening/qualification.json) covers
+source `d49b7e40`: the full hosted Studio courts and local keyboard/accessibility,
+visual, style and boundary checks pass. S10.5's automated v1 scope is qualified.
+The owner's manual VoiceOver deferral is tracked by `a11y-voiceover-post-v1`;
+no speech-bridge or general screen-reader conformance is claimed. Physical Retina
+and researcher usability acceptance remain separate release obligations.
+
 ## Results focus and supported windows, 2026-10-26
 
 The [qualification receipt](evidence/20261026-usability/qualification.json) and

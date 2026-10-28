@@ -1,7 +1,10 @@
 # Archive and timeline hardening, 2026-10-28
 
-Implementation and targeted regression evidence; the combined release gate is pending.
-The source candidate and final qualification will be recorded separately.
+Source `d49b7e40` (tree `3a1739ac`) passed the complete local and hosted source gates.
+The [qualification receipt](qualification.json) records source, exact-byte private
+compatibility, reviewed Linux captures and the ARM64 bundled-runtime check.
+This completes the cache/timeline and owner-defined automated accessibility scope;
+single-cohort capacity and human/physical release acceptance remain open.
 
 The timeline uses the declared origin/end when a trial extent is served. Otherwise
 its viewport and playback cover the first observed onset through the last observed
@@ -32,3 +35,13 @@ The owner deferred manual VoiceOver acceptance beyond v1 on 2026-10-28
 (`a11y-voiceover-post-v1`). Keyboard, contrast, focus, roles and table twins remain
 v1 requirements. Physical Retina, installed/Finder/clean-no-JDK/Gatekeeper and
 researcher usability acceptance remain unqualified.
+
+A final review regression caught signed-zero geometry returned by a recomputer.
+Numeric grid agreement permits it, while canonical bytes distinguish it. Readback
+now reuses a cached prefix only for bit-identical geometry, otherwise hashing the
+actual geometry and preserving the original typed digest mismatch. The negative
+zero digest is pinned on JVM and Scala.js; the full gate was repeated afterward.
+
+The owner selected compact storage under the existing limits on 2026-10-28. That
+work remains on `g2-archive-scaling`; it requires an actual representation and
+bounded-decoding redesign, not a larger default budget or a compression-only claim.
