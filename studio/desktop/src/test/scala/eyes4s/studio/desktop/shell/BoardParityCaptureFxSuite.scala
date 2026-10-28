@@ -150,7 +150,8 @@ class BoardParityCaptureFxSuite extends StoryCaptureFixture:
           }
           runOnFx {
             w.timeline.dispatch(TimelineIntent.Play)
-            w.timeline.dispatch(TimelineIntent.Tick(2160.0))
+            // Capture the board at its absolute raw onset, regardless of playback coverage.
+            w.timeline.dispatch(TimelineIntent.Tick(2160.0 - w.timeline.timeline.playheadMs))
             w.timeline.dispatch(TimelineIntent.Pause)
             w.timeline.dispatch(TimelineIntent.Brushed(HalfOpenSpan.between(1200.0, 2800.0)))
           }

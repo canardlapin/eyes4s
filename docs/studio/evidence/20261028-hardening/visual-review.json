@@ -1,0 +1,139 @@
+{
+  "sourceCandidate": "4466d578ada2987687ab93378648aaf9365eada9",
+  "hostedRun": 40718395633,
+  "court": "Linux Monocle native1;2x raster transform",
+  "status": "reviewed intentional baseline change; new candidate qualification pending",
+  "reason": "Undeclared timeline starts at observed onset. Board capture uses elapsed2160-currenthead to reach absolute raw2160ms. Rawtimestamps and declaredwindows unchanged.",
+  "changes": [
+    {
+      "theme": "light",
+      "scale": 1,
+      "oldSha256": "cf54614e4a1cc940ba27cc562d56349086e4333c8e05c7700caebbe0e9d8e3ff",
+      "newSha256": "70981aa8c0c6eaec2647b6919515da90ea51605c4df90c5a94d074e0e0f3f97e",
+      "dimensions": [
+        1440,
+        900
+      ],
+      "changed": 6255,
+      "bbox": [
+        295,
+        565,
+        1033,
+        665
+      ],
+      "maximumChannelDelta": 157,
+      "logicalBoundingBoxAboveOneChannelDelta": [
+        295.0,
+        565.0,
+        1033.0,
+        665.0
+      ],
+      "outsideTimeline": {
+        "changedPixels": 344,
+        "maximumChannelDelta": 1,
+        "wholeImageChangedFraction": 0.0002654320987654321,
+        "withinExistingPixelPolicy": true
+      },
+      "onlySubstantiveChangeIsTimeline": true,
+      "review": "Manual before/after light/dark review: timeline starts60ms; bars useobservedcoverage. Bothscales verified. OutsideTimeline differences are bounded raster rounding within unchanged1-channel/0.001 policy."
+    },
+    {
+      "theme": "light",
+      "scale": 2,
+      "oldSha256": "8ed269355cfdcc873a724d6dc0fa8d22197ad3e828bd9182794eb295bb5704ab",
+      "newSha256": "6f32cfed183887dbbdfaade17306f3d6062495913448448171408ce2a3443484",
+      "dimensions": [
+        2880,
+        1800
+      ],
+      "changed": 29183,
+      "bbox": [
+        589,
+        1130,
+        2067,
+        1331
+      ],
+      "maximumChannelDelta": 181,
+      "logicalBoundingBoxAboveOneChannelDelta": [
+        294.5,
+        565.0,
+        1033.5,
+        665.5
+      ],
+      "outsideTimeline": {
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "wholeImageChangedFraction": 0.0,
+        "withinExistingPixelPolicy": true
+      },
+      "onlySubstantiveChangeIsTimeline": true,
+      "review": "Manual before/after light/dark review: timeline starts60ms; bars useobservedcoverage. Bothscales verified. OutsideTimeline differences are bounded raster rounding within unchanged1-channel/0.001 policy."
+    },
+    {
+      "theme": "dark",
+      "scale": 1,
+      "oldSha256": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+      "newSha256": "44a586a026c995d00736741504439725481d74295c35979c6d26f344c8c04950",
+      "dimensions": [
+        1440,
+        900
+      ],
+      "changed": 6212,
+      "bbox": [
+        295,
+        565,
+        1033,
+        665
+      ],
+      "maximumChannelDelta": 138,
+      "logicalBoundingBoxAboveOneChannelDelta": [
+        295.0,
+        565.0,
+        1033.0,
+        665.0
+      ],
+      "outsideTimeline": {
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "wholeImageChangedFraction": 0.0,
+        "withinExistingPixelPolicy": true
+      },
+      "onlySubstantiveChangeIsTimeline": true,
+      "review": "Manual before/after light/dark review: timeline starts60ms; bars useobservedcoverage. Bothscales verified. OutsideTimeline differences are bounded raster rounding within unchanged1-channel/0.001 policy."
+    },
+    {
+      "theme": "dark",
+      "scale": 2,
+      "oldSha256": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+      "newSha256": "0ea30313b3b5c24f75d84a499256aa4e6ff9227857461815e88853a599d9d23d",
+      "dimensions": [
+        2880,
+        1800
+      ],
+      "changed": 29078,
+      "bbox": [
+        590,
+        1130,
+        2067,
+        1331
+      ],
+      "maximumChannelDelta": 162,
+      "logicalBoundingBoxAboveOneChannelDelta": [
+        295.0,
+        565.0,
+        1033.5,
+        665.5
+      ],
+      "outsideTimeline": {
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "wholeImageChangedFraction": 0.0,
+        "withinExistingPixelPolicy": true
+      },
+      "onlySubstantiveChangeIsTimeline": true,
+      "review": "Manual before/after light/dark review: timeline starts60ms; bars useobservedcoverage. Bothscales verified. OutsideTimeline differences are bounded raster rounding within unchanged1-channel/0.001 policy."
+    }
+  ],
+  "thresholdsChanged": false,
+  "otherBaselineFilesChanged": false
+}
