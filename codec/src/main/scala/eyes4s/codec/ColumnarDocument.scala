@@ -22,7 +22,7 @@ import scala.collection.mutable
 import scala.util.boundary
 import scala.util.boundary.{Label, break}
 
-/** Private storage experiment. Native archives do not accept this format yet.
+/** Private versioned storage, admitted only through explicit columnar media.
   * Objects with the same ordered keys are stored as reference columns, and
   * identical values are interned without normalizing numbers or strings.
   */

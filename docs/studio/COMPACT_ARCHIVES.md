@@ -136,3 +136,19 @@ reconstruction remain required. Reopening uses retained results, with no
 analysis re-execution. Tests cover the actual fallback, copied-byte verification,
 unchanged facts and a legacy package that still refuses under the same tighter
 byte budget on both JVM and Scala.js.
+
+## Complete-cohort integration pilot
+
+The first frozen native integration candidate (`3af0f47a`) saved the complete
+cohort within the unchanged defaults: 243,893,043 stored bytes, 753,249 physical
+structural descriptors, 109 entries and 11,696,640 density cells. Its five-person
+control retained the previous archive, map/failure, query and export bytes exactly.
+The full-cohort API scientific identity matched the frozen reference.
+
+That candidate's application journey subsequently failed its existing 60-second
+participant/scale-profile plot-readiness wait. Its source, failure receipt and
+saved project are preserved. These capacity measurements are not an application,
+reopen or export qualification. A successor indexes repeated inventory-label and
+nominal clock-identity scans while retaining first-error selection, canonical
+identity order and all capacity and readiness limits. A fresh complete journey
+and the full release gate remain required.
