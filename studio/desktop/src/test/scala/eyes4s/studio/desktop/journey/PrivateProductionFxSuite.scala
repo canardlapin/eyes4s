@@ -41,7 +41,8 @@ import eyes4s.studio.desktop.trial.TrialViewStatus
 import eyes4s.studio.core.importing.{ColumnChoice, GeometryField}
 import io.circe.{Json, parser}
 import io.circe.syntax.*
-import javafx.scene.control.{Button, Menu, MenuItem}
+import javafx.scene.AccessibleAttribute
+import javafx.scene.control.{Button, Label, Menu, MenuItem}
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
@@ -423,18 +424,51 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           val table = get(runOnFx(w.summary.vm.queries).get)
           assertEquals(table.rows.size, found.size)
           val expectedCells = table.rows.map(table.cellsOf)
-          var drawnCells    = Vector.empty[Vector[String]]
-          // A full virtualized-table scan can cross a pending layout pulse. Keep
-          // exact cell equality, but wait for every requested node to be realized.
-          until(fx, "every query-table row is drawn with the expected cells", 2.minutes) {
-            drawnCells = w.summary.queryTable.rowTexts
-            if drawnCells != expectedCells then
-              println(
-                s"[private-production/table] expected=${expectedCells.size}; drawn=${drawnCells.size}; awaiting exact drawn-cell equality"
+          assertEquals(runOnFx(w.summary.queryTable.modelRowTexts), expectedCells)
+          val tableTop = runOnFx(w.summary.queryTable.topRow).getOrElse(0)
+          def drawnRow(index: Int): Option[Vector[String]] =
+            w.summary.queryTable.rowNode(index).map { row =>
+              assertEquals(row.getItem.intValue, index)
+              assertEquals(
+                row.queryAccessibleAttribute(AccessibleAttribute.INDEX),
+                Integer.valueOf(index)
               )
-            drawnCells == expectedCells
+              row
+                .lookupAll(".table-twin-cell")
+                .asScala
+                .toVector
+                .collect { case cell: Label =>
+                  val column = cell
+                    .queryAccessibleAttribute(AccessibleAttribute.COLUMN_INDEX)
+                    .asInstanceOf[Integer]
+                    .intValue
+                  column -> cell.getText
+                }
+                .sortBy(_._1)
+                .map(_._2)
+            }
+          // Unlike the small-table rowTexts helper, retain each requested index
+          // and leave an unrealized target in view across a real layout pulse.
+          // Restoring the viewport before that pulse can omit the final row.
+          var drawnCells = runOnFx {
+            expectedCells.indices.flatMap(i => drawnRow(i).map(i -> _)).toMap
           }
-          assertEquals(drawnCells, expectedCells)
+          fx.awaitLayout()
+          expectedCells.indices
+            .filter(i => drawnCells.get(i) != Some(expectedCells(i)))
+            .foreach { index =>
+              until(fx, s"query-table row $index is drawn with the expected cells", 2.minutes) {
+                drawnRow(index).exists { cells =>
+                  drawnCells = drawnCells.updated(index, cells)
+                  cells == expectedCells(index)
+                }
+              }
+            }
+          assertEquals(drawnCells.size, expectedCells.size)
+          assertEquals(expectedCells.indices.map(drawnCells).toVector, expectedCells)
+          runOnFx(w.summary.queryTable.rowNode(tableTop))
+          fx.awaitLayout()
+          println(s"[private-production] all ${drawnCells.size} query-table rows drawn exactly")
           assertEquals(archive(w), expectedDigest)
           write(
             root.resolve(if reopen then "reopened-queries.json" else "ui-queries.json"),
