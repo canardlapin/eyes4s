@@ -9899,7 +9899,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -24425,6 +24424,10 @@
       "forks retain every partial-block boundary and remain independent after finish",
       "one million 'a', fed in runs, never held"
     ],
+    "resultsJS/eyes4s.results.TableDigestStreamingSuite": [
+      "streamed table UTF-8 preserves boundaries and historical surrogate bytes",
+      "table digest retains SHA-256 vectors and block-boundary identities"
+    ],
     "surfaceJS/consumer.PublicSurfaceSuite": [
       "density and bandwidth errors preserve scientific operands and underlying failures",
       "pyramid and smoother descriptions retain scales conventions and parameter units"
@@ -29001,6 +29004,10 @@
       "finish resets the hasher, so it digests the next message from the start",
       "forks retain every partial-block boundary and remain independent after finish",
       "one million 'a', fed in runs, never held"
+    ],
+    "resultsJVM/eyes4s.results.TableDigestStreamingSuite": [
+      "streamed table UTF-8 preserves boundaries and historical surrogate bytes",
+      "table digest retains SHA-256 vectors and block-boundary identities"
     ],
     "surfaceJVM/consumer.PublicSurfaceSuite": [
       "density and bandwidth errors preserve scientific operands and underlying failures",
