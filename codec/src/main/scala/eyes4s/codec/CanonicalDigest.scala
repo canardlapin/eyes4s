@@ -126,13 +126,15 @@ object CanonicalDigest:
   */
 private[codec] enum CanonicalDoc:
   case Leaf(value: Json)
+  case Deferred(value: () => CanonicalDoc)
   case Obj(members: ListMap[String, CanonicalDoc])
   case Arr(size: Int, item: Int => Either[CodecError, CanonicalDoc])
 
   /** The whole document, every item made. */
   def json: Either[CodecError, Json] = this match
-    case Leaf(value)  => Right(value)
-    case Obj(members) =>
+    case Leaf(value)     => Right(value)
+    case Deferred(value) => value().json
+    case Obj(members)    =>
       members
         .foldLeft[Either[CodecError, Vector[(String, Json)]]](Right(Vector.empty)) {
           case (acc, (key, member)) =>
@@ -148,8 +150,9 @@ private[codec] enum CanonicalDoc:
 
   /** The same document, every failure making an item passed through `f`. */
   def mapError(f: CodecError => CodecError): CanonicalDoc = this match
-    case leaf: Leaf   => leaf
-    case Obj(members) => Obj(members.map((key, member) => key -> member.mapError(f)))
+    case leaf: Leaf      => leaf
+    case Deferred(value) => Deferred(() => value().mapError(f))
+    case Obj(members)    => Obj(members.map((key, member) => key -> member.mapError(f)))
 
     case Arr(size, item) => Arr(size, i => item(i).left.map(f).map(_.mapError(f)))
 
@@ -217,7 +220,8 @@ private[codec] object CanonicalBytes:
       path: String,
       out: Byte => Unit
   ): Either[CodecError, Unit] = doc match
-    case CanonicalDoc.Leaf(value) =>
+    case CanonicalDoc.Deferred(value) => stream(value(), path, out)
+    case CanonicalDoc.Leaf(value)     =>
       unrepresentable(value, path) match
         case Some(at) => Left(refusal(at))
         case None     => Right(write(value, out))
