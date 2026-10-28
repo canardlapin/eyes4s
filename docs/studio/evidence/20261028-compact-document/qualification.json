@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "updatedUtc": "2026-10-28T19:49:34.648841+00:00",
+  "qualifiedSource": "a3da0ff8a8081417e96edeabeda7a240322d96d5",
+  "qualifiedSourceTree": "f7bb9e9f26c3a3810522748127545ff0caa9c135",
+  "scope": "Private bounded columnar document layer and generic lazy row restoration only. The native application writer does not use it in this candidate.",
+  "canonicalGate": {
+    "hygieneMinutes": 0.6,
+    "strictJvmJsCompileMinutes": 1.6,
+    "apiAuditMinutes": 25.4,
+    "fullTestsAndBoundariesMinutes": 10.3,
+    "artifactConsumerMinutes": 3.6,
+    "status": "passed",
+    "coveredRuntimeEntries": 3984,
+    "uncoveredRuntimeEntries": 0
+  },
+  "hosted": {
+    "Checks": {
+      "id": 40750086479,
+      "status": "success"
+    },
+    "Studio": {
+      "id": 40750086649,
+      "status": "success",
+      "jobs": [
+        "Linux headless visual",
+        "Linux native output scale 2",
+        "macOS functional JavaFX",
+        "clean-clone pins"
+      ]
+    },
+    "Clean": {
+      "id": 40750086375,
+      "status": "success"
+    }
+  },
+  "focused": {
+    "testsPerPlatform": 20,
+    "platforms": [
+      "JVM",
+      "Scala.js"
+    ],
+    "signedZeroRegression": "Initial private implementation failed on Scala.js; explicit zero sign corrected and cross-platform fixtures pass.",
+    "malformedInputCoverage": [
+      "truncations",
+      "overflowing and overlong counts",
+      "forward or cyclic references",
+      "expansion and depth limits",
+      "unreachable dictionary records",
+      "500 deterministic binary mutations"
+    ]
+  },
+  "privateDocumentProbe": {
+    "participants": 5,
+    "jsonBytes": 149108708,
+    "compactBytes": 6810726,
+    "canonicalDocumentIdentitiesEqual": true,
+    "binaryReencodingsIdentical": true,
+    "qualifiedCompiledInputsUnchanged": true,
+    "documents": [
+      {
+        "role": "eyes4s.study-input",
+        "jsonBytes": 8669927,
+        "compactBytes": 1292724
+      },
+      {
+        "role": "eyes4s.admission-ledger",
+        "jsonBytes": 90298190,
+        "compactBytes": 3818249
+      },
+      {
+        "role": "eyes4s.study-result",
+        "jsonBytes": 50140591,
+        "compactBytes": 1699753
+      }
+    ],
+    "scope": "Existing JSON documents only; density chunks and other project files excluded; no native capacity or memory qualification."
+  },
+  "remaining": [
+    "Native format integration and explicit unchanged-budget resource contract",
+    "Actual full-cohort API/application/save/fresh-process-reopen/export qualification",
+    "ci-macos-row-navigation-timeout: original main repetition and diagnostic repetition failed different readiness waits; document candidate passed macOS. No stability claim.",
+    "Manual native installation, Finder dispatch, clean no-JDK macOS, Gatekeeper, physical Retina and researcher usability remain unqualified; manual VoiceOver owner-deferred beyond v1."
+  ]
+}
