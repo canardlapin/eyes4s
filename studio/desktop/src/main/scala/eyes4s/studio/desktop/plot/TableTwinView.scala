@@ -366,8 +366,13 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
     // native reveal operation realizes and fully reveals the target
     // (bead g2-table-end).
     Option(list.lookup(".virtual-flow")) match
-      case Some(flow: VirtualFlow[?]) => flow.scrollTo(index)
-      case _                          => list.scrollTo(index)
+      case Some(flow: VirtualFlow[?]) =>
+        flow.scrollTo(index)
+        // Native Home/End also anchor the viewport at its boundary. Merely
+        // creating an adjacent end cell can otherwise leave it clipped.
+        if index == 0 then flow.setPosition(0)
+        else if index == rowCount - 1 then flow.setPosition(1)
+      case _ => list.scrollTo(index)
 
   private def scrolledTo(index: Int): Option[RowCell] =
     if index < 0 || index >= rowCount then None
