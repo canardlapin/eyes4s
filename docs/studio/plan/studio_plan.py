@@ -1193,7 +1193,7 @@ t(
     "Accessibility audit",
     1,
     "all boards",
-    "Keyboard-only E2E-01; VoiceOver pass on macOS; contrast suite; every plot has a Table twin; focus order reviewed.",
+    "Keyboard-only E2E-01; contrast suite; every plot has a Table twin; focus order reviewed. Manual VoiceOver acceptance is deferred beyond v1 by the owner decision of 2026-10-28 (bead a11y-voiceover-post-v1); it is not a v1 release gate.",
     [
         "Keyboard-only golden journey passes.",
         "Audit report in docs/studio/A11Y_AUDIT.md.",

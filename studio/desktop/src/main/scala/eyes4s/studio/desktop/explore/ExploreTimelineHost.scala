@@ -184,7 +184,7 @@ final class ExploreTimelineHost(
   def refresh(): Unit =
     if !disposed then
       shownRead = ExploreTimeline.shown(trialView())
-      state = ExploreTimeline.sync(state, trialView().trial)
+      state = ExploreTimeline.sync(state, trialView().trial, shown)
       render()
 
   def dispatch(intent: TimelineIntent): Unit =

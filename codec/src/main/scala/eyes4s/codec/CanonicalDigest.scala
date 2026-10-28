@@ -87,6 +87,34 @@ object CanonicalDigest:
       .stream(doc, "$", hasher.update(_))
       .map(_ => new CanonicalDigest(ByteDigest.finished(hasher)))
 
+  /** A hashed object prefix. Only independent continuations leave this object. */
+  private[codec] final class ObjectSuffix[A] private[CanonicalDigest] (
+      prefix: eyes4s.results.Sha256Core.Hasher,
+      keys: Vector[String]
+  ):
+    def finish(values: Vector[Json]): Either[CodecError, CanonicalDigest[A]] =
+      if values.size != keys.size then
+        Left(
+          CodecError.Unsupported(
+            "canonical object suffix",
+            s"expected ${keys.size} values for $keys, received ${values.size}"
+          )
+        )
+      else
+        val hasher = prefix.fork()
+        CanonicalBytes
+          .members(keys.zip(values), hasher.update(_))
+          .map(_ => new CanonicalDigest(ByteDigest.finished(hasher)))
+
+  private[codec] def objectPrefix[A](
+      members: Vector[(String, Json)],
+      remainingKeys: Vector[String]
+  ): Either[CodecError, ObjectSuffix[A]] =
+    val hasher = new eyes4s.results.Sha256Core.Hasher
+    CanonicalBytes
+      .objectPrefix(members, remainingKeys.size, hasher.update(_))
+      .map(_ => new ObjectSuffix(hasher, remainingKeys))
+
 /** A canonical document described member by member, whose arrays make their
   * items on demand. `json` makes the whole document; `CanonicalDigest.streamed`
   * digests it one item at a time. Both read the same description, so the
@@ -210,6 +238,23 @@ private[codec] object CanonicalBytes:
         result = item(at).flatMap(stream(_, s"$path[$at]", out))
         i += 1
       result
+
+  /** The same object rendering, split between a shared prefix and later members. */
+  def objectPrefix(
+      fields: Vector[(String, Json)],
+      remaining: Int,
+      out: Byte => Unit
+  ): Either[CodecError, Unit] =
+    Renderer(out).header(7, fields.size + remaining)
+    members(fields, out)
+
+  def members(fields: Vector[(String, Json)], out: Byte => Unit): Either[CodecError, Unit] =
+    fields.foldLeft[Either[CodecError, Unit]](Right(())) { case (acc, (key, value)) =>
+      acc.flatMap { _ =>
+        Renderer(out).string(key)
+        stream(CanonicalDoc.Leaf(value), s"$$.$key", out)
+      }
+    }
 
   private def refusal(path: String): CodecError =
     CodecError.Unsupported(

@@ -53,6 +53,27 @@ class ExploreTimelineSuite extends munit.FunSuite:
   private def step(t: Timeline)(s: ExploreTimeline, i: TimelineIntent) =
     ExploreTimeline.update(s, Some(t), i)
 
+  test("unknown-extent large-origin playback and VM start at observed coverage without re-zeroing") {
+    import eyes4s.studio.app.plot.TimelineFixation
+    val t = ok(Timeline.of(enc03, Vector(
+      TimelineFixation(ok(FixationIndex.of(1)), 600000L, 400L),
+      TimelineFixation(ok(FixationIndex.of(2)), 600500L, 300L)
+    )))
+    val before = ok(eyes4s.studio.app.plot.Timeline.source(t, ok(TimelineColumns.standard)))
+    val initial = ExploreTimeline.sync(ExploreTimeline.empty, Some(enc03))
+    val playing = ExploreTimeline.update(initial, Some(t), TimelineIntent.Play)
+    assertEquals(playing.playheadMs, 600000.0)
+    val vm = ExploreTimelineVM.of(initial, Right(Some(TimelineRead(t, Vector.empty))))
+    assertEquals(vm.playheadMs, Some(600000.0))
+    assertEquals(vm.status, "playhead 600.00 s")
+    val ended = ExploreTimeline.update(playing, Some(t), TimelineIntent.Tick(800.0))
+    assertEquals((ended.playheadMs, ended.playing), (600800.0, false))
+    assertEquals(ExploreTimeline.update(ended, Some(t), TimelineIntent.Play).playheadMs, 600000.0)
+    assertEquals(vm.source, Some(before))
+    val span = HalfOpenSpan.between(600100.0, 600500.0).get
+    assertEquals(PlotBrush.rows(before, TimelineColumns.brushRule(ok(TimelineColumns.standard)), span), Vector(t.refs.head))
+  }
+
   test("the fixture's intervals: 13 bars, to the millisecond, ending at 5038 ms") {
     timeline.map { t =>
       assertEquals(t.fixations.size, 13)
@@ -60,7 +81,7 @@ class ExploreTimelineSuite extends munit.FunSuite:
       assertEquals((t.fixations(5).onsetMs, t.fixations(5).durationMs), (2160L, 412L))
       assertEquals(ExploreTimeline.endMs(t), 5038.0)
       val vm = ExploreTimelineVM.of(start, Right(Some(TimelineRead(t, Vector.empty))))
-      assertEquals(vm.status, "playhead 0.00 s")
+      assertEquals(vm.status, "playhead 0.06 s")
       assertEquals(vm.disclaimer, "Brushing highlights; it does not crop the analysis")
       assertEquals(vm.source.map(_.rows.size), Some(13))
       assertEquals(
@@ -81,23 +102,23 @@ class ExploreTimelineSuite extends munit.FunSuite:
         "Pause"
       )
       val one = s(playing, TimelineIntent.Tick(1000.0))
-      assertEquals(one.playheadMs, 1000.0)
+      assertEquals(one.playheadMs, 1060.0)
       val twice =
         s(s(one, TimelineIntent.SetSpeed(PlaybackSpeed.Two)), TimelineIntent.Tick(500.0))
-      assertEquals(twice.playheadMs, 2000.0)
+      assertEquals(twice.playheadMs, 2060.0)
       val half =
         s(s(twice, TimelineIntent.SetSpeed(PlaybackSpeed.Half)), TimelineIntent.Tick(320.0))
-      assertEquals(half.playheadMs, 2160.0)
+      assertEquals(half.playheadMs, 2220.0)
       assertEquals(
         ExploreTimelineVM.of(half, Right(Some(TimelineRead(t, Vector.empty)))).status,
-        "playhead 2.16 s"
+        "playhead 2.22 s"
       )
       val paused = s(half, TimelineIntent.Pause)
-      assertEquals(s(paused, TimelineIntent.Tick(1000.0)).playheadMs, 2160.0)
+      assertEquals(s(paused, TimelineIntent.Tick(1000.0)).playheadMs, 2220.0)
       // The end stops playback; playing again starts over.
       val ended = s(s(paused, TimelineIntent.Play), TimelineIntent.Tick(1e6))
       assertEquals((ended.playheadMs, ended.playing), (5038.0, false))
-      assertEquals(s(ended, TimelineIntent.Play).playheadMs, 0.0)
+      assertEquals(s(ended, TimelineIntent.Play).playheadMs, 60.0)
       // Nothing plays before the fixations are read.
       assert(!ExploreTimeline.update(start, None, TimelineIntent.Play).playing)
     }
@@ -125,7 +146,7 @@ class ExploreTimelineSuite extends munit.FunSuite:
       val span    = HalfOpenSpan.between(1200.0, 2800.0).get
       val brushed = step(t)(start, TimelineIntent.Brushed(Some(span)))
       val vm      = ExploreTimelineVM.of(brushed, Right(Some(TimelineRead(t, Vector.empty))))
-      assertEquals(vm.status, "playhead 0.00 s · brush 1.20–2.80 s")
+      assertEquals(vm.status, "playhead 0.06 s · brush 1.20–2.80 s")
       assertEquals(vm.brush, Some(span))
       val cols = ok(TimelineColumns.standard)
       val refs = PlotBrush.rows(vm.source.get, TimelineColumns.brushRule(cols), span)

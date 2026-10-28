@@ -70,6 +70,21 @@ private[real] object NativeArtifacts:
       _ <- limit("entries", entries, BigInt(budget.maxEntries))
       // Packed cells alone establish this lower bound before encoding JSON or allocating chunks.
       _            <- limit("packed density bytes", cells * 8, BigInt(budget.maxTotalBytes))
+      p <- codec("plan artifact")(StoredArtifact.plan("plan", work.plans, work.plan))
+      i <- codec("input artifact")(
+        StoredArtifact.input("input", work.inputs, work.admitted.input)
+      )
+      l <- codec("ledger artifact")(
+        StoredArtifact.ledger("ledger", work.inputs, work.admitted.evidence)
+      )
+      // These exact retained bytes plus packed cells are a lower bound on the
+      // final package. Refuse before result hashing/chunk construction when it
+      // already exceeds the unchanged whole-package limit.
+      _ <- limit(
+        "encoded archive lower bound",
+        BigInt(p.bytes.length) + i.bytes.length + l.bytes.length + cells * 8,
+        BigInt(budget.maxTotalBytes)
+      )
       planDigest   <- codec("plan digest")(work.plans.codec.digest(work.plan))
       inputDigest  <- codec("input digest")(work.inputs.input.digest(work.admitted.input))
       resultDigest <- codec("result digest")(work.results.codec.digest(result))
@@ -98,13 +113,6 @@ private[real] object NativeArtifacts:
         resultCanonical,
         work.recipe,
         Some(definition)
-      )
-      p <- codec("plan artifact")(StoredArtifact.plan("plan", work.plans, work.plan))
-      i <- codec("input artifact")(
-        StoredArtifact.input("input", work.inputs, work.admitted.input)
-      )
-      l <- codec("ledger artifact")(
-        StoredArtifact.ledger("ledger", work.inputs, work.admitted.evidence)
       )
       packed <- codec("packed result artifacts")(
         ResultManifest.packed("result", work.results, result)

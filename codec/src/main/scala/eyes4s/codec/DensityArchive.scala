@@ -56,6 +56,18 @@ object DensityDigest:
       mass: Mass[U],
       description: Vector[(String, Vector[Provenance.Param])]
   ): Either[CodecError, DensityDigest[U]] =
+    CanonicalDigest
+      .document[DensityView[U]](
+        Json.obj(
+          "format"         -> Json.fromString("eyes4s.density-view/1"),
+          "geometry"       -> geometry(mass.grid, description),
+          "provenance"     -> ResultWire.provenance(mass.provenance),
+          "cellsFloat64LE" -> cells(mass)
+        )
+      )
+      .map(new DensityDigest(_))
+
+  private def cells[U <: Unit2D](mass: Mass[U]): Json =
     val bytes = new Array[Byte](mass.grid.size * 8)
     mass.values.iterator.zipWithIndex.foreach { (value, index) =>
       Bytes.putLong(bytes, index * 8, java.lang.Double.doubleToLongBits(value))
@@ -66,34 +78,76 @@ object DensityDigest:
       cells.append(digits((value & 0xff) >>> 4))
       cells.append(digits(value & 0x0f))
     }
-    CanonicalDigest
-      .document[DensityView[U]](
-        Json.obj(
-          "format"   -> Json.fromString("eyes4s.density-view/1"),
-          "geometry" -> Json.obj(
-            "frame" -> Json.obj(
-              "id"    -> Json.fromString(mass.grid.frame.id.name),
-              "xMin"  -> Json.fromDoubleOrNull(mass.grid.frame.bounds.xMin),
-              "yMin"  -> Json.fromDoubleOrNull(mass.grid.frame.bounds.yMin),
-              "xMax"  -> Json.fromDoubleOrNull(mass.grid.frame.bounds.xMax),
-              "yMax"  -> Json.fromDoubleOrNull(mass.grid.frame.bounds.yMax),
-              "yAxis" -> Json.fromString(mass.grid.frame.yAxis.toString)
-            ),
-            "grid"    -> Json.fromString(mass.grid.id.name),
-            "nx"      -> Json.fromInt(mass.grid.nx),
-            "ny"      -> Json.fromInt(mass.grid.ny),
-            "order"   -> Json.fromString("row-major-x-fastest"),
-            "context" -> Json.arr(
-              description.map((k, v) =>
-                Json.obj("field" -> Json.fromString(k), "values" -> ResultWire.values(v))
-              )*
-            )
-          ),
-          "provenance"     -> ResultWire.provenance(mass.provenance),
-          "cellsFloat64LE" -> Json.fromString(cells.result())
-        )
+    Json.fromString(cells.result())
+
+  private def geometry[U <: Unit2D](
+      grid: Grid[U],
+      description: Vector[(String, Vector[Provenance.Param])]
+  ): Json =
+    Json.obj(
+      "frame" -> Json.obj(
+        "id"    -> Json.fromString(grid.frame.id.name),
+        "xMin"  -> Json.fromDoubleOrNull(grid.frame.bounds.xMin),
+        "yMin"  -> Json.fromDoubleOrNull(grid.frame.bounds.yMin),
+        "xMax"  -> Json.fromDoubleOrNull(grid.frame.bounds.xMax),
+        "yMax"  -> Json.fromDoubleOrNull(grid.frame.bounds.yMax),
+        "yAxis" -> Json.fromString(grid.frame.yAxis.toString)
+      ),
+      "grid"    -> Json.fromString(grid.id.name),
+      "nx"      -> Json.fromInt(grid.nx),
+      "ny"      -> Json.fromInt(grid.ny),
+      "order"   -> Json.fromString("row-major-x-fastest"),
+      "context" -> Json.arr(
+        description.map((k, v) =>
+          Json.obj("field" -> Json.fromString(k), "values" -> ResultWire.values(v))
+        )*
       )
-      .map(new DensityDigest(_))
+    )
+
+  private[codec] final case class GeometryKey(
+      grid: GridId,
+      frame: FrameId,
+      xMin: Long,
+      yMin: Long,
+      xMax: Long,
+      yMax: Long,
+      yAxis: YAxis,
+      nx: Int,
+      ny: Int
+  ) derives CanEqual
+
+  // Exact geometry bits: JSON printing on Scala.js normalizes signed zero.
+  private[codec] def geometryKey[U <: Unit2D](grid: Grid[U]): GeometryKey =
+    val bounds = grid.frame.bounds
+    GeometryKey(
+      grid.id,
+      grid.frame.id,
+      java.lang.Double.doubleToLongBits(bounds.xMin),
+      java.lang.Double.doubleToLongBits(bounds.yMin),
+      java.lang.Double.doubleToLongBits(bounds.xMax),
+      java.lang.Double.doubleToLongBits(bounds.yMax),
+      grid.frame.yAxis,
+      grid.nx,
+      grid.ny
+    )
+
+  private[codec] def prepare[U <: Unit2D](
+      grid: Grid[U],
+      description: Vector[(String, Vector[Provenance.Param])]
+  ): Either[CodecError, CanonicalDigest.ObjectSuffix[DensityView[U]]] =
+    CanonicalDigest.objectPrefix[DensityView[U]](
+      Vector(
+        "format"   -> Json.fromString("eyes4s.density-view/1"),
+        "geometry" -> geometry(grid, description)
+      ),
+      Vector("provenance", "cellsFloat64LE")
+    )
+
+  private[codec] def continued[U <: Unit2D](
+      prefix: CanonicalDigest.ObjectSuffix[DensityView[U]],
+      mass: Mass[U]
+  ): Either[CodecError, ByteDigest] =
+    prefix.finish(Vector(ResultWire.provenance(mass.provenance), cells(mass))).map(_.sha256)
 
 /** A located refusal to read one archived density. */
 enum DensityError[K]:
@@ -200,6 +254,16 @@ final class DensityReader[K, U <: Unit2D] private[codec] (
     payloads: PayloadRef => Option[VerifiedPayload],
     recompute: Option[(Int, Int, K) => Either[DensityError[K], Mass[U]]]
 )(using UnitLabel[U]):
+  private lazy val prefixes = rows.flatten
+    .flatMap { (_, outcome) =>
+      outcome.hcursor.get[String]("grid").toOption
+    }
+    .distinct
+    .map { name =>
+      name -> identities.grid[U](GridId(name)).flatMap(DensityDigest.prepare(_, description))
+    }
+    .toMap
+
   def density(scale: Int, key: K): Either[DensityError[K], DensityView[U]] =
     for
       entries <- rows.lift(scale).toRight(DensityError.UnknownScale(scale, rows.size))
@@ -329,8 +393,10 @@ final class DensityReader[K, U <: Unit2D] private[codec] (
                     .map(e => CodecError.Field("digest", source, e.message))
                 )
             )
-            actual <- decoded(DensityWire.digest(mass, description))
-            _      <- Either.cond(
+            actual <- decoded(
+              prefixes(mass.grid.id.name).flatMap(DensityDigest.continued(_, mass))
+            )
+            _ <- Either.cond(
               actual == expected,
               (),
               DensityError.DigestMismatch(scale, key, expected, actual)
@@ -378,6 +444,20 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
           (s, i, key, mass)
         }
       }
+      prefixes <-
+        if storage == DensityStorage.Inline then
+          Right(
+            Map.empty[DensityDigest.GeometryKey, CanonicalDigest.ObjectSuffix[DensityView[U]]]
+          )
+        else
+          maps
+            .map(_._4.grid)
+            .groupBy(DensityDigest.geometryKey(_))
+            .toVector
+            .traverse { (key, grids) =>
+              DensityDigest.prepare(grids.head, value.description).map(key -> _)
+            }
+            .map(_.toMap)
       chunks <-
         if storage != DensityStorage.Packed then Right(Vector.empty[(String, VerifiedPayload)])
         else
@@ -431,7 +511,10 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
               if storage == DensityStorage.Inline then Right(DensityWire.inline(mass))
               else
                 for
-                  digest   <- DensityWire.digest(mass, value.description)
+                  digest <- DensityDigest.continued(
+                    prefixes(DensityDigest.geometryKey(mass.grid)),
+                    mass
+                  )
                   location <- storage match
                     case DensityStorage.Recomputable =>
                       Right(

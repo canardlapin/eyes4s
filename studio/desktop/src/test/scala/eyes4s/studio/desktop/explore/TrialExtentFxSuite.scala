@@ -35,9 +35,13 @@ class TrialExtentFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration          = Duration(180, "s")
   private def ok[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
 
-  private def model(cell: Option[String]): AppModel =
+  private def model(cell: Option[String], fixes: String = TrialDurationNativeFixture.fixes): AppModel =
     val original = ok(StoryMoments.t2)
-    val spec     = TrialDurationNativeFixture.spec(cell)
+    val base = TrialDurationNativeFixture.spec(cell)
+    val spec = base.copy(sources = ok(Sources.of(base.sources.entries.map { source =>
+      if source.role == SourceRole.Fixations then source.copy(bytes = eyes4s.codec.ByteDigest.sha256(IArray.from(fixes.getBytes(UTF_8))))
+      else source
+    })))
     val document = ok(
       StudioDocument.of(
         original.datasets.map(d => if d.id == spec.id then spec else d),
@@ -80,10 +84,10 @@ class TrialExtentFxSuite extends ShellFxSuite:
     assertEquals(eyes4s.studio.app.explore.FixationInspector.focusOf(selected), Some(fixation))
     selected
 
-  private def sources(cell: Option[String]): DatasetSources[IO] = new DatasetSources[IO]:
+  private def sources(cell: Option[String], fixes: String = TrialDurationNativeFixture.fixes): DatasetSources[IO] = new DatasetSources[IO]:
     def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] =
       val raw = source.role match
-        case SourceRole.Fixations => TrialDurationNativeFixture.fixes
+        case SourceRole.Fixations => fixes
         case SourceRole.Trials    => TrialDurationNativeFixture.trials(cell.getOrElse(""))
       IO.pure(Some(IArray.from(raw.getBytes(UTF_8))))
     def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] = IO.pure(
@@ -152,3 +156,37 @@ class TrialExtentFxSuite extends ShellFxSuite:
           }
           assertEquals(runOnFx(w.timeline.timeline.playheadMs), 400.0)
     }
+
+  fxStage.test("undeclared native raw-clock coverage reaches the viewport and restart playhead") { fx =>
+    val fixes = TrialDurationNativeFixture.fixes.replace("enc_03,1,1,100,300,", "enc_03,1,1,600000,300,")
+    val w = boot(fx, model(None, fixes), StoryMoment.T2, nativeSources = Some(sources(None, fixes)))
+    eventually(fx, "raw-clock timeline drawn") {
+      w.timeline.vm.enabled && w.timeline.twin.input.targets.isDefined
+    }
+    val timeline = w.timeline.vm
+    assertEquals(timeline.playheadMs, Some(600000.0))
+    assertEquals(timeline.status, "playhead 600.00 s")
+    assert(timeline.extentNote.exists(_.contains("not declared")))
+    val columns = ok(eyes4s.studio.app.plot.TimelineColumns.standard)
+    assertEquals(timeline.source.flatMap(_.number(0, columns.onset)), Some(600000.0))
+    val width = runOnFx {
+      val targets = w.timeline.twin.input.targets.get
+      val from = ok(targets.transform.dataToDevice(DataPoint(600000, 0)))
+      val end = ok(targets.transform.dataToDevice(DataPoint(600300, 0)))
+      (end.x - from.x) / targets.transform.surface.logicalWidth
+    }
+    assert(width > 0.8, s"Observed coverage must fill the timeline: $width")
+    fx.snapshot(eyes4s.studio.desktop.harness.StudioTheme.Light)
+    runOnFx {
+      w.timeline.dispatch(TimelineIntent.Play)
+      w.timeline.dispatch(TimelineIntent.Tick(10000))
+    }
+    assertEquals(runOnFx(w.timeline.timeline.playheadMs), 600300.0)
+    assert(!runOnFx(w.timeline.timeline.playing))
+    runOnFx {
+      w.timeline.dispatch(TimelineIntent.Play)
+      w.timeline.dispatch(TimelineIntent.Pause)
+    }
+    assertEquals(runOnFx(w.timeline.timeline.playheadMs), 600000.0)
+    assertEquals(w.timeline.vm.source.flatMap(_.number(0, columns.onset)), Some(600000.0))
+  }

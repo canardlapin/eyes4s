@@ -113,7 +113,7 @@ class TimelineFxSuite extends ShellFxSuite:
     val pane = runOnFx(w.host.node(StudioLayouts.timeline)).getOrElse(fail("no timeline pane"))
     assert(runOnFx(pane.getScene eq fx.scene))
     val h = w.timeline
-    assertEquals(runOnFx(h.status.getText), "playhead 0.00 s")
+    assertEquals(runOnFx(h.status.getText), "playhead 0.06 s")
     assertEquals(
       runOnFx(h.disclaimer.getText),
       "Brushing highlights; it does not crop the analysis"
@@ -152,7 +152,7 @@ class TimelineFxSuite extends ShellFxSuite:
       ),
       (1 to 13).toVector.map(i => i >= 3 && i <= 7)
     )
-    assert(runOnFx(w.timeline.status.getText).startsWith("playhead 0.00 s · brush 1.20–2.80 s"))
+    assert(runOnFx(w.timeline.status.getText).startsWith("playhead 0.06 s · brush 1.20–2.80 s"))
     // The brush is view state: the document and its encoding are unchanged.
     val after = runOnFx(w.runtime.model.document)
     assertEquals(after, before)
@@ -241,8 +241,9 @@ class TimelineFxSuite extends ShellFxSuite:
   fxStage.test("play, step, speed and pause act on the playhead") { fx =>
     val (w, _) = ready(fx)
     val h      = w.timeline
-    runOnFx(h.stepForward.fire())
     assertEquals(runOnFx(h.status.getText), "playhead 0.06 s")
+    runOnFx(h.stepForward.fire())
+    assert(runOnFx(h.timeline.playheadMs) > 60.0)
     runOnFx(h.speeds(PlaybackSpeed.Two).fire())
     assertEquals(runOnFx(h.timeline.speed), PlaybackSpeed.Two)
     runOnFx(h.play.fire())
@@ -273,7 +274,7 @@ class TimelineFxSuite extends ShellFxSuite:
     // Another view selects fixation 1: the span and its status go.
     dispatch(fx, w, StoryModels.select(w.runtime.model, "explore.trial-view", ref(1)))
     eventually(fx, "the brush cleared")(h.timeline.brush.isEmpty && h.brush.span.isEmpty)
-    assertEquals(runOnFx(h.status.getText), "playhead 0.00 s")
+    assertEquals(runOnFx(h.status.getText), "playhead 0.06 s")
     // Brush again; Escape on the plot clears the selection, and with it the brush.
     val t2 = runOnFx(h.twin.input.targets).get
     drag(w, t2, 1200.0, 2800.0)
@@ -303,7 +304,7 @@ class TimelineFxSuite extends ShellFxSuite:
       eventually(fx, "the clock to stop")(!h.clockRunning)
       // Playing, then another trial: paused at its start, the clock stopped.
       runOnFx(h.play.fire())
-      assertEquals(runOnFx(h.timeline.playheadMs), 0.0)
+      assertEquals(runOnFx(h.timeline.playheadMs), 60.0)
       assert(runOnFx(h.timeline.playing))
       val enc04 = enc03.copy(trial = "enc_04")
       dispatch(
@@ -317,7 +318,7 @@ class TimelineFxSuite extends ShellFxSuite:
         )
       )
       eventually(fx, "the new trial")(h.timeline.trial.contains(enc04))
-      assertEquals(runOnFx((h.timeline.playing, h.timeline.playheadMs)), (false, 0.0))
+      assert(!runOnFx(h.timeline.playing))
       eventually(fx, "the clock to stop")(!h.clockRunning)
       // Disposed while playing: the clock stops, and a button no longer starts it.
       eventually(fx, "enc_04's bars")(h.vm.enabled)

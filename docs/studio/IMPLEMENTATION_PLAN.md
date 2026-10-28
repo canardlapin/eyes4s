@@ -1632,7 +1632,7 @@ Board PNGs rendered from docs/studio/design by a pinned Chromium script (support
 
 *Board:* all boards
 
-Keyboard-only E2E-01; VoiceOver pass on macOS; contrast suite; every plot has a Table twin; focus order reviewed.
+Keyboard-only E2E-01; contrast suite; every plot has a Table twin; focus order reviewed. Manual VoiceOver acceptance is deferred beyond v1 by the owner decision of 2026-10-28 (bead a11y-voiceover-post-v1); it is not a v1 release gate.
 
 **Acceptance criteria**
 

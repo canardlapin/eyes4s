@@ -4,7 +4,7 @@ Ticket S10.5 (bead bd-01M3DPG1XBKAVXA1CDT1T1RPMA). This report has three parts:
 
 - **Slice a, automated audit:** done.
 - **Slice b, keyboard-only journey:** automated journey passes; see the dated qualification below.
-- **Slice c, VoiceOver pass on macOS:** needs a person at a Mac.
+- **Slice c, VoiceOver pass on macOS:** deferred beyond v1 by the owner on 2026-10-28; not yet performed (bead `a11y-voiceover-post-v1`).
 
 Requirements: DESIGN_SPEC §10 and WCAG 2.2 AA (1.4.3 text contrast, 1.4.11
 non-text contrast, 2.1.1 keyboard, 2.4.3 focus order, 2.4.6 labels, 2.4.7 focus
@@ -21,7 +21,7 @@ visible, 3.2.4 consistent identification, 4.1.2 name and role).
 | Unambiguous names | Checked, 1 finding fixed, 1 deferred | `A11yRenderSuite` |
 | Focus order | Reviewed against the boards, 1 finding fixed | `docs/studio/a11y/tab-order-*.txt` |
 | Keyboard-only E2E-01 | Passes, byte-identical to the headless route; 4 findings fixed, 2 to beads | `KeyboardJourneySuite` |
-| VoiceOver on macOS | Pending: slice c, the script is below | a person at a Mac |
+| VoiceOver on macOS | Deferred beyond v1; not performed | `a11y-voiceover-post-v1`; script below |
 
 ## Results focus and supported windows, 2026-10-26
 
@@ -44,7 +44,9 @@ The supported 1024×656 scene preserves a scrollable work area of at least
 forward/reverse traversal, F6/Ctrl+Tab entry, and Home/End cursor visibility through
 nested clips. These checks qualify automated readability and reachability. They do
 not constitute a VoiceOver pass, physical Mac Retina review or researcher usability
-study; S10.5 remains open for its human acceptance.
+study. The owner deferred manual VoiceOver acceptance beyond v1 on 2026-10-28;
+the automated keyboard, contrast, focus, names/roles and table-twin requirements remain
+in S10.5. Deferral does not establish screen-reader conformance.
 
 The earlier findings and method below are retained as audit history. Their original
 statuses are not a replacement for the dated source-bound qualification receipts.

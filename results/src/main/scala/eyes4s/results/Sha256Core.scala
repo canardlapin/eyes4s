@@ -86,6 +86,17 @@ private[eyes4s] object Sha256Core:
     private var filled = 0
     private var length = 0L
 
+    /** An independent continuation of the exact prefix, including its partial block.
+      * Updating or finishing either hasher cannot change the other.
+      */
+    def fork(): Hasher =
+      val next = new Hasher
+      Array.copy(block, 0, next.block, 0, block.length)
+      Array.copy(hash, 0, next.hash, 0, hash.length)
+      next.filled = filled
+      next.length = length
+      next
+
     def update(value: Byte): Unit =
       block(filled) = value
       filled += 1

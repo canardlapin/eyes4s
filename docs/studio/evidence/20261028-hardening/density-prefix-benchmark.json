@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "maps": 300,
+  "explicitParameters": 12213,
+  "cellsPerMap": 4,
+  "fullSeconds": 5.201475334,
+  "sharedPrefixSeconds": 0.0219405,
+  "allDigestsIdentical": true,
+  "digest": "caa59762a0ef8277d3caf6f8e93ab1ad236714671677d410bf3aaa139e06361b",
+  "scope": "Hash-only microbenchmark: 300 four-cell maps and 12213 explicit context parameters. Includes one shared-prefix preparation; not end-to-end save time."
+}

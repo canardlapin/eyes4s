@@ -62,6 +62,18 @@ class TimelinePlotSuite extends FunSuite:
   private def device(t: PlotTargets, ms: Double): DevicePoint =
     right(t.transform.dataToDevice(DataPoint(ms, 10.0)))
 
+  test("an undeclared large-origin timeline uses observed coverage without changing its source") {
+    val t = timeline(Vector(600000L -> 400L, 600500L -> 300L))
+    val plot = built(t)
+    val targets = targetsOn(plot)
+    val first = device(targets, 600000.0)
+    val end = device(targets, 600400.0)
+    val MinimumHalfCoverageWidthPx = 300.0
+    assert(end.x - first.x > MinimumHalfCoverageWidthPx, s"First400ms of800ms coverage is compressed: ${end.x - first.x}px")
+    assertEquals(plot.source, source(t))
+    assertEquals(plot.marks.map(_.at.x), Vector(600000.0, 600500.0))
+  }
+
   test("each fixation is a bar at its onset, as long and as tall as its duration") {
     val plot = built(board)
     assertEquals(

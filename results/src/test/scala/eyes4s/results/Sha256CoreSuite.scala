@@ -77,3 +77,28 @@ class Sha256CoreSuite extends munit.FunSuite:
     hasher.update(ascii("abc"))
     assertEquals(hex(hasher.finish()), vectors(1)._2)
   }
+
+  test("forks retain every partial-block boundary and remain independent after finish") {
+    (0 to 200).foreach { n =>
+      val prefix   = IArray.tabulate[Byte](n)(i => (i * 31 + 7).toByte)
+      val original = new Sha256Core.Hasher
+      original.update(prefix)
+      val left  = original.fork()
+      val right = original.fork()
+      left.update(ascii("left"))
+      right.update(ascii("right"))
+      assertEquals(
+        hex(left.finish()),
+        hex(Sha256Core.digest(IArray.from(prefix.iterator ++ ascii("left").iterator))),
+        n
+      )
+      left.update(ascii("reset"))
+      assertEquals(hex(left.finish()), hex(Sha256Core.digest(ascii("reset"))), n)
+      assertEquals(
+        hex(right.finish()),
+        hex(Sha256Core.digest(IArray.from(prefix.iterator ++ ascii("right").iterator))),
+        n
+      )
+      assertEquals(hex(original.finish()), hex(Sha256Core.digest(prefix)), n)
+    }
+  }

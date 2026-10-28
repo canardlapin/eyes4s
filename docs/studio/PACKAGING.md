@@ -81,8 +81,9 @@ SHA, architecture, OS build, runtime receipt and signing/notarization decision.
    A locked, invalid or missing project must show its normal explicit refusal.
 6. Run `--package-check` from Terminal with JAVA_HOME unset; retain the receipt.
    This complements the GUI journey; it cannot substitute for it.
-7. Review the physical Retina display and perform the VoiceOver script in
-   `A11Y_AUDIT.md`. Record actual backing scale, input method and observed output.
+7. Review the physical Retina display. Record actual backing scale, input method
+   and observed output. Manual VoiceOver acceptance in `A11Y_AUDIT.md` is deferred
+   beyond v1 by the owner decision of 2026-10-28 (`a11y-voiceover-post-v1`).
 
 Keep step-level pass/fail/not-run results and screenshots. S10.7 stays open until
 the VM journey is recorded; the internal unsigned distribution decision is recorded. A hosted macOS 15 run

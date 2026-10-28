@@ -194,7 +194,8 @@ final case class TimelinePlot(
       else GraphicParams.checked(stroke = None, fill = Some(ink))
     val ends     = placed.map((_, at) => at.x + at.y)
     val (x0, x1) = timeDomain(
-      placed.map(_._2.x) ++ ends ++ playheadMs.toVector ++ trialEndMs.toVector
+      placed.map(_._2.x) ++ ends ++ trialEndMs.toVector,
+      includeZero = trialEndMs.isDefined
     )
     val y1 = (placed.map(_._2.y) :+ 1.0).max * (1.0 + Headroom)
     for
@@ -311,11 +312,12 @@ object TimelinePlot:
   // A length in logical pixels as Intaglio points (96 logical pixels per inch).
   private def px(value: Double): Double = value * PointsPerPixel
 
-  /** The time range drawn: zero, every onset and end and the playhead, with
-    * [[Margin]] either side.
+  /** Observed coverage, or coverage including the declared origin, with
+    * [[Margin]] either side. A playhead never expands observed coverage.
     */
-  def timeDomain(times: Vector[Double]): (Double, Double) =
-    val lo  = (times :+ 0.0).min
-    val hi  = math.max((times :+ 0.0).max, lo + 1.0)
+  def timeDomain(times: Vector[Double], includeZero: Boolean = true): (Double, Double) =
+    val covered = if includeZero || times.isEmpty then times :+ 0.0 else times
+    val lo  = covered.min
+    val hi  = math.max(covered.max, lo + 1.0)
     val pad = (hi - lo) * Margin
     (lo - pad, hi + pad)

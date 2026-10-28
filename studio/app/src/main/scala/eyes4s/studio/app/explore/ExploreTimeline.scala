@@ -119,6 +119,16 @@ object ExploreTimeline:
       case None    => Right(None)
       case Some(f) => timeline(f).map(Some(_)).left.map(_.message)
 
+  /** The declared origin, or the first observed onset without re-zeroing its clock. */
+  def startMs(timeline: Timeline): Double =
+    timeline.extent.declared.fold(
+      timeline.fixations.map(_.onsetMs.toDouble).minOption.getOrElse(0.0)
+    )(_ => 0.0)
+
+  /** Keep view state inside the served coverage; source timestamps stay unchanged. */
+  def coveredPlayhead(state: ExploreTimeline, timeline: Timeline): Double =
+    math.max(startMs(timeline), math.min(endMs(timeline), state.playheadMs))
+
   /** The served trial end, or fixation coverage when no duration is declared.
     * The latter is labelled as coverage and never displayed as trial duration.
     */
@@ -135,9 +145,17 @@ object ExploreTimeline:
   /** Follow the trial view's trial: a new trial starts at its beginning,
     * paused and unbrushed; the speed stays.
     */
-  def sync(timeline: ExploreTimeline, trial: Option[TrialKey]): ExploreTimeline =
-    if trial == timeline.trial then timeline
-    else empty.copy(trial = trial, speed = timeline.speed)
+  def sync(
+      timeline: ExploreTimeline,
+      trial: Option[TrialKey],
+      shown: Option[Timeline] = None
+  ): ExploreTimeline =
+    val followed =
+      if trial == timeline.trial then timeline
+      else empty.copy(trial = trial, speed = timeline.speed)
+    shown.filter(t => trial.contains(t.trial)).fold(followed)(t =>
+      followed.copy(playheadMs = coveredPlayhead(followed, t))
+    )
 
   /** The Elm-style update over the shown trial's timeline (if read). */
   def update(
@@ -147,18 +165,20 @@ object ExploreTimeline:
   ): ExploreTimeline =
     import TimelineIntent.*
     val end = shown.fold(0.0)(endMs)
+    val start = shown.fold(0.0)(startMs)
+    val head = shown.fold(state.playheadMs)(coveredPlayhead(state, _))
     intent match
       case Play =>
         // Playing from the end starts again.
-        val from = if state.playheadMs >= end then 0.0 else state.playheadMs
-        state.copy(playing = shown.isDefined && end > 0.0, playheadMs = from)
+        val from = if head >= end then start else head
+        state.copy(playing = shown.isDefined && end > start, playheadMs = from)
       case Pause           => state.copy(playing = false)
       case SetSpeed(s)     => state.copy(speed = s)
       case Brushed(span)   => state.copy(brush = span)
       case Tick(elapsedMs) =>
         if !state.playing || !elapsedMs.isFinite || elapsedMs <= 0.0 then state
         else
-          val next = state.playheadMs + elapsedMs * state.speed.factor
+          val next = head + elapsedMs * state.speed.factor
           if next >= end then state.copy(playheadMs = end, playing = false)
           else state.copy(playheadMs = next)
       case StepForward =>
@@ -220,7 +240,8 @@ object ExploreTimelineVM:
       cols <- ExploreTimeline.columns.toOption
       src  <- Timeline.source(tl, cols).toOption
     yield src
-    val playhead = t(PlayheadStatus, seconds(state.playheadMs))
+    val head = timeline.fold(state.playheadMs)(ExploreTimeline.coveredPlayhead(state, _))
+    val playhead = t(PlayheadStatus, seconds(head))
     val brushed  =
       state.brush.map(b => t(BrushStatus, seconds(b.from), seconds(b.until))).toVector
     ExploreTimelineVM(
@@ -231,7 +252,7 @@ object ExploreTimelineVM:
       (playhead +: brushed).mkString(" · "),
       t(BrushDisclaimer),
       source,
-      timeline.map(_ => state.playheadMs),
+      timeline.map(_ => head),
       state.brush,
       shown.left.toOption.map(why => t(TimelineNotRead, state.trial.fold("")(_.label), why)),
       read.toVector

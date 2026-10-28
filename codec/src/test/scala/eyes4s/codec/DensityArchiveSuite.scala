@@ -158,6 +158,58 @@ class DensityArchiveSuite extends munit.FunSuite:
     )
   }
 
+  test(
+    "shared-prefix continuations match the full canonical document for large contexts and independent maps"
+  ) {
+    val description = result.description :+ ("explicit-selection" -> Vector.tabulate(3000)(i =>
+      Provenance.Param.Text(s"query-$i-λ")
+    ))
+    result.scales
+      .flatMap(_.estimation)
+      .collect { case (_, Right(m)) => m }
+      .groupBy(_.grid)
+      .values
+      .foreach { maps =>
+        val prefix = get(DensityDigest.prepare(maps.head.grid, description))
+        maps.reverse.foreach { m =>
+          assertEquals(
+            get(DensityDigest.continued(prefix, m)),
+            get(DensityDigest.of(m, description)).sha256
+          )
+        }
+        assertEquals(
+          get(DensityDigest.continued(prefix, maps.head)),
+          get(DensityDigest.of(maps.head, description)).sha256
+        )
+      }
+  }
+
+  test(
+    "prefix geometry keys distinguish bounds with the same nominal grid identity and signed zero"
+  ) {
+    def grid(x: Double) = get(
+      Grid.of(
+        mass.grid.id,
+        Frame.of(
+          mass.grid.frame.id,
+          get(Bounds.of[Px](x, 0.0, 10.0, 10.0)),
+          mass.grid.frame.yAxis
+        ),
+        mass.grid.nx,
+        mass.grid.ny
+      )
+    )
+    assertNotEquals(DensityDigest.geometryKey(grid(0.0)), DensityDigest.geometryKey(grid(1.0)))
+    assertNotEquals(DensityDigest.geometryKey(grid(0.0)), DensityDigest.geometryKey(grid(-0.0)))
+    Vector(grid(0.0), grid(-0.0), grid(1.0)).foreach { g =>
+      val m = get(Surface.mass(g, mass.values, mass.provenance))
+      assertEquals(
+        get(DensityDigest.continued(get(DensityDigest.prepare(g, result.description)), m)),
+        get(DensityDigest.of(m, result.description)).sha256
+      )
+    }
+  }
+
   test("same map has the same digest independent of storage") {
     val expected = get(DensityDigest.of(mass, result.description))
     DensityStorage.values.foreach { mode =>

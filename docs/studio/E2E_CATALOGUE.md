@@ -50,4 +50,6 @@ strict Studio gates, local/hosted catalogue reports, documentation consumer and 
 All 24 scenarios passed on their required platforms; 4,343 portable and 797 local desktop tests passed,
 with one private-data test opt-in and ignored. Hosted Linux, GTK2, macOS and clean-clone jobs passed.
 A source reference alone does not qualify a case. G2 acquisition/timing, all-board visual sign-off,
-VoiceOver, the performance court, packaging and researcher usability remain separate acceptance obligations.
+The performance court, packaging and researcher usability have separate acceptance evidence.
+Manual VoiceOver acceptance is deferred beyond v1 by the owner decision of 2026-10-28
+(`a11y-voiceover-post-v1`); no speech-bridge pass is claimed.

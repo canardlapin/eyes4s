@@ -152,6 +152,15 @@ on `g2-archive-scaling`; the existing budgets were not raised.
 Explore timeline viewport/playhead behavior for large raw timestamp origins remains open
 on `g2-timeline-coverage`; the spatial receipt does not qualify event-relative timing.
 
+The [2026-10-28 hardening](evidence/20261028-hardening/README.md) implements observed-coverage
+viewport/playback for undeclared extents, including raw timestamps near600000 ms.
+Unknown-extent examples begin at their first observed onset; this deliberate board
+deviation avoids implying coverage before the observations. Declared trial windows
+retain their origin and tail. Targeted JVM/JS and headless native checks pass;
+combined release qualification is pending. Event-relative timing remains unqualified.
+Manual VoiceOver acceptance is deferred beyond v1 by the owner decision of2026-10-28
+(`a11y-voiceover-post-v1`); automated accessibility requirements remain.
+
 
 ## Main and MainDark (moment t2)
 - [x] Queries navigator with the count strip, including "by design".

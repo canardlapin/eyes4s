@@ -86,6 +86,19 @@ class NativeArtifactRestoreSuite extends munit.FunSuite:
     NativeArtifactRestore.of(exported, ref, revision, prepared.admitted.spec)
   )
 
+  test("the exact source closure refuses an impossible byte budget before packing the result") {
+    val cells = result.scales.flatMap(_.estimation).collect { case (_, Right(mass)) => mass.values.length.toLong }.sum
+    val limit = cells * 8 + 1
+    val budget = get(NativeArtifactBudget.of(maxTotalBytes = limit))
+    NativeArtifacts.build(run, held, budget) match
+      case Left(NativeArtifactError.Budget(id, resource, needed, maximum)) =>
+        assertEquals(id, run)
+        assertEquals(resource, "encoded archive lower bound")
+        assert(needed > maximum)
+        assertEquals(maximum, BigInt(limit))
+      case other => fail(s"Expected early exact-size refusal, got $other")
+  }
+
   test(
     "inventory-selected expected-unmatched recipe survives native verification and restore"
   ) {
