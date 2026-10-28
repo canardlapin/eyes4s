@@ -422,7 +422,19 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           until(fx, "query table is visible and drawing rows") { w.summary.queryTable.onScreen }
           val table = get(runOnFx(w.summary.vm.queries).get)
           assertEquals(table.rows.size, found.size)
-          assertEquals(runOnFx(w.summary.queryTable.rowTexts), table.rows.map(table.cellsOf))
+          val expectedCells = table.rows.map(table.cellsOf)
+          var drawnCells    = Vector.empty[Vector[String]]
+          // A full virtualized-table scan can cross a pending layout pulse. Keep
+          // exact cell equality, but wait for every requested node to be realized.
+          until(fx, "every query-table row is drawn with the expected cells", 2.minutes) {
+            drawnCells = w.summary.queryTable.rowTexts
+            if drawnCells != expectedCells then
+              println(
+                s"[private-production/table] expected=${expectedCells.size}; drawn=${drawnCells.size}; awaiting exact drawn-cell equality"
+              )
+            drawnCells == expectedCells
+          }
+          assertEquals(drawnCells, expectedCells)
           assertEquals(archive(w), expectedDigest)
           write(
             root.resolve(if reopen then "reopened-queries.json" else "ui-queries.json"),
