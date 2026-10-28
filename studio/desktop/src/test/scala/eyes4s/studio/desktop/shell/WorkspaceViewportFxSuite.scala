@@ -97,6 +97,15 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
     for key <- Vector(KeyCode.END, KeyCode.HOME) do
       fx.robot.press(key)
       fx.awaitLayout()
+      // Dispatch can replace the cursor row after a layout pulse. Do not
+      // inspect its clip geometry until that new row has been laid out.
+      // Visibility itself is still asserted below, without an eventual wait.
+      eventually(fx, s"$key cursor $selector has layout bounds") {
+        Option(composite.lookup(selector)).exists { row =>
+          val bounds = row.getBoundsInLocal
+          bounds.getWidth > 0.0 && bounds.getHeight > 0.0
+        }
+      }
       runOnFx {
         val row = composite.lookup(selector)
         assert(row != null, s"missing cursor $selector")
