@@ -827,7 +827,7 @@ structural identities of two results.
 
 ## Artifact manifests and verified resolution
 
-A saved study is several artifacts. `ScientificManifest` (`eyes4s.manifest@1`) lists them and the
+A saved study is several artifacts. `ScientificManifest` (the `eyes4s.manifest@1` / `@2` ladder) lists them and the
 typed relations between them, and `ArtifactResolver` rebuilds the scientific values from bytes the
 application supplies, admitting nothing it has not verified. eyes4s owns the manifest and the
 verification; the application owns where the bytes live, autosave, crash recovery and missing-file
@@ -838,7 +838,7 @@ Each `ManifestEntry` records a manifest-local `ArtifactName`, an `ArtifactRole` 
 `temporal-study-input`, `payload`, `recording-plan`, `recording-result`, `temporal-plan`,
 `temporal-result`, or the generic `analysis-plan` and `analysis-result` of an analysis family
 without a role of its own), the schema identity of the artifact's envelope, its media kind
-(`application/json` or `application/octet-stream`), its exact byte length as a decimal string and
+(`application/json`, `application/octet-stream`, or the explicit columnar kind below), its exact byte length as a decimal string and
 the SHA-256 of its exact bytes (`ByteDigest`, 64 lowercase hexadecimal digits). The identity-bearing
 roles (study input, recording, recording input, temporal input) also declare the semantic identity
 that plans and results reference: the 16-hex `ContentHash` of an `ArtifactRef`, whose meaning is
@@ -846,6 +846,16 @@ unchanged. The two are separate on purpose. Re-serializing a JSON artifact (comp
 pretty-printed, say) gives new bytes and therefore a new length and digest, but the same identity;
 the byte digest never stands in for the semantic one. A `payload` entry carries the
 `eyes4s.packed-array@1` schema and its `PayloadLayout`, whose byte length must equal the entry's.
+
+Version 2 admits `application/vnd.eyes4s.columnar-json;version=1` for study input,
+admission ledger and study result metadata. Ordinary graphs still write as version 1;
+version 1 refuses the new media. This is a physical representation of the same logical
+schemas: canonical scientific digests, ordered rows, flags and relations stay unchanged.
+The bounded reader restores large typed tables row by row. Older readers cannot read a
+compact entry. Eyes Studio retries only row/byte capacity refusals through this route,
+under its unchanged default limits; small legacy saves remain byte-identical. The
+format, physical structural accounting and qualification scope are documented in
+[compact native archives](studio/COMPACT_ARCHIVES.md).
 
 Relations are typed edges, checked against decoded values rather than names:
 
@@ -867,7 +877,7 @@ Relations are typed edges, checked against decoded values rather than names:
 `ScientificManifest.of` checks structure only: unique names, relations naming existing entries of
 the required roles, a packed-recording owner for every `PayloadOf`, no repeated relation and the
 multiplicities above, each refusal a `ManifestError` naming the entry or relation.
-`ManifestEntry.of` refuses a media kind other than the role's, a missing or superfluous identity and
+`ManifestEntry.of` refuses a media kind outside the role's allowed kinds, a missing or superfluous identity and
 a payload without its schema or with a layout of another length. A graph's own consistency is proven
 only by resolution.
 

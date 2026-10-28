@@ -1,0 +1,151 @@
+{
+  "schema": 1,
+  "updatedUtc": "2026-10-28T21:46:13.645934+00:00",
+  "candidate": "d63cf3b8f78c8744bcd518b4d8382b0893ad2c13",
+  "tree": "9cf74f769e8ccdaf3e56788f4d27cafc94a36a0d",
+  "scope": "Complete 103-participant single-project exploratory pixel-space software validation; retained source clock; no calibrated-angle, event-relative timing or biological replication claim.",
+  "qualification": "native storage and12g complete production foundation qualified; all canonical and hosted source gates passed; default8g export remains unqualified and is being fixed in a separate successor",
+  "nativeDefaults": {
+    "densityCells": 20000000,
+    "structuralRows": 1000000,
+    "entries": 512,
+    "bytes": 268435456
+  },
+  "sourceCounts": {
+    "participants": 103,
+    "observedTrials": 60922,
+    "fixationRows": 509182,
+    "offscreenRowsRetained": 2954,
+    "shortFixationFlagsRetained": 23266
+  },
+  "resultCounts": {
+    "maps": 60920,
+    "explicitMapFailures": 2,
+    "queries": 12213,
+    "contributing": 6100,
+    "expectedUnmatched": 6112,
+    "unexpectedNoMatch": 1,
+    "comparisons": 729948,
+    "participantExportRows": 206
+  },
+  "capacity": {
+    "scientificArchiveEntryBytes": 243893043,
+    "physicalStructuralDescriptors": 753249,
+    "entries": 109,
+    "densityCells": 11696640,
+    "wholeProjectDirectoryIsLargerThanScientificArchive": true
+  },
+  "runtime": {
+    "heap": "12g",
+    "headless": "Monocle 1920x1200 at scale 1; software pipeline",
+    "freshJvms": true,
+    "classAndJarFilesHashed": 18865,
+    "compiledInputsUnchanged": true,
+    "plotReadinessLimitSeconds": 60,
+    "limitUnchanged": true
+  },
+  "privateCourt": {
+    "native-five-d63cf3b8": {
+      "status": "passed",
+      "resultSha256": "f64e0bc38abb95966b9e883375db565bfbf8c65a3534b7c6fc15eec10895c630",
+      "entries": 11,
+      "storedBytes": 154215484,
+      "compactEntries": {},
+      "allApiMapsAndFlagsByteIdentical": true,
+      "queriesByteIdentical": true,
+      "exportsByteIdenticalAcrossReopen": true,
+      "legacyArchiveByteIdentical": true,
+      "processSeconds": {
+        "api": 5.4960534580000004,
+        "ui": 35.811121333,
+        "reopen": 19.288227042
+      }
+    },
+    "native-cohort-d63cf3b8": {
+      "status": "passed",
+      "resultSha256": "3af5c241cd88ce00ba6e50af3a9b9728ad9f5b04520f89aa00dd0d455b29799c",
+      "entries": 109,
+      "storedBytes": 243893043,
+      "compactEntries": {
+        "input": 25226117,
+        "ledger": 78426777,
+        "result": 36434105
+      },
+      "allApiMapsAndFlagsByteIdentical": true,
+      "queriesByteIdentical": true,
+      "exportsByteIdenticalAcrossReopen": true,
+      "legacyArchiveByteIdentical": false,
+      "processSeconds": {
+        "api": 41.997376041,
+        "ui": 302.7153035,
+        "reopen": 149.413104958
+      }
+    }
+  },
+  "independentExportAudit": {
+    "status": "passed",
+    "everyQueryFieldChecked": true,
+    "everyComparisonFieldAndWindowTallyChecked": true,
+    "participantCellsAndMissingReasonsChecked": true,
+    "allSixFilesByteIdenticalAcrossReopen": true,
+    "numericTolerance": {
+      "absolute": 2e-12,
+      "relative": 2e-12
+    },
+    "tableDigestAlgorithmIndependentlyReimplemented": false,
+    "auditedPrecedingSource": "af6eee304586eb3a8deafca82451c2ca7b620d71",
+    "finalExportBytesExactlyEqualAuditedSource": true
+  },
+  "preservedGenerations": [
+    {
+      "candidate": "3af0f47a",
+      "outcome": "saved within unchanged caps; initial UI failed plot-readiness wait"
+    },
+    {
+      "candidate": "4fc14f9b",
+      "outcome": "initial UI/export passed; fresh-JVM failed plot-readiness wait"
+    },
+    {
+      "candidate": "af6eee30",
+      "outcome": "complete production journey passed; subsequent trial lookup index addresses observed repeated report join"
+    }
+  ],
+  "remainingManualAcceptance": [
+    "installed native UI",
+    "Finder dispatch",
+    "clean no-JDK macOS and Gatekeeper",
+    "physical Retina",
+    "researcher usability"
+  ],
+  "voiceOver": "owner deferred manual acceptance beyond v1; not performed",
+  "privateEvidence": "Original data, source-record views and native project files remain local and ignored by Git.",
+  "canonicalGate": {
+    "status": "passed",
+    "source": "d63cf3b8f78c8744bcd518b4d8382b0893ad2c13",
+    "tree": "9cf74f769e8ccdaf3e56788f4d27cafc94a36a0d",
+    "runtimeEntries": 3986,
+    "gaps": 0,
+    "minutes": {
+      "hygiene": 0.2,
+      "strictCompile": 1.3,
+      "apiAudit": 18.2,
+      "testsAndBoundaries": 8.9,
+      "consumer": 3.3
+    }
+  },
+  "hostedSource": {
+    "Checks": 40773272692,
+    "Studio": 40773272693,
+    "Clean": 40773272670,
+    "status": "all passed"
+  },
+  "defaultHeapProbe": {
+    "heap": "8g",
+    "nativeSave": "passed",
+    "reportPlots": "passed",
+    "export": "heap-space failure in TableDigest.ofUtf8 -> Utf8Lenient byte buffering",
+    "failurePreserved": true,
+    "mote": "g2-export-utf8",
+    "heapAndAcceptanceLimitsNotRaised": true
+  }
+}
