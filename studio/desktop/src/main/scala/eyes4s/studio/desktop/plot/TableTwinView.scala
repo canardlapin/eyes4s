@@ -37,6 +37,7 @@ import javafx.css.PseudoClass
 import javafx.event.EventHandler
 import javafx.scene.{AccessibleAction, AccessibleAttribute, AccessibleRole, Node}
 import javafx.scene.control.{ContentDisplay, Label, ListCell, ListView}
+import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.{KeyEvent, MouseButton, MouseEvent}
 import javafx.scene.layout.{Pane, Priority, Region, VBox}
 
@@ -359,12 +360,21 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
 
   // Row `index`'s built node, scrolled into view if need be (tests and
   // the SHOW_ITEM / SCROLL_TO_INDEX actions only).
+  private def reveal(index: Int): Unit =
+    // Match ListViewSkin's SHOW_ITEM rather than its scroll-to-top event.
+    // At the bottom boundary scrollToTop can stop one cell short; the
+    // native reveal operation realizes and fully reveals the target
+    // (bead g2-table-end).
+    Option(list.lookup(".virtual-flow")) match
+      case Some(flow: VirtualFlow[?]) => flow.scrollTo(index)
+      case _                          => list.scrollTo(index)
+
   private def scrolledTo(index: Int): Option[RowCell] =
     if index < 0 || index >= rowCount then None
     else
       list.layout()
       builtRow(index).orElse {
-        list.scrollTo(index)
+        reveal(index)
         list.layout()
         builtRow(index)
       }
@@ -418,7 +428,7 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
   // cell (JavaFX has no scroll-to-index action).
   override def executeAccessibleAction(action: AccessibleAction, parameters: AnyRef*): Unit =
     def show(index: Int): Unit =
-      if index >= 0 && index < rowCount then list.scrollTo(index)
+      if index >= 0 && index < rowCount then reveal(index)
     action match
       case AccessibleAction.SHOW_ITEM =>
         parameters.headOption
@@ -501,6 +511,9 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
       do
         list.scrollTo(math.max(0, row - 2))
         list.layout()
+        if !wholly(row) then
+          reveal(row)
+          list.layout()
     checkFocus()
     val selected =
       shown.map(s => current.selection.selected.flatMap(current.shownIndex(s, _)).toSet)

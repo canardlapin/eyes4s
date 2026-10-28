@@ -32,7 +32,7 @@ import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.desktop.harness.StudioFxSuite
 import eyes4s.studio.desktop.typography.StudioFonts
 import javafx.scene.{AccessibleAttribute, AccessibleRole, Node}
-import javafx.scene.control.Labeled
+import javafx.scene.control.{Labeled, ListView}
 import javafx.scene.layout.StackPane
 
 import scala.collection.mutable.ArrayBuffer
@@ -102,6 +102,67 @@ class TableTwinViewFxSuite extends StudioFxSuite:
     }
     fx.show(root)
     (table, intents)
+
+  fxStage.test("reader scroll reveals the final row at the viewport boundary") { fx =>
+    val src        = source(596)
+    val (table, _) = shown(fx, src)
+    runOnFx {
+      val list = table.lookup(".table-twin-body").asInstanceOf[ListView[?]]
+      list.setMinHeight(290)
+      list.setMaxHeight(290)
+      table.requestFocus()
+    }
+    fx.awaitLayout()
+    runOnFx {
+      (0 until src.rows.size - 1).foreach(table.rowNode)
+      val last = table.queryAccessibleAttribute(
+        AccessibleAttribute.ROW_AT_INDEX,
+        Integer.valueOf(src.rows.size - 1)
+      )
+      table.executeAccessibleAction(javafx.scene.AccessibleAction.SHOW_ITEM, last)
+    }
+    fx.awaitLayout()
+    assert(runOnFx(table.inView(src.rows.size - 1)), "reader could not reveal the final row")
+    assertEquals(runOnFx(table.rowNode(src.rows.size - 1).get.getItem.intValue), 595)
+    val PixelTolerance = 0.5
+    runOnFx {
+      val row  = table.rowNode(595).get
+      val list = table.lookup(".table-twin-body")
+      val b    = row.localToScene(row.getLayoutBounds)
+      val box  = list.localToScene(list.getLayoutBounds)
+      assert(b.getMinY >= box.getMinY - PixelTolerance)
+      assert(b.getMaxY <= box.getMaxY + PixelTolerance)
+      table.dispose()
+    }
+  }
+
+  fxStage.test("End reveals the final cursor row at the viewport boundary") { fx =>
+    val src        = source(596)
+    val (table, _) = shown(fx, src)
+    val list       = runOnFx {
+      val l = table.lookup(".table-twin-body").asInstanceOf[ListView[?]]
+      l.setMinHeight(290)
+      l.setMaxHeight(290)
+      table.requestFocus()
+      (0 until src.rows.size - 1).foreach(table.rowNode)
+      l
+    }
+    fx.awaitLayout()
+    fx.robot.press(javafx.scene.input.KeyCode.END)
+    fx.awaitLayout()
+    assertEquals(runOnFx(table.state.cursor), Some(src.rows.last.ref))
+    assert(runOnFx(table.inView(595)), "the final cursor row is not drawn")
+    val PixelTolerance = 0.5
+    runOnFx {
+      val row = table.rowNode(595).get
+      val b   = row.localToScene(row.getLayoutBounds)
+      val box = list.localToScene(list.getLayoutBounds)
+      assert(b.getMinY >= box.getMinY - PixelTolerance)
+      assert(b.getMaxY <= box.getMaxY + PixelTolerance)
+      assertEquals(row.getItem.intValue, 595)
+      table.dispose()
+    }
+  }
 
   fxStage.test("pending and cleared tables are not unnamed focus stops") { _ =>
     runOnFx {

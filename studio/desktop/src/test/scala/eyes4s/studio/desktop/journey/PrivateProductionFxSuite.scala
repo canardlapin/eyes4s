@@ -447,9 +447,8 @@ class PrivateProductionFxSuite extends ShellFxSuite:
                 .sortBy(_._1)
                 .map(_._2)
             }
-          // Unlike the small-table rowTexts helper, retain each requested index
-          // and leave an unrealized target in view across a real layout pulse.
-          // Restoring the viewport before that pulse can omit the final row.
+          // Read actual cell nodes by index across layout pulses. Require every
+          // row and every cell; the table's model is never a rendering substitute.
           var drawnCells = runOnFx {
             expectedCells.indices.flatMap(i => drawnRow(i).map(i -> _)).toMap
           }
