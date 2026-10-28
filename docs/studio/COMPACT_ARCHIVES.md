@@ -152,3 +152,13 @@ reopen or export qualification. A successor indexes repeated inventory-label and
 nominal clock-identity scans while retaining first-error selection, canonical
 identity order and all capacity and readiness limits. A fresh complete journey
 and the full release gate remain required.
+
+The indexed successor (`4fc14f9b`) passed the complete-cohort initial application
+and export journey, but fresh-process reopening still reached the unchanged
+60-second plot-readiness limit. A live reporting stack identified canonical
+covariate-source hashing through the complete legacy ledger JSON. The next
+candidate gives the ledger codec the same lazy earliest-schema envelope already
+used for compact storage. The logical JSON writer, schema ladder and every
+canonical digest remain unchanged. Tests pin all four versions and require lazy
+record descriptions; deliberately restoring the old route fails three regressions.
+Both failed generations remain preserved. Full qualification is still pending.

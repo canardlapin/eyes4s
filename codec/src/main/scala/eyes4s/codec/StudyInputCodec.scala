@@ -130,7 +130,8 @@ final class StudyInputCodec[K, U <: Unit2D](
         )
       )(readLedger(_, 4))
 
-  val ledger: VersionedCodec[AdmissionLedger[K]] = ledgerLadder.codec
+  val ledger: VersionedCodec[AdmissionLedger[K]] =
+    ledgerLadder.codec.withCanonicalDocument(ledgerDocument)
 
   /** A trial's identity under this layout, when the layout names a trial. */
   private val trialIdentity: Option[K => TrialIdentity] = TrialIdentity.projection(layout)

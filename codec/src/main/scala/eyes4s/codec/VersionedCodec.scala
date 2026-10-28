@@ -196,12 +196,13 @@ final class VersionedCodec[A] private (
     document(value).flatMap(CanonicalDigest.streamed)
 
   private[codec] def document(value: A): Either[CodecError, CanonicalDoc] =
-    canonical match
-      case None           => encode(value).map(CanonicalDoc.Leaf(_))
-      case Some(describe) =>
-        describe(value).map(payload =>
-          CanonicalDoc.obj("schema" -> CanonicalDoc.Leaf(Wire.id(schema)), "value" -> payload)
-        )
+    canonical.fold(encode(value).map(CanonicalDoc.Leaf(_)))(_(value))
+
+  /** Describe the complete envelope, retaining a ladder's earliest schema. */
+  private[codec] def withCanonicalDocument(
+      describe: A => Either[CodecError, CanonicalDoc]
+  ): VersionedCodec[A] =
+    new VersionedCodec(schema, schemas, write, read, role, ladder, Some(describe))
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
       .parse(input)
@@ -263,7 +264,11 @@ object VersionedCodec:
       (_, json) => read(json),
       None,
       None,
-      Some(describe)
+      Some(value =>
+        describe(value).map(payload =>
+          CanonicalDoc.obj("schema" -> CanonicalDoc.Leaf(Wire.id(schema)), "value" -> payload)
+        )
+      )
     )
 
   /** The codec of a [[SchemaLadder]]: `write` chooses each value's version

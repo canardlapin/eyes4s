@@ -44,8 +44,10 @@ class StructuredInputSuite extends munit.FunSuite:
     val codec     = StudyInputCodecs.study[Px]
     val frozen    = get(io.circe.parser.parse(StudyInputFixtures.ledgerVersionOne))
     val original  = get(codec.ledger.decode(frozen))
-    val described = get(codec.ledgerDocument(original))
+    val described = get(codec.ledger.document(original))
+    assert(!described.isInstanceOf[CanonicalDoc.Leaf])
     assertEquals(get(described.json), frozen)
+    assertEquals(get(codec.ledger.digest(original)), get(CanonicalDigest.document(frozen)))
     val restored = get(codec.readLedgerDocument(stored(described)))
     assertEquals(get(codec.ledger.encode(restored)), frozen)
     assertEquals(restored.records, original.records)
@@ -56,8 +58,10 @@ class StructuredInputSuite extends munit.FunSuite:
     val codec     = StudyInputCodecs.trial[Px]
     val frozen    = get(io.circe.parser.parse(LedgerV3Mirrors.ledgerVersionThree))
     val original  = get(codec.ledger.decode(frozen))
-    val described = get(codec.ledgerDocument(original))
+    val described = get(codec.ledger.document(original))
+    assert(!described.isInstanceOf[CanonicalDoc.Leaf])
     assertEquals(get(described.json), frozen)
+    assertEquals(get(codec.ledger.digest(original)), get(CanonicalDigest.document(frozen)))
     val restored = get(codec.readLedgerDocument(stored(described)))
     assertEquals(get(codec.ledger.encode(restored)), frozen)
     assertEquals(restored.records, original.records)
@@ -113,4 +117,26 @@ class StructuredInputSuite extends munit.FunSuite:
       )
     )
     assert(codec.readInputDocument(stored(CanonicalDoc.Leaf(wrong))).isLeft)
+  }
+
+  test("ledger canonical binding streams records and retains each earliest schema") {
+    val codec = StudyInputCodecs.study[Px]
+    Vector(
+      StudyInputFixtures.ledgerVersionOne,
+      StudyV2Mirrors.ledgerVersionTwo,
+      SourceIdentityMirrors.ledgerV4
+    ).foreach { fixture =>
+      val frozen  = get(io.circe.parser.parse(fixture))
+      val value   = get(codec.ledger.decode(frozen))
+      val doc     = get(codec.ledger.document(value))
+      val records = get(get(StructuredValue(doc).member("value")).member("records"))
+      assert(records.document.isInstanceOf[CanonicalDoc.Arr])
+      assertEquals(get(doc.json), frozen)
+      assertEquals(get(codec.ledger.digest(value)), get(CanonicalDigest.document(frozen)))
+      assertEquals(get(codec.ledger.encode(value)), frozen)
+      assertEquals(
+        codec.ledger.ladder.map(_.earliest(value)),
+        codec.ledgerLadder.codec.ladder.map(_.earliest(value))
+      )
+    }
   }
