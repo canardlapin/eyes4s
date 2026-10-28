@@ -9771,6 +9771,7 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -20228,6 +20229,21 @@
       "every projection keeps every field, and every reachable error type is cataloged",
       "the codec code table is pinned and so identical on the JVM and Scala.js"
     ],
+    "codecJS/eyes4s.codec.ColumnarDocumentSuite": [
+      "a tiny shared graph cannot cause exponential expansion",
+      "canonical identities agree with the existing document renderer",
+      "deferred object members are visited in order only when consumed",
+      "every truncation, trailing data and an unsupported version are refused",
+      "exact numeric spellings, signed zero, UTF-16, member order and repeated rows survive",
+      "hostile counts, overflowing varints, forward references and invalid numbers are refused",
+      "mutated binary input always refuses or returns a bounded re-encodable document",
+      "packed columns cross byte boundaries and restore ordered rows exactly",
+      "positive and negative zero never share an interned number",
+      "row restoration is sequential, preserves all rows and stops at the first failure",
+      "stored zero signs override platform-specific JSON number parsing",
+      "unused dictionary records are refused rather than silently ignored",
+      "writer bounds apply to lazy input before calling an oversized array's item"
+    ],
     "codecJS/eyes4s.codec.CombinedSourceResultManifestSuite": [
       "mixed source and packed-result graphs re-evaluate reports through either decorator order",
       "mixed source and packed-result graphs retain both routes through import decorators",
@@ -24525,6 +24541,21 @@
       "every codec family is sampled, in catalog order, through its own Diagnose instance",
       "every projection keeps every field, and every reachable error type is cataloged",
       "the codec code table is pinned and so identical on the JVM and Scala.js"
+    ],
+    "codecJVM/eyes4s.codec.ColumnarDocumentSuite": [
+      "a tiny shared graph cannot cause exponential expansion",
+      "canonical identities agree with the existing document renderer",
+      "deferred object members are visited in order only when consumed",
+      "every truncation, trailing data and an unsupported version are refused",
+      "exact numeric spellings, signed zero, UTF-16, member order and repeated rows survive",
+      "hostile counts, overflowing varints, forward references and invalid numbers are refused",
+      "mutated binary input always refuses or returns a bounded re-encodable document",
+      "packed columns cross byte boundaries and restore ordered rows exactly",
+      "positive and negative zero never share an interned number",
+      "row restoration is sequential, preserves all rows and stops at the first failure",
+      "stored zero signs override platform-specific JSON number parsing",
+      "unused dictionary records are refused rather than silently ignored",
+      "writer bounds apply to lazy input before calling an oversized array's item"
     ],
     "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite": [
       "mixed source and packed-result graphs re-evaluate reports through either decorator order",
