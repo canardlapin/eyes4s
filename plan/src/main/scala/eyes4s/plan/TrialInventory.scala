@@ -408,8 +408,11 @@ sealed abstract case class InventoryLedger private (
     recordAttributes: Vector[RecordAttributes],
     sampleCounts: SampleCountRule
 ) derives CanEqual:
+  private lazy val trialsByIdentity: Map[TrialIdentity, InventoryTrial] =
+    trials.iterator.map(t => t.identity -> t).toMap
+
   def trial(identity: TrialIdentity): Option[InventoryTrial] =
-    trials.find(_.identity == identity)
+    trialsByIdentity.get(identity)
 
   /** The inventory attributes of an admitted trial key's trial. */
   def attributes(key: TrialKey): Option[Attributes] =

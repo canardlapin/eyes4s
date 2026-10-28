@@ -443,3 +443,36 @@ class InventoryLedgerSuite extends munit.FunSuite:
       Left(InventoryError.DuplicateTrial("P1", "Encoding", "a", 2))
     )
   }
+
+  test("indexed trial joins retain full participant/phase identity and declaration order") {
+    val declared = Vector
+      .tabulate(1000) { i =>
+        val identity = get(
+          TrialIdentity.of(
+            s"P${i / 10}",
+            if i % 2 == 0 then "Encoding" else "Retrieval",
+            s"trial-${i % 5}",
+            TrialOccurrence.first
+          )
+        )
+        good.head.copy(
+          identity = identity,
+          records = Vector(i + 2),
+          attributes = rtIs(i.toLong)
+        )
+      }
+      .reverse
+    val found = get(inventory(declared))
+    assertEquals(found.trials.map(_.identity), declared.map(_.identity))
+    found.trials.reverse.foreach { expected =>
+      assertEquals(found.trial(expected.identity), Some(expected))
+      assertEquals(
+        found.attributes(get(expected.identity.withItem("beach"))),
+        Some(expected.attributes)
+      )
+    }
+    assertEquals(found.trial(id("absent")), None)
+    val otherOccurrence =
+      get(TrialIdentity.of("P0", "Encoding", "trial-0", get(TrialOccurrence.of(2))))
+    assertEquals(found.trial(otherOccurrence), None)
+  }
