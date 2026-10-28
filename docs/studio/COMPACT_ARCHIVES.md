@@ -1,8 +1,10 @@
 # Compact native archives
 
-Status: document layer qualified and landed; native integration implemented in
-an unqualified candidate. Owner selected compact storage under the existing
-limits on 28 October 2026. Full-cohort application qualification is pending.
+Status: native storage foundation qualified on `d63cf3b8` with unchanged limits,
+including a complete-cohort production journey at 12g and all source gates.
+An additional 8g run exposed table-digest UTF-8 buffering during export;
+`g2-export-utf8` tracks the separate streaming fix. Default-heap export and main
+landing remain pending. Owner selected compact storage on 28 October 2026.
 
 The current defaults remain 20,000,000 density cells, 1,000,000 structural rows,
 512 entries and 268,435,456 stored bytes. Existing JSON archives retain their

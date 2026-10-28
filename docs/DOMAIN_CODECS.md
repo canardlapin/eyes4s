@@ -65,7 +65,7 @@ There is no global interning, mutable registry or cross-document identity state.
 | Schema `DefinitionId` | The versioned wire shape and interpretation | Wire |
 | Method `DefinitionId` | The scientific implementation and parameter meaning | Wire |
 | `CanonicalDigest[A]` | SHA-256 of a value's canonical document under its codec (`codec.digest(value)`), typed by what it identifies | Persisted and cited across files and runs |
-| Byte digest (`ByteDigest`) | SHA-256 of an artifact's exact bytes, carried with its length by each `eyes4s.manifest@1` entry | Persisted: verifies stored bytes |
+| Byte digest (`ByteDigest`) | SHA-256 of an artifact's exact bytes, carried with its length by each `eyes4s.manifest@1` or `@2` entry | Persisted: verifies stored bytes |
 | `ContentHash` / `ArtifactRef` | 64-bit FNV-1a semantic identity; 16-hex representation unchanged | In memory, and the cross-check version-1 documents already carry |
 
 Schema or method IDs are not content hashes. `ContentHash` is not a cryptographic
@@ -78,8 +78,9 @@ injects; decoding never reads. See
 SHA-256: stored bytes by their `ByteDigest`, which a manifest verifies, and values by their
 `CanonicalDigest`. A plan revision, the input a run used and the result a report or figure is
 bound to should be cited by `CanonicalDigest`. This is the contract for stale-run rejection:
-compare the digest of the current plan (or input) with the one the run was stamped with. No
-shipped code compares them yet; UI-D wires the run stamp to `CanonicalDigest`. Because the writer
+compare the digest of the current plan (or input) with the one the run was stamped with.
+Stamped archives use `RunStamp.check`; manifest resolution derives the current plan and input
+digests from the decoded documents before checking the claim. Because the writer
 emits one canonical document per value (under the earliest version that expresses it; see the
 [version policy](#version-policy) and [canonical wire forms](#canonical-wire-forms)), equal
 values have equal digests, and a changed value has a different digest except with SHA-256's
