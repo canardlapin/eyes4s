@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-10-27",
-  "status": "numerical-reference-passed; production-lifecycle-qualification-in-progress",
+  "status": "numerical reference and production lifecycle passed; exploratory participant-partition scope",
   "privacy": "No source records, trial/item/participant identifiers, images or private plots in Git. Full receipts and failed attempts retained privately.",
   "scope": "Exploratory pixel-space processed-export software validation; no acquisition calibration, event-relative timing, biological inference or manuscript replication claim.",
   "source": {
@@ -75,7 +75,9 @@
       "relative": 2e-12
     },
     "native_difference": "Largest native corrected-score difference0.21659985617122168;384opposite contrast signs. Independent staged reconstruction attributes dominant difference to point binning at coarse resolution; endpoint locations,support and decimal rounding recorded separately. Native estimators are not declared equivalent.",
-    "reverse_bridge": "All729948 eyesim-array pairs through eyes4s; maximum absolute score difference1.9984014443252818e-15."
+    "reverse_bridge": "All729948 eyesim-array pairs through eyes4s; maximum absolute score difference1.9984014443252818e-15.",
+    "map_tolerance_scope": "Unrounded direct-map numeric tolerance; eyesim additionally uses its explicitly modeled per-map zapsmall rounding bound, not the unrounded absolute bound alone.",
+    "eyesim_rounding": "Per-map tolerance determined by documented zapsmall(digits=7), not widened to fit observations."
   },
   "result_sha256": "3af5c241cd88ce00ba6e50af3a9b9728ad9f5b04520f89aa00dd0d455b29799c",
   "retained_negative_paths": [
@@ -85,5 +87,8 @@
     "Five-participant initial archive refusal: expectedUnmatched reconstruction omitted retained inventory."
   ],
   "followup": "g2-archive-scaling remains open; no archive budget limits raised.",
-  "g2_closed": false
+  "g2_closed": true,
+  "production_qualification": "qualification.json",
+  "largest_gap_trace_sha256": "6711d662f846bfa20478d99ea50dc9bd530a66ec845b41f5b5cb69e5be266498",
+  "production_verification_sha256": "12479e294a50c9802d03c1575acd30767814e3fab5ac52fd18c1e82927c190fe"
 }

@@ -9771,7 +9771,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -9809,7 +9808,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -24117,6 +24115,7 @@
     ],
     "planJS/eyes4s.plan.UnmatchedReasonsSuite": [
       "an admitted reference the pairing cannot use is not pairable, not by design",
+      "an explicitly unselected old probe without a declared reference is not by design",
       "by-design candidates before pair counting agree with completed library reasons",
       "control admission facts use other items and preserve declared dispositions",
       "control admission respects occurrence selection and AllOccurrences overrides it",
@@ -28636,6 +28635,7 @@
     ],
     "planJVM/eyes4s.plan.UnmatchedReasonsSuite": [
       "an admitted reference the pairing cannot use is not pairable, not by design",
+      "an explicitly unselected old probe without a declared reference is not by design",
       "by-design candidates before pair counting agree with completed library reasons",
       "control admission facts use other items and preserve declared dispositions",
       "control admission respects occurrence selection and AllOccurrences overrides it",

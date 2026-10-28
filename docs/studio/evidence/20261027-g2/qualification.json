@@ -1,0 +1,328 @@
+{
+  "schema": 1,
+  "date": "2026-10-28T03:26:17+00:00",
+  "status": "passed; declared exploratory pixel-space participant-partition scope",
+  "source": {
+    "commit": "92ca5f544b32baf67c52e477a1ae7be036d3b6d8",
+    "tree": "cdce3c2bd7001b30e00be79f35a4505936755a0f",
+    "tracked_source_clean": true,
+    "same_implementation_all_63_JVMs": true,
+    "compiled_artifacts_unchanged": true,
+    "compiled_file_count": 18756
+  },
+  "privacy": "Aggregate receipts and generic validation sources only. No source records, subject/item/trial identifiers, private plots, native projects or credentials committed.",
+  "scope": {
+    "study": "Owner-permitted real memory processed fixation exports",
+    "participants": 103,
+    "fixation_rows": 509182,
+    "observed_trials": 60922,
+    "native_projects": 21,
+    "largest_project_participants": 5,
+    "complete_participant_control_pools": true,
+    "single_full_cohort_native_project_qualified": false,
+    "calibrated_angles_qualified": false,
+    "event_relative_timing_qualified": false,
+    "biological_inference_or_paper_replication": false,
+    "planned_absent_trials": "unknown; observed-only inventory",
+    "virtual_geometry": "Declared uncalibrated40px/unit adapter; sigma80px,16x12 grid; unknown display content/placement. Physical acquisition calibration not inferred."
+  },
+  "admission": {
+    "all_original_rows_retained": true,
+    "offscreen_flagged": 2954,
+    "shorter_than80ms_flagged_not_excluded": 23266,
+    "all_offscreen_maps_explicit_failure": 2,
+    "successful_maps": 60920,
+    "inventory_equation_balances": true,
+    "partition_multiset_conservation": true,
+    "independent_full_source_query_classification_sha256": "a930d5e874dfc8e546c1ccc98a313321a5cf046f613d5970400d1482eeb6d82a",
+    "manifest_sha256": "a1de48a1d19c3f628933268355c547f4c6de1e7b4cc5504e0762c0bdaaf53a6a"
+  },
+  "production": {
+    "route": "ProjectLifecycleHost File New/Open/Close; ordinary import/review/admission/descriptor recipe/run/Compare/Figures; native backend and archive; figure bundle export; separate-JVM reopen",
+    "counts": {
+      "ByDesign": 6112,
+      "Contributing": 6100,
+      "participant_export_rows": 206,
+      "comparison_export_rows": 729948,
+      "projects": 21,
+      "screenshots": 189,
+      "NoMatch": 1
+    },
+    "exact_full_cohort_query_objects": true,
+    "all_final_code_maps_and_failures_byte_identical": true,
+    "native_projects_embed_exact_source_bytes": true,
+    "map_verification_sha256": "cca658ddd2aefbc47a042c4baac4f19ddc54746aaaf020eaf246fca81b246461",
+    "every_query_export_field_and_missingness_checked": true,
+    "every_pair_identity_and_independent_score_checked": true,
+    "participant_group_means_n_and_whole_participant_totals_checked": true,
+    "whole_participant_counts_repeat_across_group_rows": true,
+    "summary_plots_and_query_reference_maps_required_drawn": true,
+    "screenshots_exist_all_projects": true,
+    "verification_sha256": "12479e294a50c9802d03c1575acd30767814e3fab5ac52fd18c1e82927c190fe",
+    "fresh_reopen_export_verification_sha256": "c0d432a08ecba06bee4d66ae29e06d0690cfa6910d2add321841627571dbb9b3",
+    "fresh_reopen_uses_persisted_reporting_and_figure": true,
+    "elapsed_seconds": {
+      "api": {
+        "min": 3.6814954997971654,
+        "max": 11.008456542156637,
+        "sum": 138.38880233000964
+      },
+      "ui": {
+        "min": 46.364652124233544,
+        "max": 578.4979025414214,
+        "sum": 2953.366972542368
+      },
+      "reopen": {
+        "min": 26.265956833027303,
+        "max": 203.89898729138076,
+        "sum": 1559.4348212908953
+      }
+    }
+  },
+  "visual_review": {
+    "renderer": "Production Studio/viz Intaglio; numeric Python/R scripts draw no scientific plots",
+    "reviewed": [
+      {
+        "batch": 12,
+        "file": "03-summary.png",
+        "sha256": "90f697e7048afc83da7263a04413fa1a6b6f8b5c5d2569ce7d53113127cdcb02",
+        "review": "Viewed actual full screenshot; readable participant/scale plots or shared-limit density/contours or figure/methods. No blank data panels or clipped figure labels; exploratory virtual-unit declarations retained."
+      },
+      {
+        "batch": 12,
+        "file": "05-trial-maps-dark.png",
+        "sha256": "96f2a92f6bc6853c517751f43385b5014949643fc39c5d251b1ee4f060eda433",
+        "review": "Viewed actual full screenshot; readable participant/scale plots or shared-limit density/contours or figure/methods. No blank data panels or clipped figure labels; exploratory virtual-unit declarations retained."
+      },
+      {
+        "batch": 12,
+        "file": "06-figure.png",
+        "sha256": "499d69221a0fdcd6c4397e30b74f55160b6b45a825aa6a31b65aed9921edef36",
+        "review": "Viewed actual full screenshot; readable participant/scale plots or shared-limit density/contours or figure/methods. No blank data panels or clipped figure labels; exploratory virtual-unit declarations retained."
+      },
+      {
+        "batch": 12,
+        "file": "08-reopened-figure.png",
+        "sha256": "22af99e1651eff8f3373a89851a14a0027e8f2115bb574b160d2ce6f310fe83b",
+        "review": "Viewed fresh-process saved figure screenshot; same participant lines, group labels, descriptive caption and exploratory methods as initial figure; six-file byte identity independently audited."
+      },
+      {
+        "batch": 0,
+        "file": "03-summary.png",
+        "sha256": "a84ec198d61275ded7b9479296850431595a5bf5f3e2dfaf402801666f622148",
+        "review": "Viewed full screenshot on frozen candidate; drawn plots/maps with readable labels, shared density limits and truthful unknown-display and virtual-unit declarations. Source-record screen shows exact provenance/raw fields locally; excluded from web publishing."
+      },
+      {
+        "batch": 0,
+        "file": "04-trial-maps.png",
+        "sha256": "7c9a781eed5acb2bdc71a11be34da2a8b3454ba753f3eff39dcb123a9910ba04",
+        "review": "Viewed full screenshot on frozen candidate; drawn plots/maps with readable labels, shared density limits and truthful unknown-display and virtual-unit declarations. Source-record screen shows exact provenance/raw fields locally; excluded from web publishing."
+      },
+      {
+        "batch": 0,
+        "file": "05-trial-maps-dark.png",
+        "sha256": "1584f934c0e6db603b269c9c304bea5e03b4643d29d06da68abcd3dd0f6bde67",
+        "review": "Viewed full screenshot on frozen candidate; drawn plots/maps with readable labels, shared density limits and truthful unknown-display and virtual-unit declarations. Source-record screen shows exact provenance/raw fields locally; excluded from web publishing."
+      },
+      {
+        "batch": 0,
+        "file": "06-figure.png",
+        "sha256": "da6d43b7820cae268a085b98543de3b640d87f997c0bcd5d5e487991525ef2ac",
+        "review": "Viewed full screenshot on frozen candidate; drawn plots/maps with readable labels, shared density limits and truthful unknown-display and virtual-unit declarations. Source-record screen shows exact provenance/raw fields locally; excluded from web publishing."
+      },
+      {
+        "batch": 0,
+        "file": "source-record.png",
+        "sha256": "baf7fa56e291643ff61db7a07e2456f334cd49b0c6b9787dfbd7f9c50d7f8b5a",
+        "review": "Viewed full screenshot on frozen candidate; drawn plots/maps with readable labels, shared density limits and truthful unknown-display and virtual-unit declarations. Source-record screen shows exact provenance/raw fields locally; excluded from web publishing."
+      },
+      {
+        "batch": 0,
+        "file": "07-reopened.png",
+        "sha256": "b8e709381f9ccd5de52c3c946c8408fc4acf2eabf7397576015ab0e8d9bc3ed7",
+        "review": "Viewed fresh-process redraw; summary/figure matches saved grouping and participant values, with clear data panels and retained exploratory title and methods."
+      },
+      {
+        "batch": 0,
+        "file": "08-reopened-figure.png",
+        "sha256": "708fe623197444175099a7dd8ba7f632c52b452d298782a1194593b8bf8b2ce9",
+        "review": "Viewed fresh-process redraw; summary/figure matches saved grouping and participant values, with clear data panels and retained exploratory title and methods."
+      },
+      {
+        "batch": 0,
+        "file": "exports/figure-1-bundle/figure-1.svg",
+        "sha256": "a40eed91fc94bf5cc7d91a1d6c202f03905084f7f9c002202371d31e94134f94",
+        "review": "Rendered actual SVG in Chrome at local preview after refresh; participant markers/lines, group labels, caption, exploratory virtual labels and methods provenance match native preview; not a raster substitute."
+      },
+      {
+        "batch": 10,
+        "file": "03-summary.png",
+        "sha256": "2f70585f75ff13c1b9d7ba28da6710698a9f745c0ac80fb9fd9bf280d538304d",
+        "review": "Viewed current middle-project screenshot; readable summary markers/group means or paired density maps/shared contours or full figure/caption. Methods declare uncalibrated conversion, retained source rows and descriptive-only figure; group support2-58queries displayed without claiming inferential testing."
+      },
+      {
+        "batch": 10,
+        "file": "05-trial-maps-dark.png",
+        "sha256": "a6a584bbe6c96fda3854304b3f63d2f384215a3728edab19bfbf3cfd16422f1c",
+        "review": "Viewed current middle-project screenshot; readable summary markers/group means or paired density maps/shared contours or full figure/caption. Methods declare uncalibrated conversion, retained source rows and descriptive-only figure; group support2-58queries displayed without claiming inferential testing."
+      },
+      {
+        "batch": 10,
+        "file": "06-figure.png",
+        "sha256": "b4bea8ce19ca9851719b8101471b05795573b4178bd6b3f257cc784daf13850e",
+        "review": "Viewed current middle-project screenshot; readable summary markers/group means or paired density maps/shared contours or full figure/caption. Methods declare uncalibrated conversion, retained source rows and descriptive-only figure; group support2-58queries displayed without claiming inferential testing."
+      },
+      {
+        "batch": 20,
+        "file": "03-summary.png",
+        "sha256": "2e0f4b74b0b9b1cb042f832ff47c3e0289a32032593e6d055a91cdb8708c8f02",
+        "review": "Viewed last three-participant project; clear participant/scale plots, native paired map panels and figure with n3/group, support2-58queries, descriptive-only caption and uncalibrated conversion declaration. Fresh-process figure redraw matches initial."
+      },
+      {
+        "batch": 20,
+        "file": "05-trial-maps-dark.png",
+        "sha256": "7f45d49641000c8faaf60323303208b36fd6d988d7a96e97d6914adce22bfc87",
+        "review": "Viewed last three-participant project; clear participant/scale plots, native paired map panels and figure with n3/group, support2-58queries, descriptive-only caption and uncalibrated conversion declaration. Fresh-process figure redraw matches initial."
+      },
+      {
+        "batch": 20,
+        "file": "06-figure.png",
+        "sha256": "4bceaa51e9bb95969ee63b45760245650b65c8ef71cd74abfd841c0532c5eb83",
+        "review": "Viewed last three-participant project; clear participant/scale plots, native paired map panels and figure with n3/group, support2-58queries, descriptive-only caption and uncalibrated conversion declaration. Fresh-process figure redraw matches initial."
+      },
+      {
+        "batch": 20,
+        "file": "08-reopened-figure.png",
+        "sha256": "ef60be316691e8d60d13f3b09661393e757720a613b4b8396d91674d92abcb41",
+        "review": "Viewed last three-participant project; clear participant/scale plots, native paired map panels and figure with n3/group, support2-58queries, descriptive-only caption and uncalibrated conversion declaration. Fresh-process figure redraw matches initial."
+      }
+    ],
+    "all_189_screenshots_manually_reviewed": false,
+    "findings": "Reviewed native summaries, missingness table, paired density maps/light and dark themes, figure/methods declarations, exact source record and fresh-process redraw. Unknown display and virtual angular labels remain explicit. Raw timing not qualified."
+  },
+  "defects": [
+    "g2-reference-absence",
+    "g2-unmatched-persistence",
+    "g2-native-panels",
+    "g2-report-levels",
+    "g2-table-end"
+  ],
+  "negative_paths_retained": [
+    "initial wrong missing-reference classification",
+    "full native archive row-budget refusal",
+    "20-participant byte-budget refusal and repeated canonical-prefix hashing",
+    "native replay missing inventory",
+    "native Compare unserved content ports",
+    "reference-only report category refusal",
+    "export ByDesign label domains and participant count omission",
+    "native scroll-to-end last row unrealized or partially clipped: exact drawn cells and full-bounds regression required",
+    "harness readiness/focus/selection/screenshot collisions",
+    "broken partial TASTy after interrupted earlier compile; clean-output retry"
+  ],
+  "limits_remaining": [
+    {
+      "mote": "g2-timeline-coverage",
+      "status": "open",
+      "claim": "Observed-coverage timeline viewport/playhead usability for large-origin timestamps with unknown trial extent; preserve raw clocks, no temporal certification."
+    },
+    {
+      "mote": "g2-archive-scaling",
+      "status": "open",
+      "claim": "Whole-cohort single native archive exceeds existing limits; repeated prefix hashing needs optimization/benchmark. No budget raised."
+    },
+    "unknown image placement, physical pixels per degree and exported time conventions",
+    "physical Retina and actual VoiceOver acceptance",
+    "independent researcher usability",
+    "Maven Central publication and public distribution signing"
+  ],
+  "qualification": {
+    "local_phases": [
+      {
+        "phase": "clean",
+        "exit": 0,
+        "seconds": 12.181830083020031,
+        "log_sha256": "dcfa9b81d3e4e2b8faeaca453dd47362171dde305f65321877570b135db4e22f"
+      },
+      {
+        "phase": "canonical",
+        "exit": 0,
+        "seconds": 2695.6934892088175,
+        "log_sha256": "859ebf96ba3ec8816d7771a2c9c105626fee03d439bce07635893a7862b4ee0a"
+      },
+      {
+        "phase": "studio",
+        "exit": 0,
+        "seconds": 1324.8734136661515,
+        "log_sha256": "a41a80309a962f5f457fa0458ddc1be274b8f28359fa3b3c52342fcf02f52292"
+      },
+      {
+        "phase": "site-mima",
+        "exit": 0,
+        "seconds": 98.84485908318311,
+        "log_sha256": "faf9acf699c62cd3873f95521b28cb6340226315c9a2198b6b9a9592ccda05fb"
+      },
+      {
+        "phase": "docs-consumer",
+        "exit": 0,
+        "seconds": 227.13182466756552,
+        "log_sha256": "9be4e79fb574d5967e0096b61566f072152fcc50401c3b433c85969c3ec1ad74"
+      },
+      {
+        "phase": "r-baseline",
+        "exit": 0,
+        "seconds": 0.7781414166092873,
+        "log_sha256": "b5c5d7caa92640686029df3dafc061b238232c1ab6b46434e4b3b4524f1da009"
+      },
+      {
+        "phase": "e2e-tests",
+        "exit": 0,
+        "seconds": 0.12572725024074316,
+        "log_sha256": "4c979c0d06f0e9e2109df48cae7f69ac5d403754045b4cfe404fe744e7390b47"
+      },
+      {
+        "phase": "e2e",
+        "exit": 0,
+        "seconds": 0.3771350830793381,
+        "log_sha256": "abac71d3c5cb077abdcb280d60496b60a55b80df766bc5d2f98bab403a96ddfb"
+      },
+      {
+        "phase": "visual-tests",
+        "exit": 0,
+        "seconds": 2.088789291679859,
+        "log_sha256": "3cc949a9dd8b4679dbb96a02c614b5cb9859ed8f602929069c3dea0be00684cf"
+      },
+      {
+        "phase": "visual",
+        "exit": 0,
+        "seconds": 0.46281091682612896,
+        "log_sha256": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+      }
+    ],
+    "hosted": [
+      {
+        "workflow": "Clean",
+        "id": 40618863555,
+        "head": "92ca5f544b32baf67c52e477a1ae7be036d3b6d8",
+        "conclusion": "success"
+      },
+      {
+        "workflow": "Checks",
+        "id": 40618863412,
+        "head": "92ca5f544b32baf67c52e477a1ae7be036d3b6d8",
+        "conclusion": "success"
+      },
+      {
+        "workflow": "Studio",
+        "id": 40618863471,
+        "head": "92ca5f544b32baf67c52e477a1ae7be036d3b6d8",
+        "conclusion": "success"
+      }
+    ],
+    "consumer": "Local published-artifact court, not Maven Central publication",
+    "visual": "Functional parity receipts; no replacement for physical Retina or VoiceOver"
+  },
+  "private_archive": "fixtures/private/behavioral_pattern_completion/runs/20261027-g2-production/",
+  "dashboard": "https://liminal-unity-q3fr.here.now/g2-20261027/",
+  "dashboard_access": "Existing restricted policy preserved; permanent owner account",
+  "g2_acceptance": "Complete permitted real-study production journey through bounded participant projects; unresolved physical/time provenance retained explicitly. Native capacity follow-up stays open."
+}

@@ -20921,6 +20921,7 @@
   "value eyes4s.plan.UnmatchedFocalPolicy$.derived$CanEqual": ["compile-time-equality-witness", "plan/src/main/scala/eyes4s/plan/StudyPairing.scala", "jvm+js", false, [], "scala.CanEqual[eyes4s.plan.UnmatchedFocalPolicy, eyes4s.plan.UnmatchedFocalPolicy]"],
   "value eyes4s.plan.UnmatchedKind$.NoReferenceInDesign": ["enum-case-value", "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala", "jvm+js", false, [], "eyes4s.plan.UnmatchedKind"],
   "value eyes4s.plan.UnmatchedKind$.ReferenceNotAdmitted.references": ["structural-accessor", "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala", "jvm+js", false, [], "scala.collection.immutable.Vector[eyes4s.plan.DeclaredReference]"],
+  "value eyes4s.plan.UnmatchedKind$.ReferenceNotDeclared": ["enum-case-value", "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala", "jvm+js", false, [], "eyes4s.plan.UnmatchedKind"],
   "value eyes4s.plan.UnmatchedKind$.ReferenceNotPairable.references": ["structural-accessor", "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala", "jvm+js", false, [], "scala.collection.immutable.Vector[eyes4s.plan.TrialIdentity]"],
   "value eyes4s.plan.UnmatchedKind$.Undetermined": ["enum-case-value", "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala", "jvm+js", false, [], "eyes4s.plan.UnmatchedKind"],
   "value eyes4s.plan.UnmatchedKind$.derived$CanEqual": ["compile-time-equality-witness", "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala", "jvm+js", false, [], "scala.CanEqual[eyes4s.plan.UnmatchedKind, eyes4s.plan.UnmatchedKind]"],

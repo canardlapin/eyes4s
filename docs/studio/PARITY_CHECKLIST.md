@@ -131,6 +131,28 @@ window/grid/initial-fixation “pending UI-A / UI-F” tags are replaced by serv
 the Data/Analysis inventory tags now also read served UI-H. The System module map
 records served interfaces rather than obsolete blockers. Full qualification is recorded with the landing.
 
+Native production confirmation (2026-10-27): the [G2 qualification](evidence/20261027-g2/qualification.json)
+exercises ordinary import, admission, descriptor recipe, analysis, Compare, Figures,
+native save, normal close, fresh-process reopen and repeat export for a complete permitted
+study in 21 complete-participant projects. An explicit expected-unmatched selector
+keeps an unselected missing reference as NoMatch; native archive replay retains the
+inventory, and exports preserve by-design status, missingness and participant counts.
+Native Compare now uses the production display/fixation sources, including fractional
+millisecond marks. Automatic report levels come from declared focal inventory trials;
+genuinely empty focal groups remain explicit. Native table reveal brings boundary rows fully into view for both reader actions and keyboard navigation. Fresh reopening uses the persisted reporting specification and figure; all six exported files reproduce byte-for-byte. Actual Intaglio plots and light/dark maps
+were reviewed. This confirms the served UI-A / UI-F descriptor path already recorded
+above; those board tags were replaced on 2026-10-13.
+
+The G2 receipt is exploratory pixel-space software qualification with explicitly virtual
+angular labels, unknown display placement/calibration/timing provenance and observed-only
+inventory. It does not qualify a single full-cohort native archive, physical Retina,
+VoiceOver or scientific inference. Large-archive limits and repeated hashing remain open
+on `g2-archive-scaling`; the existing budgets were not raised.
+
+Explore timeline viewport/playhead behavior for large raw timestamp origins remains open
+on `g2-timeline-coverage`; the spatial receipt does not qualify event-relative timing.
+
+
 ## Main and MainDark (moment t2)
 - [x] Queries navigator with the count strip, including "by design".
 - [x] Query panel: filled circles, "Displayed: blank + fixation cross".
