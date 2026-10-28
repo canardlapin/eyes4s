@@ -153,9 +153,9 @@ object ExploreTimeline:
     val followed =
       if trial == timeline.trial then timeline
       else empty.copy(trial = trial, speed = timeline.speed)
-    shown.filter(t => trial.contains(t.trial)).fold(followed)(t =>
-      followed.copy(playheadMs = coveredPlayhead(followed, t))
-    )
+    shown
+      .filter(t => trial.contains(t.trial))
+      .fold(followed)(t => followed.copy(playheadMs = coveredPlayhead(followed, t)))
 
   /** The Elm-style update over the shown trial's timeline (if read). */
   def update(
@@ -164,9 +164,9 @@ object ExploreTimeline:
       intent: TimelineIntent
   ): ExploreTimeline =
     import TimelineIntent.*
-    val end = shown.fold(0.0)(endMs)
+    val end   = shown.fold(0.0)(endMs)
     val start = shown.fold(0.0)(startMs)
-    val head = shown.fold(state.playheadMs)(coveredPlayhead(state, _))
+    val head  = shown.fold(state.playheadMs)(coveredPlayhead(state, _))
     intent match
       case Play =>
         // Playing from the end starts again.
@@ -240,7 +240,7 @@ object ExploreTimelineVM:
       cols <- ExploreTimeline.columns.toOption
       src  <- Timeline.source(tl, cols).toOption
     yield src
-    val head = timeline.fold(state.playheadMs)(ExploreTimeline.coveredPlayhead(state, _))
+    val head     = timeline.fold(state.playheadMs)(ExploreTimeline.coveredPlayhead(state, _))
     val playhead = t(PlayheadStatus, seconds(head))
     val brushed  =
       state.brush.map(b => t(BrushStatus, seconds(b.from), seconds(b.until))).toVector

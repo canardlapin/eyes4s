@@ -69,7 +69,7 @@ private[real] object NativeArtifacts:
       _ <- limit("structural rows", rows, BigInt(budget.maxRows))
       _ <- limit("entries", entries, BigInt(budget.maxEntries))
       // Packed cells alone establish this lower bound before encoding JSON or allocating chunks.
-      _            <- limit("packed density bytes", cells * 8, BigInt(budget.maxTotalBytes))
+      _ <- limit("packed density bytes", cells * 8, BigInt(budget.maxTotalBytes))
       p <- codec("plan artifact")(StoredArtifact.plan("plan", work.plans, work.plan))
       i <- codec("input artifact")(
         StoredArtifact.input("input", work.inputs, work.admitted.input)

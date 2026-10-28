@@ -87,8 +87,11 @@ class NativeArtifactRestoreSuite extends munit.FunSuite:
   )
 
   test("the exact source closure refuses an impossible byte budget before packing the result") {
-    val cells = result.scales.flatMap(_.estimation).collect { case (_, Right(mass)) => mass.values.length.toLong }.sum
-    val limit = cells * 8 + 1
+    val cells = result.scales
+      .flatMap(_.estimation)
+      .collect { case (_, Right(mass)) => mass.values.length.toLong }
+      .sum
+    val limit  = cells * 8 + 1
     val budget = get(NativeArtifactBudget.of(maxTotalBytes = limit))
     NativeArtifacts.build(run, held, budget) match
       case Left(NativeArtifactError.Budget(id, resource, needed, maximum)) =>

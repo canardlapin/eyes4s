@@ -53,13 +53,20 @@ class ExploreTimelineSuite extends munit.FunSuite:
   private def step(t: Timeline)(s: ExploreTimeline, i: TimelineIntent) =
     ExploreTimeline.update(s, Some(t), i)
 
-  test("unknown-extent large-origin playback and VM start at observed coverage without re-zeroing") {
+  test(
+    "unknown-extent large-origin playback and VM start at observed coverage without re-zeroing"
+  ) {
     import eyes4s.studio.app.plot.TimelineFixation
-    val t = ok(Timeline.of(enc03, Vector(
-      TimelineFixation(ok(FixationIndex.of(1)), 600000L, 400L),
-      TimelineFixation(ok(FixationIndex.of(2)), 600500L, 300L)
-    )))
-    val before = ok(eyes4s.studio.app.plot.Timeline.source(t, ok(TimelineColumns.standard)))
+    val t = ok(
+      Timeline.of(
+        enc03,
+        Vector(
+          TimelineFixation(ok(FixationIndex.of(1)), 600000L, 400L),
+          TimelineFixation(ok(FixationIndex.of(2)), 600500L, 300L)
+        )
+      )
+    )
+    val before  = ok(eyes4s.studio.app.plot.Timeline.source(t, ok(TimelineColumns.standard)))
     val initial = ExploreTimeline.sync(ExploreTimeline.empty, Some(enc03))
     val playing = ExploreTimeline.update(initial, Some(t), TimelineIntent.Play)
     assertEquals(playing.playheadMs, 600000.0)
@@ -68,10 +75,16 @@ class ExploreTimelineSuite extends munit.FunSuite:
     assertEquals(vm.status, "playhead 600.00 s")
     val ended = ExploreTimeline.update(playing, Some(t), TimelineIntent.Tick(800.0))
     assertEquals((ended.playheadMs, ended.playing), (600800.0, false))
-    assertEquals(ExploreTimeline.update(ended, Some(t), TimelineIntent.Play).playheadMs, 600000.0)
+    assertEquals(
+      ExploreTimeline.update(ended, Some(t), TimelineIntent.Play).playheadMs,
+      600000.0
+    )
     assertEquals(vm.source, Some(before))
     val span = HalfOpenSpan.between(600100.0, 600500.0).get
-    assertEquals(PlotBrush.rows(before, TimelineColumns.brushRule(ok(TimelineColumns.standard)), span), Vector(t.refs.head))
+    assertEquals(
+      PlotBrush.rows(before, TimelineColumns.brushRule(ok(TimelineColumns.standard)), span),
+      Vector(t.refs.head)
+    )
   }
 
   test("the fixture's intervals: 13 bars, to the millisecond, ending at 5038 ms") {

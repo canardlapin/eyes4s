@@ -317,7 +317,7 @@ object TimelinePlot:
     */
   def timeDomain(times: Vector[Double], includeZero: Boolean = true): (Double, Double) =
     val covered = if includeZero || times.isEmpty then times :+ 0.0 else times
-    val lo  = covered.min
-    val hi  = math.max(covered.max, lo + 1.0)
-    val pad = (hi - lo) * Margin
+    val lo      = covered.min
+    val hi      = math.max(covered.max, lo + 1.0)
+    val pad     = (hi - lo) * Margin
     (lo - pad, hi + pad)
