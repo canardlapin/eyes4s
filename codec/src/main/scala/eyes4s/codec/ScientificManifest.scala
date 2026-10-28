@@ -50,6 +50,9 @@ enum MediaKind(val wire: String) derives CanEqual:
   /** A little-endian packed payload described by a [[PayloadLayout]]. */
   case Binary extends MediaKind("application/octet-stream")
 
+  /** Versioned columnar storage of the same logical JSON document. */
+  case ColumnarJson extends MediaKind("application/vnd.eyes4s.columnar-json;version=1")
+
 /** What an entry is in the scientific object graph, which fixes its media
   * kind and whether it carries a semantic identity: the 16-hex portable
   * `ContentHash` that plans and results reference as an `ArtifactRef`.
@@ -97,6 +100,10 @@ enum ArtifactRole(val wire: String, val media: MediaKind, val identityBearing: B
     */
   case AnalysisPlan   extends ArtifactRole("analysis-plan", MediaKind.JsonText, false)
   case AnalysisResult extends ArtifactRole("analysis-result", MediaKind.JsonText, false)
+
+  private[codec] def accepts(found: MediaKind): Boolean =
+    found == media || (found == MediaKind.ColumnarJson &&
+      (this == StudyInput || this == AdmissionLedger || this == StudyResult))
 
 /** Which independently interpreted source a ledger relation supplies. */
 enum LedgerSourceRole(val wire: String) derives CanEqual:
@@ -151,7 +158,7 @@ object ManifestEntry:
   ): Either[ManifestError, ManifestEntry] =
     val payload = role == ArtifactRole.Payload || role == ArtifactRole.ResultPayload
     for
-      _ <- Either.cond(media == role.media, (), ManifestError.MediaMismatch(name, role, media))
+      _ <- Either.cond(role.accepts(media), (), ManifestError.MediaMismatch(name, role, media))
       _ <- Either.cond(length >= 0L, (), ManifestError.NegativeLength(name, length))
       _ <- Either.cond(
         identity.isDefined == role.identityBearing,
@@ -490,6 +497,10 @@ sealed abstract case class ScientificManifest private (
 ) derives CanEqual:
   def entry(name: ArtifactName): Option[ManifestEntry] = entries.find(_.name == name)
 
+/** Manifest vocabulary added with columnar document storage. */
+object CompactArchiveDefinitions:
+  val manifestV2: DefinitionId = DefinitionId.builtIn("eyes4s.manifest", 2)
+
 object ScientificManifest:
   private def apply(
       entries: Vector[ManifestEntry],
@@ -632,8 +643,21 @@ object ScientificManifest:
       .orElse(sourceCounts)
       .toLeft(ScientificManifest(entries, relations))
 
-  val codec: VersionedCodec[ScientificManifest] =
-    VersionedCodec.checked[ScientificManifest](schema)(m => Right(write(m)))(read)
+  private def legacy(manifest: ScientificManifest): Boolean =
+    !manifest.entries.exists(_.media == MediaKind.ColumnarJson)
+
+  val ladder: SchemaLadder[ScientificManifest] =
+    SchemaLadder
+      .of[ScientificManifest]("scientific manifest", schema)(m =>
+        Either.cond(
+          legacy(m),
+          write(m),
+          CodecError.Unsupported("manifest@1", "columnar storage requires manifest@2")
+        )
+      )(json => read(json, allowColumnar = false))
+      .next(legacy, identity)(m => Right(write(m)))(json => read(json, allowColumnar = true))
+
+  val codec: VersionedCodec[ScientificManifest] = ladder.codec
 
   /** The canonical stored form: UTF-8 of the pretty-printed envelope. */
   def bytes(manifest: ScientificManifest): Either[CodecError, IArray[Byte]] =
@@ -806,17 +830,23 @@ object ScientificManifest:
       case other => Left(CodecError.Field("kind", json, s"unknown relation kind '$other'"))
     }
 
-  private def read(json: Json): Either[CodecError, ScientificManifest] = for
-    rawEntries <- Wire.field[Vector[Json]](json, "entries")
-    entries    <- rawEntries.zipWithIndex.traverse { case (entry, index) =>
-      readEntry(entry).left.map(Wire.at(s"entries[$index]"))
-    }
-    rawRelations <- Wire.field[Vector[Json]](json, "relations")
-    relations    <- rawRelations.zipWithIndex.traverse { case (relation, index) =>
-      readRelation(relation).left.map(Wire.at(s"relations[$index]"))
-    }
-    manifest <- of(entries, relations).left.map(CodecError.Manifest.apply)
-  yield manifest
+  private def read(json: Json, allowColumnar: Boolean): Either[CodecError, ScientificManifest] =
+    for
+      rawEntries <- Wire.field[Vector[Json]](json, "entries")
+      entries    <- rawEntries.zipWithIndex.traverse { case (entry, index) =>
+        readEntry(entry).left.map(Wire.at(s"entries[$index]"))
+      }
+      _ <- Either.cond(
+        allowColumnar || !entries.exists(_.media == MediaKind.ColumnarJson),
+        (),
+        CodecError.Unsupported("manifest@1", "columnar storage requires manifest@2")
+      )
+      rawRelations <- Wire.field[Vector[Json]](json, "relations")
+      relations    <- rawRelations.zipWithIndex.traverse { case (relation, index) =>
+        readRelation(relation).left.map(Wire.at(s"relations[$index]"))
+      }
+      manifest <- of(entries, relations).left.map(CodecError.Manifest.apply)
+    yield manifest
 
 /** One artifact ready to store: its manifest entry and a private copy of its
   * exact bytes. Build JSON artifacts from a typed value through a registered
@@ -984,6 +1014,52 @@ object StoredArtifact:
       value: eyes4s.plan.StudyPlan[K, U, P, S, D]
   ): Either[CodecError, StoredArtifact] =
     persistence.codec.encode(value).flatMap(document(name, ArtifactRole.StudyPlan, _, None))
+
+  private[codec] def compactDocument(
+      name: String,
+      role: ArtifactRole,
+      document: CanonicalDoc,
+      identity: Option[ContentHash],
+      limits: CompactArtifactLimits
+  ): Either[CodecError, StoredArtifact] = for
+    artifact <- ArtifactName.of(name).left.map(CodecError.Manifest(_))
+    bytes    <- CompactArtifacts.encode(document, limits)
+    header   <- StructuredValue(document).header(Set("value"))
+    schema   <- Wire.definition(header, "schema")
+    entry    <- ManifestEntry
+      .of(
+        artifact,
+        role,
+        schema,
+        MediaKind.ColumnarJson,
+        bytes.length.toLong,
+        ByteDigest.sha256(bytes),
+        identity,
+        None
+      )
+      .left
+      .map(CodecError.Manifest(_))
+  yield new StoredArtifact(entry, bytes)
+
+  private[eyes4s] def compactInput[K, U <: Unit2D](
+      name: String,
+      persistence: StudyInputCodec[K, U],
+      value: eyes4s.plan.StudyInput[K, U],
+      limits: CompactArtifactLimits
+  ): Either[CodecError, StoredArtifact] =
+    persistence.input
+      .document(value)
+      .flatMap(compactDocument(name, ArtifactRole.StudyInput, _, Some(value.hash), limits))
+
+  private[eyes4s] def compactLedger[K, U <: Unit2D](
+      name: String,
+      persistence: StudyInputCodec[K, U],
+      value: eyes4s.plan.AdmissionLedger[K],
+      limits: CompactArtifactLimits
+  ): Either[CodecError, StoredArtifact] =
+    persistence
+      .ledgerDocument(value)
+      .flatMap(compactDocument(name, ArtifactRole.AdmissionLedger, _, None, limits))
 
   def input[K, U <: Unit2D](
       name: String,

@@ -55,6 +55,31 @@ object ResultManifest:
       payloads.map(p => ManifestRelation.ResultPayloadOf(result.name, p.name))
     )
 
+  private[eyes4s] def compactPacked[K, U <: Unit2D: UnitLabel, P, S, D](
+      name: String,
+      persistence: StudyResultCodec[K, U, P, S, D],
+      value: StudyResult[K, U, S, D],
+      limits: CompactArtifactLimits
+  ): Either[CodecError, ResultArtifacts] =
+    val codec = new DensityArchiveCodec(persistence)
+    for
+      bundle <- codec.encode(value, DensityStorage.Packed)
+      result <- StoredArtifact.compactDocument(
+        name,
+        ArtifactRole.StudyResult,
+        codec.document(bundle.archive),
+        None,
+        limits
+      )
+      payloads <- bundle.chunks.zipWithIndex.traverse { case ((_, chunk), index) =>
+        StoredArtifact.resultPayload(s"$name.payload.$index", chunk)
+      }
+    yield ResultArtifacts(
+      result,
+      payloads,
+      payloads.map(p => ManifestRelation.ResultPayloadOf(result.name, p.name))
+    )
+
   /** Persist a completion-bound result and its canonical run claim. */
   def stamped[K, U <: Unit2D: UnitLabel, P, S, D](
       name: String,
@@ -80,8 +105,19 @@ object ResultManifest:
     * Full geometry and completed-result validation still belongs to its codec.
     */
   private[codec] def references(document: Json): Either[CodecError, Vector[PayloadRef]] = for
-    schema <- Wire.definition(document, "schema")
-    _      <- Either.cond(
+    schema     <- Wire.definition(document, "schema")
+    _          <- requireArchiveSchema(schema)
+    value      <- Wire.field[Json](document, "value")
+    scales     <- Wire.field[Vector[Json]](value, "scales")
+    references <- scales.traverse { scale =>
+      Wire
+        .field[Vector[Json]](scale, "estimation")
+        .flatMap(_.traverse(referencesInRow).map(_.flatten))
+    }
+  yield references.flatten.distinct
+
+  private def requireArchiveSchema(schema: DefinitionId): Either[CodecError, Unit] =
+    Either.cond(
       schema == DensityArchiveDefinitions.studyResultV2,
       (),
       CodecError.UnsupportedSchema(
@@ -90,31 +126,41 @@ object ResultManifest:
         Vector(DensityArchiveDefinitions.studyResultV2)
       )
     )
-    value      <- Wire.field[Json](document, "value")
-    scales     <- Wire.field[Vector[Json]](value, "scales")
-    references <- scales.traverse { scale =>
-      Wire
-        .field[Vector[Json]](scale, "estimation")
-        .flatMap(_.traverse { row =>
+
+  private def referencesInRow(row: Json): Either[CodecError, Vector[PayloadRef]] = for
+    outcome <- Wire.field[Json](row, "outcome")
+    kind    <- Wire.field[String](outcome, "kind")
+    refs    <- kind match
+      case "failure" => Right(Vector.empty)
+      case "mass"    =>
+        for
+          storage <- Wire.field[Json](outcome, "storage")
+          mode    <- Wire.field[String](storage, "kind")
+          refs    <- mode match
+            case "packed" =>
+              Wire.field[Json](storage, "chunk").flatMap(PayloadRef.read).map(Vector(_))
+            case "inline" | "recomputable" => Right(Vector.empty)
+            case other => Left(CodecError.Field("storage.kind", storage, s"unknown $other"))
+        yield refs
+      case other => Left(CodecError.Field("kind", outcome, s"unknown density outcome $other"))
+  yield refs
+
+  private[codec] def referencesDocument(
+      document: CanonicalDoc
+  ): Either[CodecError, Vector[PayloadRef]] = document match
+    case CanonicalDoc.Leaf(json) => references(json)
+    case _                       =>
+      val root = StructuredValue(document)
+      for
+        header     <- root.header(Set("value"))
+        schema     <- Wire.definition(header, "schema")
+        _          <- requireArchiveSchema(schema)
+        value      <- root.member("value")
+        scales     <- value.member("scales")
+        references <- scales.rows("scales") { (scale, _) =>
           for
-            outcome <- Wire.field[Json](row, "outcome")
-            kind    <- Wire.field[String](outcome, "kind")
-            refs    <- kind match
-              case "failure" => Right(Vector.empty)
-              case "mass"    =>
-                for
-                  storage <- Wire.field[Json](outcome, "storage")
-                  mode    <- Wire.field[String](storage, "kind")
-                  refs    <- mode match
-                    case "packed" =>
-                      Wire.field[Json](storage, "chunk").flatMap(PayloadRef.read).map(Vector(_))
-                    case "inline" | "recomputable" => Right(Vector.empty)
-                    case other                     =>
-                      Left(CodecError.Field("storage.kind", storage, s"unknown $other"))
-                yield refs
-              case other =>
-                Left(CodecError.Field("kind", outcome, s"unknown density outcome $other"))
-          yield refs
-        }.map(_.flatten))
-    }
-  yield references.flatten.distinct
+            rows <- scale.member("estimation")
+            refs <- rows.rows("estimation")((row, _) => row.json.flatMap(referencesInRow))
+          yield refs.flatten
+        }
+      yield references.flatten.distinct

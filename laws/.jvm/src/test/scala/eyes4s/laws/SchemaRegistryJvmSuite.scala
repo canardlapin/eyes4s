@@ -320,6 +320,12 @@ object SchemaRegistry:
       codecLaw(artifacts, "signed difference") ++ codecLaw(results, "cosine study result")
     ),
     Entry(
+      CompactArchiveDefinitions.manifestV2,
+      Kind.Document,
+      Vector("manifest-v2.json"),
+      codecLaw(() => new CompactManifestLawSuite, "compact manifest")
+    ),
+    Entry(
       DefinitionId.manifest,
       Kind.Document,
       Vector("manifest-v1.json", "manifest-inputs-v1.json"),
@@ -587,6 +593,10 @@ object SchemaRegistry:
 
   /** The published ladder laws of each multi-version schema, by name. */
   val ladderLaws: Map[String, Vector[Law]] = Map(
+    "eyes4s.manifest" -> ladderLaw(
+      () => new CompactManifestLawSuite,
+      "manifest storage ladder"
+    ),
     "eyes4s.study-result" -> ladderLaw(densities, "density archive versions"),
     "eyes4s.study"        ->
       (ladderLaw(plans, "study plan versions") ++ ladderLaw(
@@ -870,6 +880,7 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
       versioned.map(_.name),
       Vector(
         "eyes4s.admission-ledger",
+        "eyes4s.manifest",
         "eyes4s.study",
         "eyes4s.study-result",
         "eyes4s.template-recipe"
@@ -1174,9 +1185,10 @@ private object Decoders:
       case DefinitionId.studyResult | DensityArchiveDefinitions.studyResultV2 =>
         Some(new DensityArchiveCodec(StudyResultCodecs.cosine[Px]).codec)
       case StudyProgressDefinitions.progress => Some(StudyProgressCodec.codec[String, String])
-      case DefinitionId.manifest             => Some(ScientificManifest.codec)
-      case DefinitionId.similarity           => Some(StudyResultCodecs.similarity())
-      case DefinitionId.measureDistance      =>
+      case DefinitionId.manifest | CompactArchiveDefinitions.manifestV2 =>
+        Some(ScientificManifest.codec)
+      case DefinitionId.similarity      => Some(StudyResultCodecs.similarity())
+      case DefinitionId.measureDistance =>
         Some(StudyResultCodecs.measureDistance())
       case DefinitionId.scalar           => Some(StudyResultCodecs.scalar())
       case DefinitionId.signedDifference =>

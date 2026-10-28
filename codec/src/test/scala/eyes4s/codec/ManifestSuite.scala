@@ -518,20 +518,30 @@ class ManifestSuite extends munit.FunSuite:
       ArtifactResolver.manifest(saved.address, source),
       Left(ResolveError.ManifestDigest(saved.address, ByteDigest.sha256(corrupted)))
     )
-    val v2 = get(ScientificManifest.codec.encode(saved.manifest)).mapObject(
+    val unknownVersion = get(ScientificManifest.codec.encode(saved.manifest)).mapObject(
       _.add(
         "schema",
-        Json.obj("name" -> Json.fromString("eyes4s.manifest"), "version" -> Json.fromInt(2))
+        Json.obj(
+          "name"    -> Json.fromString("eyes4s.manifest"),
+          "version" -> Json.fromInt(ScientificManifest.codec.schema.version + 1)
+        )
       )
     )
-    val bytes   = IArray.from(v2.spaces2.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    val bytes =
+      IArray.from(unknownVersion.spaces2.getBytes(java.nio.charset.StandardCharsets.UTF_8))
     val address = ByteDigest.sha256(bytes)
     assertEquals(
       ArtifactResolver.manifest(address, ByteSource.inMemory(Map(address -> bytes), blobs)),
       Left(
         ResolveError.ManifestDecode(
           address,
-          CodecError.Schema(DefinitionId.manifest, get(DefinitionId.of("eyes4s.manifest", 2)))
+          CodecError.UnsupportedSchema(
+            "scientific manifest",
+            get(
+              DefinitionId.of("eyes4s.manifest", ScientificManifest.codec.schema.version + 1)
+            ),
+            ScientificManifest.codec.schemas
+          )
         )
       )
     )

@@ -74,7 +74,7 @@ final class StudyInputCodec[K, U <: Unit2D](
   private given KeyDigest[K] = layout.digest
 
   val input: VersionedCodec[StudyInput[K, U]] =
-    VersionedCodec.checked(schema)(writeInput)(readInput)
+    VersionedCodec.described(schema)(describeInput)(readInput)
 
   /** All four ledger versions. A version-1 ledger is an admission under
     * `AdmissionPolicy.version1`; a version-2 ledger adds the admission policy
@@ -138,68 +138,135 @@ final class StudyInputCodec[K, U <: Unit2D](
   private def noTrialProjection: CodecError =
     CodecError.Admission(AdmissionError.Inventory(InventoryError.NoTrialProjection(layout.id)))
 
-  private def rows(table: DocumentIdentities): VersionedCodec[Trials[K, Unit, Scanpath[U]]] =
-    VersionedCodec.trials(
-      StudyInputCodecs.trials,
-      keys,
-      VersionedCodec.unit(DefinitionId.unit),
-      scanpaths(table)
+  private def describeInput(value: StudyInput[K, U]): Either[CodecError, CanonicalDoc] =
+    for table <- value.trials.rows.zipWithIndex
+        .foldLeft[Either[CodecError, DocumentIdentities]](Right(DocumentIdentities.empty)) {
+          case (acc, (trial, index)) =>
+            acc.flatMap(t =>
+              t.addFrame(trial.value.frame)
+                .map(_.addClock(trial.value.clock))
+                .left
+                .map(Wire.at(s"trials.rows[$index]"))
+            )
+        }
+    yield CanonicalDoc.obj(
+      "layout"     -> CanonicalDoc.Leaf(Wire.id(layout.id)),
+      "keySchema"  -> CanonicalDoc.Leaf(Wire.id(keys.schema)),
+      "unit"       -> CanonicalDoc.Leaf(Json.fromString(unit.symbol)),
+      "input"      -> CanonicalDoc.Leaf(Json.fromString(value.reference.digest)),
+      "identities" -> CanonicalDoc.Leaf(table.json),
+      "trials"     -> CanonicalDoc.obj(
+        "schema" -> CanonicalDoc.Leaf(Wire.id(StudyInputCodecs.trials)),
+        "value"  -> CanonicalDoc.items(value.trials.rows) { (trial, index) =>
+          (for
+            key  <- keys.encode(trial.key)
+            meta <- VersionedCodec.unit(DefinitionId.unit).encode(())
+            path <- scanpaths(table).document(trial.value)
+          yield CanonicalDoc
+            .obj(
+              "key"   -> CanonicalDoc.Leaf(key),
+              "meta"  -> CanonicalDoc.Leaf(meta),
+              "value" -> path
+            )
+            .mapError(Wire.at(s"trials.rows[$index]"))).left
+            .map(Wire.at(s"trials.rows[$index]"))
+        }
+      )
     )
 
-  private def writeInput(value: StudyInput[K, U]): Either[CodecError, Json] = for
-    table <- value.trials.rows.zipWithIndex
-      .foldLeft[Either[CodecError, DocumentIdentities]](Right(DocumentIdentities.empty)) {
-        case (acc, (trial, index)) =>
-          acc.flatMap(t =>
-            t.addFrame(trial.value.frame)
-              .map(_.addClock(trial.value.clock))
+  private def readInput(json: Json): Either[CodecError, StudyInput[K, U]] =
+    readInputValue(StructuredValue(CanonicalDoc.Leaf(json)))
+
+  private[codec] def readInputDocument(
+      document: CanonicalDoc
+  ): Either[CodecError, StudyInput[K, U]] =
+    val root = StructuredValue(document)
+    for
+      header  <- root.header(Set("value"))
+      _       <- Wire.requireId(header, "schema", schema)
+      payload <- root.member("value")
+      result  <- readInputValue(payload)
+    yield result
+
+  private def readInputValue(document: StructuredValue): Either[CodecError, StudyInput[K, U]] =
+    for
+      json   <- document.header(Set("trials"))
+      _      <- Wire.requireId(json, "layout", layout.id)
+      _      <- Wire.requireId(json, "keySchema", keys.schema)
+      symbol <- Wire.field[String](json, "unit")
+      _      <- Either.cond(
+        symbol == unit.symbol,
+        (),
+        CodecError.Field("unit", json, s"expected ${unit.symbol}, got $symbol")
+      )
+      declared <- Wire.field[String](json, "input")
+      _ <- ArtifactRef.parse[StudyInput[K, U]](declared).left.map(CodecError.Definition.apply)
+      table  <- Wire.field[Json](json, "identities").flatMap(DocumentIdentities.read)
+      trials <- document
+        .member("trials")
+        .flatMap(readTrialsDocument(_, table))
+        .left
+        .map(Wire.at("trials"))
+      value = StudyInput(trials)
+      _ <- Either.cond(
+        value.reference.digest == declared,
+        (),
+        CodecError.InputIdentity(declared, value.reference.digest)
+      )
+    yield value
+
+  private def readTrialsDocument(
+      value: StructuredValue,
+      table: DocumentIdentities
+  ): Either[CodecError, Trials[K, Unit, Scanpath[U]]] = for
+    header  <- value.header(Set("value"))
+    _       <- Wire.requireId(header, "schema", StudyInputCodecs.trials)
+    payload <- value.member("value")
+    trials  <- payload.rows("rows") { (row, _) =>
+      for
+        key  <- row.field[Json]("key").flatMap(keys.decode)
+        meta <- row.field[Json]("meta").flatMap(VersionedCodec.unit(DefinitionId.unit).decode)
+        path <- row.member("value").flatMap(readScanpathDocument(_, table))
+      yield Trial(key, meta, path)
+    }
+  yield Trials(trials)
+
+  private def readScanpathDocument(
+      value: StructuredValue,
+      table: DocumentIdentities
+  ): Either[CodecError, Scanpath[U]] = value.document match
+    case CanonicalDoc.Leaf(json) => scanpaths(table).decode(json)
+    case _                       =>
+      for
+        header    <- value.header(Set("value"))
+        _         <- Wire.requireId(header, "schema", StudyInputCodecs.scanpath)
+        payload   <- value.member("value")
+        json      <- payload.header(Set("fixations"))
+        frameName <- Wire.field[String](json, "frame")
+        frame     <- table.frame[U](FrameId(frameName))
+        clockName <- Wire.field[String](json, "clock")
+        clock     <- table.clock(ClockId(clockName))
+        source    <- Wire.omittable[Json](json, "source")
+        fixations <- payload
+          .member("fixations")
+          .flatMap(_.rows("fixations") { (row, _) =>
+            row.json.flatMap(readFixation(_, clock, source.isDefined))
+          })
+        path <- source match
+          case None =>
+            Scanpath
+              .of(frame, clock, IArray.from(fixations))
               .left
-              .map(Wire.at(s"trials.rows[$index]"))
-          )
-      }
-    trials <- rows(table).encode(value.trials).left.map(Wire.at("trials"))
-  yield Json.obj(
-    "layout"     -> Wire.id(layout.id),
-    "keySchema"  -> Wire.id(keys.schema),
-    "unit"       -> Json.fromString(unit.symbol),
-    "input"      -> Json.fromString(value.reference.digest),
-    "identities" -> table.json,
-    "trials"     -> trials
-  )
-
-  private def readInput(json: Json): Either[CodecError, StudyInput[K, U]] = for
-    _      <- Wire.requireId(json, "layout", layout.id)
-    _      <- Wire.requireId(json, "keySchema", keys.schema)
-    symbol <- Wire.field[String](json, "unit")
-    _      <- Either.cond(
-      symbol == unit.symbol,
-      (),
-      CodecError.Field("unit", json, s"expected ${unit.symbol}, got $symbol")
-    )
-    declared <- Wire.field[String](json, "input")
-    _     <- ArtifactRef.parse[StudyInput[K, U]](declared).left.map(CodecError.Definition.apply)
-    table <- Wire.field[Json](json, "identities").flatMap(DocumentIdentities.read)
-    trials <- Wire
-      .field[Json](json, "trials")
-      .flatMap(rows(table).decode)
-      .left
-      .map(Wire.at("trials"))
-    value = StudyInput(trials)
-    _ <- Either.cond(
-      value.reference.digest == declared,
-      (),
-      CodecError.InputIdentity(declared, value.reference.digest)
-    )
-  yield value
+              .map(e => CodecError.Field("fixations", json, e.message))
+          case Some(body) =>
+            readSourceSupported(body, table, frame, clock, fixations).left.map(
+              Wire.at("source")
+            )
+      yield path
 
   private[codec] def scanpaths(table: DocumentIdentities): VersionedCodec[Scanpath[U]] =
-    VersionedCodec.checked[Scanpath[U]](StudyInputCodecs.scanpath)(path =>
-      for
-        fixations <- path.fixations.toVector.zipWithIndex
-          .traverse { case (f, index) =>
-            fixation(f, path.source.isDefined).left.map(Wire.at(s"fixations[$index]"))
-          }
-        source <- (path.source, path.sourceRecording, path.sampleSupport) match
+    VersionedCodec.described[Scanpath[U]](StudyInputCodecs.scanpath)(path =>
+      for source <- (path.source, path.sourceRecording, path.sampleSupport) match
           case (Some(ref), Some(recording), Some(support)) =>
             RecordingInputWire
               .writeRecording(recording)
@@ -221,12 +288,17 @@ final class StudyInputCodec[K, U <: Unit2D](
               .left
               .map(Wire.at("source"))
           case _ => Right(None)
-      yield Json.fromFields(
+      yield CanonicalDoc.obj(
         Vector(
-          "frame"     -> Json.fromString(path.frame.id.name),
-          "clock"     -> Json.fromString(path.clock.name),
-          "fixations" -> Json.arr(fixations*)
-        ) ++ source.map("source" -> _)
+          "frame"     -> CanonicalDoc.Leaf(Json.fromString(path.frame.id.name)),
+          "clock"     -> CanonicalDoc.Leaf(Json.fromString(path.clock.name)),
+          "fixations" -> CanonicalDoc.items(path.fixations.toVector) { (f, index) =>
+            fixation(f, path.source.isDefined)
+              .map(CanonicalDoc.Leaf(_))
+              .left
+              .map(Wire.at(s"fixations[$index]"))
+          }
+        ).concat(source.map(j => "source" -> CanonicalDoc.Leaf(j)))*
       )
     ) { json =>
       for
@@ -440,129 +512,211 @@ final class StudyInputCodec[K, U <: Unit2D](
           yield result
     yield fixation
 
-  private def writeLedger(ledger: AdmissionLedger[K]): Either[CodecError, Json] =
-    ledger.records.zipWithIndex
-      .traverse { case (SourceRecord(number, disposition), index) =>
-        (disposition match
-          case Disposition.Admitted(key, ordinal) =>
-            keys
-              .encode(key)
-              .map(k =>
-                Json.obj(
-                  "record"  -> Json.fromInt(number),
-                  "kind"    -> Json.fromString("admitted"),
-                  "key"     -> k,
-                  "ordinal" -> Json.fromInt(ordinal)
-                )
-              )
-          case Disposition.Rejected(raw, key, reason) =>
-            key
-              .traverse(keys.encode)
-              .map(k =>
-                Json.obj(
-                  "record" -> Json.fromInt(number),
-                  "kind"   -> Json.fromString("rejected"),
-                  "raw"    -> Json.arr(raw.map(Json.fromString)*),
-                  "key"    -> k.getOrElse(Json.Null),
-                  "reason" -> StudyInputCodec.reason(reason)
-                )
-              )
-        ).left.map(Wire.at(s"records[$index]"))
-      }
-      .map(records =>
-        Json.obj(
-          "keySchema" -> Wire.id(keys.schema),
-          "source"    -> (if ledger.version >= 4 then SourceIdentityCodec.write(ledger.source)
-                       else SourceIdentityCodec.ledgerSource(ledger.source)),
-          "header"  -> Json.arr(ledger.header.map(Json.fromString)*),
-          "outcome" -> Json.fromString(StudyInputCodec.outcomes.toMap.apply(ledger.outcome)),
-          "records" -> Json.arr(records*)
+  private def ledgerMembers(
+      value: AdmissionLedger[K]
+  ): Either[CodecError, Vector[(String, CanonicalDoc)]] =
+    StudyInputCodec.outcomes
+      .collectFirst { case (o, n) if o == value.outcome => n }
+      .toRight(CodecError.Unsupported("admission outcome", s"unknown outcome ${value.outcome}"))
+      .map { outcome =>
+        Vector(
+          "keySchema" -> CanonicalDoc.Leaf(Wire.id(keys.schema)),
+          "source"    -> CanonicalDoc.Leaf(if value.version >= 4 then
+            SourceIdentityCodec.write(value.source)
+          else SourceIdentityCodec.ledgerSource(value.source)),
+          "header"  -> CanonicalDoc.Leaf(Json.arr(value.header.map(Json.fromString)*)),
+          "outcome" -> CanonicalDoc.Leaf(Json.fromString(outcome)),
+          "records" -> CanonicalDoc.items(value.records) { (record, index) =>
+            writeRecord(record).map(CanonicalDoc.Leaf(_)).left.map(Wire.at(s"records[$index]"))
+          }
         )
-      )
-
-  private def writePolicy(ledger: AdmissionLedger[K]): Either[CodecError, Json] =
-    ledger.policy.corrections.zipWithIndex
-      .traverse { case (rule, index) =>
-        val scope = rule.scope match
-          case CorrectionScope.AllTrials() =>
-            Right(Json.obj("kind" -> Json.fromString("allTrials")))
-          case CorrectionScope.Participant(p) =>
-            Right(
-              Json.obj(
-                "kind"        -> Json.fromString("participant"),
-                "participant" -> Json.fromString(p)
-              )
-            )
-          case CorrectionScope.Trial(key) =>
-            keys
-              .encode(key)
-              .map(k => Json.obj("kind" -> Json.fromString("trial"), "key" -> k))
-        scope
-          .map(s =>
-            Json.obj("scope" -> s, "correction" -> StudyInputCodec.correction(rule.correction))
-          )
-          .left
-          .map(Wire.at(s"corrections[$index]"))
       }
-      .map(rules =>
-        Json.obj(
-          "offScreen" -> Json.fromString(
-            StudyInputCodec.offScreenPolicies.toMap.apply(ledger.policy.offScreen)
-          ),
-          "corrections"  -> Json.arr(rules*),
-          "outsideFrame" -> Json.arr(ledger.outsideFrame.map { entry =>
+
+  private def writeRecord(entry: SourceRecord[K]): Either[CodecError, Json] =
+    entry.disposition match
+      case Disposition.Admitted(key, ordinal) =>
+        keys
+          .encode(key)
+          .map(k =>
+            Json.obj(
+              "record"  -> Json.fromInt(entry.record),
+              "kind"    -> Json.fromString("admitted"),
+              "key"     -> k,
+              "ordinal" -> Json.fromInt(ordinal)
+            )
+          )
+      case Disposition.Rejected(raw, key, reason) =>
+        key
+          .traverse(keys.encode)
+          .map(k =>
             Json.obj(
               "record" -> Json.fromInt(entry.record),
-              "x"      -> Json.fromDoubleOrNull(entry.x),
-              "y"      -> Json.fromDoubleOrNull(entry.y),
-              "frame"  -> Json.fromString(entry.frame.name)
+              "kind"   -> Json.fromString("rejected"),
+              "raw"    -> Json.arr(raw.map(Json.fromString)*),
+              "key"    -> k.getOrElse(Json.Null),
+              "reason" -> StudyInputCodec.reason(reason)
             )
-          }*)
-        )
+          )
+
+  private def writeLedger(value: AdmissionLedger[K]): Either[CodecError, Json] =
+    ledgerMembers(value).flatMap(m => CanonicalDoc.obj(m*).json)
+
+  private def policyMembers(
+      value: AdmissionLedger[K]
+  ): Either[CodecError, Vector[(String, CanonicalDoc)]] =
+    StudyInputCodec.offScreenPolicies
+      .collectFirst { case (p, n) if p == value.policy.offScreen => n }
+      .toRight(
+        CodecError.Unsupported("off-screen policy", s"unknown policy ${value.policy.offScreen}")
       )
+      .map { name =>
+        Vector(
+          "offScreen"   -> CanonicalDoc.Leaf(Json.fromString(name)),
+          "corrections" -> CanonicalDoc.items(value.policy.corrections) { (rule, index) =>
+            val scope = rule.scope match
+              case CorrectionScope.AllTrials() =>
+                Right(Json.obj("kind" -> Json.fromString("allTrials")))
+              case CorrectionScope.Participant(p) =>
+                Right(
+                  Json.obj(
+                    "kind"        -> Json.fromString("participant"),
+                    "participant" -> Json.fromString(p)
+                  )
+                )
+              case CorrectionScope.Trial(key) =>
+                keys
+                  .encode(key)
+                  .map(k => Json.obj("kind" -> Json.fromString("trial"), "key" -> k))
+            scope
+              .map(s =>
+                CanonicalDoc.Leaf(
+                  Json.obj(
+                    "scope"      -> s,
+                    "correction" -> StudyInputCodec.correction(rule.correction)
+                  )
+                )
+              )
+              .left
+              .map(Wire.at(s"corrections[$index]"))
+          },
+          "outsideFrame" -> CanonicalDoc.items(value.outsideFrame) { (entry, _) =>
+            Right(
+              CanonicalDoc.Leaf(
+                Json.obj(
+                  "record" -> Json.fromInt(entry.record),
+                  "x"      -> Json.fromDoubleOrNull(entry.x),
+                  "y"      -> Json.fromDoubleOrNull(entry.y),
+                  "frame"  -> Json.fromString(entry.frame.name)
+                )
+              )
+            )
+          }
+        )
+      }
+
+  private def writePolicy(value: AdmissionLedger[K]): Either[CodecError, Json] =
+    policyMembers(value).flatMap(m => CanonicalDoc.obj(m*).json)
+
+  private[codec] def ledgerDocument(
+      value: AdmissionLedger[K]
+  ): Either[CodecError, CanonicalDoc] = for
+    base      <- ledgerMembers(value)
+    policy    <- if value.version >= 2 then policyMembers(value) else Right(Vector.empty)
+    inventory <-
+      if value.version < 3 then Right(Vector.empty[(String, CanonicalDoc)])
+      else
+        value.inventory.fold[Either[CodecError, Vector[(String, CanonicalDoc)]]](
+          Right(Vector("inventory" -> CanonicalDoc.Leaf(Json.Null)))
+        )(i =>
+          trialIdentity
+            .toRight(noTrialProjection)
+            .flatMap(_ => InventoryWire.describe(i, declared = value.version >= 4))
+            .map(d => Vector("inventory" -> d))
+            .left
+            .map(Wire.at("inventory"))
+        )
+  yield CanonicalDoc.obj(
+    "schema" -> CanonicalDoc.Leaf(Wire.id(ledgerLadder.earliest(value))),
+    "value"  -> CanonicalDoc.obj((base ++ policy ++ inventory)*)
+  )
 
   private def readPolicy(
-      json: Json
+      document: StructuredValue
   ): Either[CodecError, (AdmissionPolicy[K], Vector[OutsideFrame])] =
     for
+      json   <- document.header(Set("records", "inventory", "corrections", "outsideFrame"))
       name   <- Wire.field[String](json, "offScreen")
       policy <- StudyInputCodec.offScreenPolicies
         .collectFirst { case (p, n) if n == name => p }
         .toRight(CodecError.Field("offScreen", json, s"unknown off-screen policy $name"))
-      rules       <- Wire.field[Vector[Json]](json, "corrections")
-      corrections <- rules.zipWithIndex.traverse { case (rule, index) =>
-        (for
-          scope  <- Wire.field[Json](rule, "scope")
-          kind   <- Wire.field[String](scope, "kind")
-          scoped <- kind match
-            case "allTrials"   => Right(CorrectionScope.AllTrials[K]())
-            case "participant" =>
-              Wire.field[String](scope, "participant").map(CorrectionScope.Participant[K](_))
-            case "trial" =>
-              Wire.field[Json](scope, "key").flatMap(keys.decode).map(CorrectionScope.Trial(_))
-            case other =>
-              Left(CodecError.Field("kind", scope, s"unknown correction scope $other"))
-          correction <- Wire
-            .field[Json](rule, "correction")
-            .flatMap(StudyInputCodec.readCorrection)
-        yield AppliedCorrection(scoped, correction)).left.map(Wire.at(s"corrections[$index]"))
-      }
-      entries      <- Wire.field[Vector[Json]](json, "outsideFrame")
-      outsideFrame <- entries.zipWithIndex.traverse { case (entry, index) =>
-        (for
-          record <- Wire.field[Int](entry, "record")
-          x      <- DomainWire.finite(entry, "x")
-          y      <- DomainWire.finite(entry, "y")
-          frame  <- Wire.field[String](entry, "frame")
-        yield OutsideFrame(record, x, y, FrameId(frame))).left
-          .map(Wire.at(s"outsideFrame[$index]"))
-      }
+      corrections <- document
+        .member("corrections")
+        .flatMap(_.rows("corrections") { (entry, _) =>
+          entry.json.flatMap { rule =>
+            for
+              scope  <- Wire.field[Json](rule, "scope")
+              kind   <- Wire.field[String](scope, "kind")
+              scoped <- kind match
+                case "allTrials"   => Right(CorrectionScope.AllTrials[K]())
+                case "participant" =>
+                  Wire
+                    .field[String](scope, "participant")
+                    .map(CorrectionScope.Participant[K](_))
+                case "trial" =>
+                  Wire
+                    .field[Json](scope, "key")
+                    .flatMap(keys.decode)
+                    .map(CorrectionScope.Trial(_))
+                case other =>
+                  Left(CodecError.Field("kind", scope, s"unknown correction scope $other"))
+              correction <- Wire
+                .field[Json](rule, "correction")
+                .flatMap(StudyInputCodec.readCorrection)
+            yield AppliedCorrection(scoped, correction)
+          }
+        })
+      outsideFrame <- document
+        .member("outsideFrame")
+        .flatMap(_.rows("outsideFrame") { (row, _) =>
+          row.json.flatMap { entry =>
+            for
+              record <- Wire.field[Int](entry, "record")
+              x      <- DomainWire.finite(entry, "x")
+              y      <- DomainWire.finite(entry, "y")
+              frame  <- Wire.field[String](entry, "frame")
+            yield OutsideFrame(record, x, y, FrameId(frame))
+          }
+        })
     yield AdmissionPolicy(policy, corrections) -> outsideFrame
 
   private def readLedger(
       json: Json,
       version: Int
+  ): Either[CodecError, AdmissionLedger[K]] =
+    readLedgerValue(StructuredValue(CanonicalDoc.Leaf(json)), version)
+
+  private[codec] def readLedgerDocument(
+      document: CanonicalDoc
+  ): Either[CodecError, AdmissionLedger[K]] =
+    val root = StructuredValue(document)
+    for
+      header <- root.header(Set("value"))
+      found  <- Wire.definition(header, "schema")
+      index = ledger.schemas.indexOf(found)
+      _ <- Either.cond(
+        index >= 0,
+        (),
+        CodecError.UnsupportedSchema("admission ledger", found, ledger.schemas)
+      )
+      payload <- root.member("value")
+      value   <- readLedgerValue(payload, index + 1)
+    yield value
+
+  private def readLedgerValue(
+      document: StructuredValue,
+      version: Int
   ): Either[CodecError, AdmissionLedger[K]] = for
+    json   <- document.header(Set("records", "inventory", "corrections", "outsideFrame"))
     _      <- Wire.requireId(json, "keySchema", keys.schema)
     source <- Wire.field[Json](json, "source")
     label  <- Wire.field[String](source, "label")
@@ -580,14 +734,15 @@ final class StudyInputCodec[K, U <: Unit2D](
       .toRight(CodecError.Field("outcome", json, s"unknown admission outcome $name"))
     // A version-3 ledger lifted without an inventory speaks version 2's vocabulary.
     inventoryJson <-
-      if version >= 3 then Wire.field[Json](json, "inventory").map(Some(_)) else Right(None)
+      if version >= 3 then document.member("inventory").map(Some(_)) else Right(None)
     vocabulary = if inventoryJson.exists(_.isNull) then 2 else version
-    entries <- Wire.field[Vector[Json]](json, "records")
-    records <- entries.zipWithIndex.traverse { case (entry, index) =>
-      readRecord(entry, vocabulary).left.map(Wire.at(s"records[$index]"))
-    }
+    records <- document
+      .member("records")
+      .flatMap(_.rows("records") { (entry, _) =>
+        entry.json.flatMap(readRecord(_, vocabulary))
+      })
     admission <-
-      if version >= 2 then readPolicy(json)
+      if version >= 2 then readPolicy(document)
       else Right(AdmissionPolicy.version1[K] -> Vector.empty[OutsideFrame])
     ledger <-
       if version < 3 then
@@ -597,7 +752,7 @@ final class StudyInputCodec[K, U <: Unit2D](
           .map(CodecError.Admission.apply)
       else
         // A version-3 ledger states its inventory; `null` is a lifted ledger without one.
-        Wire.field[Json](json, "inventory").flatMap { body =>
+        document.member("inventory").flatMap { body =>
           if body.isNull then
             AdmissionLedger
               .of(sourceRef, header, records, outcome, admission._1, admission._2)
@@ -607,7 +762,7 @@ final class StudyInputCodec[K, U <: Unit2D](
             for
               project   <- trialIdentity.toRight(noTrialProjection)
               inventory <- InventoryWire
-                .read(body, allowDeclared = version >= 4)
+                .readDocument(body.document, allowDeclared = version >= 4)
                 .left
                 .map(Wire.at("inventory"))
               joined <- AdmissionLedger

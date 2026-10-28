@@ -172,13 +172,21 @@ object NativeArtifactPackage:
         graph.entries.flatMap(_.layout).foldLeft(BigInt(0))((n, layout) => n + layout.count),
         BigInt(budget.maxDensityCells)
       )
+      compactLimits <- layout("compact limits")(
+        CompactArtifactLimits.of(budget.maxRows, budget.maxTotalBytes)
+      )
       structuralRows <- graph.entries
-        .filter(_.media == MediaKind.JsonText)
+        .filter(e => e.media == MediaKind.JsonText || e.media == MediaKind.ColumnarJson)
         .foldLeft[Either[NativeArtifactError, BigInt]](Right(BigInt(0))) { (total, entry) =>
           total.flatMap(n =>
-            need(entry.name)
-              .flatMap(decoded(entry.name.value, _))
-              .map(doc => n + fieldRows(doc))
+            need(entry.name).flatMap { bytes =>
+              if entry.media == MediaKind.JsonText then
+                decoded(entry.name.value, bytes).map(doc => n + fieldRows(doc))
+              else
+                layout("compact structural records")(
+                  CompactArtifacts.inspect(NativeArtifactBytes.view(bytes), compactLimits)
+                ).map(stats => n + BigInt(stats.structuralRecords))
+            }
           )
         }
       _ <- limit(
@@ -193,7 +201,7 @@ object NativeArtifactPackage:
       )
       decoders <- layout("native decoders")(ArtifactDecoders.trial[Px])
       resolved <- ArtifactResolver
-        .resolveOwned(address, source, decoders)
+        .resolveOwned(address, source, decoders, compactLimits)
         .leftMap(errors =>
           NativeArtifactError
             .Package(facts.run, "resolve", errors.toVector.map(_.message).mkString("; "))
@@ -243,10 +251,9 @@ object NativeArtifactPackage:
           "This native package exports plain retained results, not stamped archives."
         )
       )
-      resultPayload <- layout("stored result metadata")(result.reconstructionMetadata)
-      nativeResult  <- layout("native result reconstruction")(
-        nativeResults.restoreDensities(
-          resultPayload,
+      nativeResult <- layout("native result reconstruction")(
+        result.reconstructWith(
+          nativeResults,
           result.result.scales.map(_.estimation.map(_._2.toOption))
         )
       )

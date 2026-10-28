@@ -33,7 +33,8 @@ private[codec] object ColumnarDocument:
       references: Int,
       textUnits: Int,
       expandedNodes: Long,
-      depth: Int
+      depth: Int,
+      arrayItems: Int = Int.MaxValue
   )
 
   final case class Statistics(
@@ -88,7 +89,7 @@ private[codec] object ColumnarDocument:
 
   private def valid[A](limits: Limits)(using Label[Either[CodecError, A]]): Unit =
     if limits.bytes < Magic.size || limits.nodes < 1 || limits.references < 0 ||
-      limits.textUnits < 0 || limits.expandedNodes < 1 || limits.depth < 1
+      limits.textUnits < 0 || limits.expandedNodes < 1 || limits.depth < 1 || limits.arrayItems < 0
     then fail(s"invalid limits $limits")
 
   /** Check all resource and graph bounds before exposing an immutable view. */
@@ -110,7 +111,10 @@ private[codec] object ColumnarDocument:
     }
     nodes.zipWithIndex.foreach { (node, index) =>
       val children = node match
-        case Node.Arr(items)     => items
+        case Node.Arr(items) =>
+          if items.size > limits.arrayItems then
+            fail(s"array at node $index exceeds ${limits.arrayItems} items")
+          items
         case Node.Obj(s, values) =>
           if s < 0 || s >= shapes.size || values.size != shapes(s).size then
             fail(s"node $index has invalid shape $s or column count ${values.size}")
@@ -234,8 +238,11 @@ private[codec] object ColumnarDocument:
         case CanonicalDoc.Obj(members)    => visitObject(members.toVector, depth)
 
     def visitArray(size: Int, item: Int => Either[CodecError, CanonicalDoc], depth: Int): Int =
-      if size < 0 || size.toLong > limits.references || size.toLong > limits.expandedNodes - visited
-      then fail(s"array length $size exceeds remaining traversal or reference limit")
+      if size < 0 || size > limits.arrayItems || size.toLong > limits.references || size.toLong > limits.expandedNodes - visited
+      then
+        fail(
+          s"array length $size exceeds item limit ${limits.arrayItems}, remaining traversal or reference limit"
+        )
       intern(Node.Arr(Vector.tabulate(size)(i => visit(take(item(i)), depth + 1))))
 
     def visitObject(members: Vector[(String, CanonicalDoc)], depth: Int): Int =
@@ -441,7 +448,7 @@ private[codec] object ColumnarDocument:
           else fail(s"number sign cannot be preserved for $token at byte $offset")
         Node.Number(token, sign == 1, value)
       case 4 => Node.Text(text())
-      case 5 => Node.Arr(refs(count(limits.references, "array")))
+      case 5 => Node.Arr(refs(count(math.min(limits.references, limits.arrayItems), "array")))
       case t => Node.Obj(t - 6, Vector.empty)
     }.toArray
     val grouped = Array.fill(shapes.size)(mutable.ArrayBuffer.empty[Int])

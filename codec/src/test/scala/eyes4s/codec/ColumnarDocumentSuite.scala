@@ -233,6 +233,32 @@ class ColumnarDocumentSuite extends munit.FunSuite:
     probes.foreach(p => assert(ColumnarDocument.decode(bytes(p*), limits).isLeft, s"$p"))
   }
 
+  test("array item bounds apply before construction and decoding") {
+    val source    = CanonicalDoc.Leaf(Json.arr(Json.True, Json.False, Json.Null))
+    val (wire, _) = round(source)
+    assert(ColumnarDocument.build(source, limits.copy(arrayItems = 2)).isLeft)
+    assert(ColumnarDocument.decode(wire, limits.copy(arrayItems = 2)).isLeft)
+  }
+
+  test("small-field materialization bounds never produce an oversized array item") {
+    var called = false
+    val rows   = CanonicalDoc.Arr(
+      Int.MaxValue,
+      _ => {
+        called = true
+        Right(CanonicalDoc.Leaf(Json.True))
+      }
+    )
+    val value = StructuredValue(
+      CanonicalDoc.obj("label" -> CanonicalDoc.Leaf(Json.fromString("safe")), "rows" -> rows)
+    )
+    assertEquals(get(value.header(Set("rows"))), Json.obj("label" -> Json.fromString("safe")))
+    assert(get(value.member("rows")).json.isLeft)
+    assert(!called)
+    assert(rows.boundedJson(10, "bounded test").isLeft)
+    assert(!called)
+  }
+
   test("unused dictionary records are refused rather than silently ignored") {
     assert(ColumnarDocument.decode(bytes(69, 52, 67, 68, 1, 2, 0, 0, 1), limits).isLeft)
     // An empty object shape followed by an unrelated null root.

@@ -130,6 +130,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       InputsManifestV1Fixtures.timelineCodec
     ),
     Pinned("manifest-v1", ManifestV1Fixtures.manifestVersionOne, ScientificManifest.codec),
+    Pinned("manifest-v2", CompactManifestFixtures.manifestVersionTwo, ScientificManifest.codec),
     Pinned(
       "manifest-inputs-v1",
       InputsManifestV1Fixtures.manifestInputsVersionOne,
@@ -216,6 +217,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.import-spec@1",
         "eyes4s.inventory-import-spec@1",
         "eyes4s.manifest@1",
+        "eyes4s.manifest@2",
         "eyes4s.measure-distance@1",
         "eyes4s.recording-input@1",
         "eyes4s.recording-plan@1",
@@ -282,7 +284,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     "text"   -> Json.fromString("not an eyes4s member")
   )
 
-  test("every pinned v1 document decodes and re-encodes to its pinned JSON value") {
+  test("every pinned document decodes and re-encodes to its pinned JSON value") {
     pinned.foreach { p =>
       assertEquals(p.reencoded(p.json), Right(p.json), p.label)
     }
@@ -297,6 +299,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         if p.codec.schemas.size > 1 then
           val role =
             if p.codec.schema.name == DefinitionId.study.name then "study plan"
+            else if p.codec.schema.name == DefinitionId.manifest.name then "scientific manifest"
             else "admission ledger"
           CodecError.UnsupportedSchema(role, id(p.codec.schema.name, next), p.codec.schemas)
         else CodecError.Schema(p.codec.schema, id(p.codec.schema.name, next))
@@ -571,21 +574,25 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
 
   test("the resolver refuses an unknown manifest version and an unknown artifact version") {
     val decoders = get(ArtifactDecoders.study[Px])
-    // A manifest@2 document stored under its own address.
-    val manifest2 = utf8(
+    // The first unsupported manifest version, stored under its own address.
+    val unknownManifest = utf8(
       withSchema(
         parse(ManifestV1Fixtures.manifestVersionOne),
         "eyes4s.manifest",
-        Json.fromInt(2)
+        Json.fromInt(ScientificManifest.codec.schema.version + 1)
       ).spaces2
     )
-    val address2 = ByteDigest.sha256(manifest2)
+    val unknownAddress = ByteDigest.sha256(unknownManifest)
     assertEquals(
-      ArtifactResolver.manifest(address2, ByteSource(_ => Right(manifest2))),
+      ArtifactResolver.manifest(unknownAddress, ByteSource(_ => Right(unknownManifest))),
       Left(
         ResolveError.ManifestDecode(
-          address2,
-          CodecError.Schema(DefinitionId.manifest, id(DefinitionId.manifest.name, 2))
+          unknownAddress,
+          CodecError.UnsupportedSchema(
+            "scientific manifest",
+            id(DefinitionId.manifest.name, ScientificManifest.codec.schema.version + 1),
+            ScientificManifest.codec.schemas
+          )
         )
       )
     )

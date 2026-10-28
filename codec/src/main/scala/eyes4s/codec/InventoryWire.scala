@@ -34,40 +34,58 @@ object InventoryDefinitions:
   */
 private[codec] object InventoryWire:
   def write(value: InventoryLedger, declared: Boolean = false): Either[CodecError, Json] =
+    describe(value, declared).flatMap(_.json)
+
+  def describe(
+      value: InventoryLedger,
+      declared: Boolean = false
+  ): Either[CodecError, CanonicalDoc] =
     Right(
-      Json.obj(
-        "source" -> (if declared then SourceIdentityCodec.write(value.source)
-                     else SourceIdentityCodec.ledgerSource(value.source)),
-        "header"           -> Json.arr(value.header.map(Json.fromString)*),
-        "attributeColumns" -> columns(value.attributeColumns),
-        "trials"           -> Json.arr(value.trials.map { t =>
-          Json.fromFields(
-            identity(t.identity) ++ Vector(
-              "rows"          -> ints(t.rows),
-              "inventoryItem" -> t.inventoryItem.fold(Json.Null)(Json.fromString),
-              "attributes"    -> attributes(t.attributes),
-              "recordItems"   -> Json.arr(t.recordItems.map(Json.fromString)*),
-              "records"       -> ints(t.records),
-              "disposition"   -> disposition(t.disposition)
+      CanonicalDoc.obj(
+        "source" -> CanonicalDoc.Leaf(if declared then SourceIdentityCodec.write(value.source)
+        else SourceIdentityCodec.ledgerSource(value.source)),
+        "header"           -> CanonicalDoc.Leaf(Json.arr(value.header.map(Json.fromString)*)),
+        "attributeColumns" -> CanonicalDoc.Leaf(columns(value.attributeColumns)),
+        "trials"           -> CanonicalDoc.items(value.trials) { (t, _) =>
+          Right(
+            CanonicalDoc.Leaf(
+              Json.fromFields(
+                identity(t.identity) ++ Vector(
+                  "rows"          -> ints(t.rows),
+                  "inventoryItem" -> t.inventoryItem.fold(Json.Null)(Json.fromString),
+                  "attributes"    -> attributes(t.attributes),
+                  "recordItems"   -> Json.arr(t.recordItems.map(Json.fromString)*),
+                  "records"       -> ints(t.records),
+                  "disposition"   -> disposition(t.disposition)
+                )
+              )
             )
           )
-        }*),
-        "unlisted" -> Json.arr(value.unlisted.map { u =>
-          Json.fromFields(
-            identity(u.identity) ++ Vector(
-              "recordItems" -> Json.arr(u.recordItems.map(Json.fromString)*),
-              "records"     -> ints(u.records)
+        },
+        "unlisted" -> CanonicalDoc.items(value.unlisted) { (u, _) =>
+          Right(
+            CanonicalDoc.Leaf(
+              Json.fromFields(
+                identity(u.identity) ++ Vector(
+                  "recordItems" -> Json.arr(u.recordItems.map(Json.fromString)*),
+                  "records"     -> ints(u.records)
+                )
+              )
             )
           )
-        }*),
-        "recordAttributeColumns" -> columns(value.recordAttributeColumns),
-        "recordAttributes"       -> Json.arr(value.recordAttributes.map { entry =>
-          Json.obj(
-            "record"     -> Json.fromInt(entry.record),
-            "attributes" -> attributes(entry.attributes)
+        },
+        "recordAttributeColumns" -> CanonicalDoc.Leaf(columns(value.recordAttributeColumns)),
+        "recordAttributes"       -> CanonicalDoc.items(value.recordAttributes) { (entry, _) =>
+          Right(
+            CanonicalDoc.Leaf(
+              Json.obj(
+                "record"     -> Json.fromInt(entry.record),
+                "attributes" -> attributes(entry.attributes)
+              )
+            )
           )
-        }*),
-        "sampleCounts" -> (value.sampleCounts match
+        },
+        "sampleCounts" -> CanonicalDoc.Leaf(value.sampleCounts match
           case SampleCountRule.PositiveColumn(column) =>
             Json.obj(
               "kind"   -> Json.fromString("positiveColumn"),
@@ -88,7 +106,15 @@ private[codec] object InventoryWire:
     * inventory meets the same invariants as the importer's.
     */
   def read(json: Json, allowDeclared: Boolean = false): Either[CodecError, InventoryLedger] =
+    readDocument(CanonicalDoc.Leaf(json), allowDeclared)
+
+  def readDocument(
+      document: CanonicalDoc,
+      allowDeclared: Boolean = false
+  ): Either[CodecError, InventoryLedger] =
+    val value = StructuredValue(document)
     for
+      json   <- value.header(Set("trials", "unlisted", "recordAttributes"))
       source <- Wire.field[Json](json, "source")
       label  <- Wire.field[String](source, "label")
       digest <- Wire.field[String](source, "records")
@@ -100,40 +126,16 @@ private[codec] object InventoryWire:
         if allowDeclared then SourceIdentityCodec.read(source) else Right(SourceRef(label, ref))
       header   <- Wire.field[Vector[String]](json, "header")
       declared <- Wire.field[Json](json, "attributeColumns").flatMap(readColumns)
-      entries  <- Wire.field[Vector[Json]](json, "trials")
-      trials   <- entries.zipWithIndex.traverse { (entry, index) =>
-        (for
-          id            <- readIdentity(entry)
-          rows          <- Wire.field[Vector[Int]](entry, "rows")
-          inventoryItem <- Wire.field[Option[String]](entry, "inventoryItem")
-          values        <- Wire.field[Json](entry, "attributes").flatMap(readAttributes)
-          recordItems   <- Wire.field[Vector[String]](entry, "recordItems")
-          records       <- Wire.field[Vector[Int]](entry, "records")
-          outcome       <- Wire.field[Json](entry, "disposition").flatMap(readDisposition)
-          trial         <- InventoryTrial
-            .of(id, rows, inventoryItem, values, recordItems, records, outcome)
-            .left
-            .map(refused)
-        yield trial).left.map(Wire.at(s"trials[$index]"))
-      }
-      others   <- Wire.field[Vector[Json]](json, "unlisted")
-      unlisted <- others.zipWithIndex.traverse { (entry, index) =>
-        (for
-          id          <- readIdentity(entry)
-          recordItems <- Wire.field[Vector[String]](entry, "recordItems")
-          records     <- Wire.field[Vector[Int]](entry, "records")
-          trial       <- UnlistedTrial.of(id, recordItems, records).left.map(refused)
-        yield trial).left.map(Wire.at(s"unlisted[$index]"))
-      }
+      trials   <- value
+        .member("trials")
+        .flatMap(_.rows("trials")((row, _) => row.json.flatMap(readTrial)))
+      unlisted <- value
+        .member("unlisted")
+        .flatMap(_.rows("unlisted")((row, _) => row.json.flatMap(readUnlisted)))
       recordDeclared   <- Wire.field[Json](json, "recordAttributeColumns").flatMap(readColumns)
-      listed           <- Wire.field[Vector[Json]](json, "recordAttributes")
-      recordAttributes <- listed.zipWithIndex.traverse { (entry, index) =>
-        (for
-          record <- Wire.field[Int](entry, "record")
-          values <- Wire.field[Json](entry, "attributes").flatMap(readAttributes)
-          value  <- RecordAttributes.of(record, values).left.map(refused)
-        yield value).left.map(Wire.at(s"recordAttributes[$index]"))
-      }
+      recordAttributes <- value
+        .member("recordAttributes")
+        .flatMap(_.rows("recordAttributes")((row, _) => row.json.flatMap(readRecordAttributes)))
       counts <- Wire.field[Json](json, "sampleCounts").flatMap(readSampleCounts)
       ledger <- InventoryLedger
         .of(
@@ -149,6 +151,33 @@ private[codec] object InventoryWire:
         .left
         .map(refused)
     yield ledger
+
+  private def readTrial(entry: Json): Either[CodecError, InventoryTrial] = for
+    id            <- readIdentity(entry)
+    rows          <- Wire.field[Vector[Int]](entry, "rows")
+    inventoryItem <- Wire.field[Option[String]](entry, "inventoryItem")
+    values        <- Wire.field[Json](entry, "attributes").flatMap(readAttributes)
+    recordItems   <- Wire.field[Vector[String]](entry, "recordItems")
+    records       <- Wire.field[Vector[Int]](entry, "records")
+    outcome       <- Wire.field[Json](entry, "disposition").flatMap(readDisposition)
+    trial         <- InventoryTrial
+      .of(id, rows, inventoryItem, values, recordItems, records, outcome)
+      .left
+      .map(refused)
+  yield trial
+
+  private def readUnlisted(entry: Json): Either[CodecError, UnlistedTrial] = for
+    id          <- readIdentity(entry)
+    recordItems <- Wire.field[Vector[String]](entry, "recordItems")
+    records     <- Wire.field[Vector[Int]](entry, "records")
+    trial       <- UnlistedTrial.of(id, recordItems, records).left.map(refused)
+  yield trial
+
+  private def readRecordAttributes(entry: Json): Either[CodecError, RecordAttributes] = for
+    record <- Wire.field[Int](entry, "record")
+    values <- Wire.field[Json](entry, "attributes").flatMap(readAttributes)
+    value  <- RecordAttributes.of(record, values).left.map(refused)
+  yield value
 
   private val kinds: Vector[(AttributeKind, String)] = Vector(
     AttributeKind.Text    -> "text",

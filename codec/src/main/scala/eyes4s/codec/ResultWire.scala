@@ -141,6 +141,31 @@ private[codec] object ResultWire:
         readParam(entry).left.map(Wire.at(s"$field[$index]"))
       })
 
+  def describeFields(fields: Vector[(String, Vector[Provenance.Param])]): CanonicalDoc =
+    CanonicalDoc.items(fields) { case ((name, values), _) =>
+      Right(
+        CanonicalDoc.obj(
+          "field"  -> CanonicalDoc.Leaf(Json.fromString(name)),
+          "values" -> CanonicalDoc.items(values)((value, _) =>
+            Right(CanonicalDoc.Leaf(param(value)))
+          )
+        )
+      )
+    }
+
+  def readFields(
+      value: StructuredValue
+  ): Either[CodecError, Vector[(String, Vector[Provenance.Param])]] =
+    value
+      .member("description")
+      .flatMap(_.rows("description") { (field, _) =>
+        for
+          name   <- field.field[String]("field")
+          items  <- field.member("values")
+          values <- items.rows("values")((item, _) => item.json.flatMap(readParam))
+        yield name -> values
+      })
+
   def provenance(value: Provenance): Json = Json.obj(
     "inputs" -> Json.fromString(value.inputs.render),
     "steps"  -> Json.arr(

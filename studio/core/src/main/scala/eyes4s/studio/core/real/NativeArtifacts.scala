@@ -29,10 +29,29 @@ import java.nio.charset.StandardCharsets.UTF_8
   * invented stamp; bead q-native-stored-completion records the binding seam.
   */
 private[real] object NativeArtifacts:
+  private enum Storage:
+    case LegacyJson, Columnar
+
   def build(
       run: RunId,
       held: RealStudyBackend.RealRun,
       budget: NativeArtifactBudget
+  ): Either[NativeArtifactError, NativeArtifactPackage] =
+    buildIn(run, held, budget, Storage.LegacyJson).left.flatMap {
+      case NativeArtifactError.Budget(_, resource, _, _)
+          if Set("structural rows", "encoded archive lower bound")(resource) =>
+        buildIn(run, held, budget, Storage.Columnar)
+      case NativeArtifactError.UnscopedBudget(resource, _, _)
+          if Set("structural rows", "total bytes")(resource) =>
+        buildIn(run, held, budget, Storage.Columnar)
+      case other => Left(other)
+    }
+
+  private def buildIn(
+      run: RunId,
+      held: RealStudyBackend.RealRun,
+      budget: NativeArtifactBudget,
+      storage: Storage
   ): Either[NativeArtifactError, NativeArtifactPackage] =
     val work       = held.prepared
     val result     = held.result
@@ -66,16 +85,30 @@ private[real] object NativeArtifacts:
         )
       )
       _ <- limit("density cells", cells, BigInt(budget.maxDensityCells))
-      _ <- limit("structural rows", rows, BigInt(budget.maxRows))
+      _ <-
+        if storage == Storage.LegacyJson then
+          limit("structural rows", rows, BigInt(budget.maxRows))
+        else Right(())
       _ <- limit("entries", entries, BigInt(budget.maxEntries))
       // Packed cells alone establish this lower bound before encoding JSON or allocating chunks.
-      _ <- limit("packed density bytes", cells * 8, BigInt(budget.maxTotalBytes))
+      _       <- limit("packed density bytes", cells * 8, BigInt(budget.maxTotalBytes))
+      compact <-
+        if storage == Storage.Columnar then
+          codec("compact limits")(
+            CompactArtifactLimits.of(budget.maxRows, budget.maxTotalBytes)
+          ).map(Some(_))
+        else Right(None)
       p <- codec("plan artifact")(StoredArtifact.plan("plan", work.plans, work.plan))
       i <- codec("input artifact")(
-        StoredArtifact.input("input", work.inputs, work.admitted.input)
+        compact.fold(StoredArtifact.input("input", work.inputs, work.admitted.input))(limits =>
+          StoredArtifact.compactInput("input", work.inputs, work.admitted.input, limits)
+        )
       )
       l <- codec("ledger artifact")(
-        StoredArtifact.ledger("ledger", work.inputs, work.admitted.evidence)
+        compact.fold(StoredArtifact.ledger("ledger", work.inputs, work.admitted.evidence))(
+          limits =>
+            StoredArtifact.compactLedger("ledger", work.inputs, work.admitted.evidence, limits)
+        )
       )
       // These exact retained bytes plus packed cells are a lower bound on the
       // final package. Refuse before result hashing/chunk construction when it
@@ -115,7 +148,9 @@ private[real] object NativeArtifacts:
         Some(definition)
       )
       packed <- codec("packed result artifacts")(
-        ResultManifest.packed("result", work.results, result)
+        compact.fold(ResultManifest.packed("result", work.results, result))(limits =>
+          ResultManifest.compactPacked("result", work.results, result, limits)
+        )
       )
       saved <- codec("manifest")(
         SavedManifest.of(

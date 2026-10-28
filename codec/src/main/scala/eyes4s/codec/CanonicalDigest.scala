@@ -148,6 +148,58 @@ private[codec] enum CanonicalDoc:
         }
         .map(Json.fromValues)
 
+  /** Materialize a small field or row with an explicit allocation/work bound. */
+  def boundedJson(maximum: Int, path: String): Either[CodecError, Json] =
+    scala.util.boundary:
+      var nodes                           = 0L
+      var work                            = 0L
+      def refuse(reason: String): Nothing =
+        scala.util.boundary.break(Left(CodecError.Unsupported(path, reason)))
+      if maximum < 1 then refuse(s"invalid JSON node bound $maximum")
+      def entered(depth: Int): Unit =
+        nodes += 1
+        if nodes > maximum || depth > 128 then
+          refuse(s"materialized JSON exceeds $maximum nodes or depth 128")
+      def check(json: Json, depth: Int): Unit =
+        entered(depth)
+        json.asArray match
+          case Some(items) =>
+            if items.size.toLong > maximum - nodes then
+              refuse(s"array exceeds remaining $maximum-node bound")
+            items.foreach(check(_, depth + 1))
+          case None =>
+            json.asObject.foreach { members =>
+              if members.size.toLong > maximum - nodes then
+                refuse(s"object exceeds remaining $maximum-node bound")
+              members.values.foreach(check(_, depth + 1))
+            }
+      def loop(doc: CanonicalDoc, depth: Int): Json =
+        work += 1
+        if work > maximum.toLong * 2 then
+          refuse(s"description exceeds ${maximum.toLong * 2} work steps")
+        doc match
+          case Deferred(make) => loop(make(), depth)
+          case Leaf(value)    => check(value, depth); value
+          case Obj(members)   =>
+            entered(depth)
+            if members.size.toLong > maximum - nodes then
+              refuse(s"object exceeds remaining $maximum-node bound")
+            Json.fromFields(members.toVector.map((key, value) => key -> loop(value, depth + 1)))
+          case Arr(size, item) =>
+            entered(depth)
+            if size < 0 || size.toLong > maximum - nodes then
+              refuse(s"array length $size exceeds remaining $maximum-node bound")
+            val values = Vector.newBuilder[Json]
+            var i      = 0
+            while i < size do
+              val next = item(i) match
+                case Right(value) => value
+                case Left(error)  => scala.util.boundary.break(Left(error))
+              values += loop(next, depth + 1)
+              i += 1
+            Json.fromValues(values.result())
+      Right(loop(this, 1))
+
   /** The same document, every failure making an item passed through `f`. */
   def mapError(f: CodecError => CodecError): CanonicalDoc = this match
     case leaf: Leaf      => leaf

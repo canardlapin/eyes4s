@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.real
 
-import eyes4s.codec.ByteDigest
+import eyes4s.codec.{ByteDigest, MediaKind}
 import eyes4s.studio.core.artifacts.*
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
@@ -81,6 +81,31 @@ class NativeArtifactPackageSuite extends munit.FunSuite:
       loaded.facts.result.sha256
     )
     assertNotEquals(loaded.manifestAddress, loaded.facts.result.sha256)
+  }
+
+  test("a byte refusal falls back to compact storage and verifies with identical facts") {
+    val oldBytes = exported.files.map(_._2.size.toLong).sum
+    val budget   = get(NativeArtifactBudget.of(maxTotalBytes = oldBytes - 1))
+    val compact  = get(NativeArtifacts.build(run, held, budget))
+    assertEquals(compact.facts, exported.facts)
+    assert(compact.files.map(_._2.size.toLong).sum <= budget.maxTotalBytes)
+    assertEquals(
+      compact.manifest.entry(NativeArtifactPackage.InputName).get.media,
+      MediaKind.ColumnarJson
+    )
+    assertEquals(
+      compact.manifest.entry(NativeArtifactPackage.LedgerName).get.media,
+      MediaKind.ColumnarJson
+    )
+    assertEquals(
+      compact.manifest.entry(NativeArtifactPackage.ResultName).get.media,
+      MediaKind.ColumnarJson
+    )
+    val copy     = compact.files.map((name, data) => name -> data.map(identity))
+    val reopened = get(NativeArtifactPackage.verify(copy, budget))
+    assertEquals(reopened.facts, exported.facts)
+    assertEquals(reopened.archive.index.archive, exported.archive.index.archive)
+    assert(NativeArtifactPackage.verify(exported.files, budget).isLeft)
   }
 
   test("corruption, incomplete closure and substituted canonical facts refuse") {

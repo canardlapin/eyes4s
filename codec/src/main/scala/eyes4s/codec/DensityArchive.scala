@@ -194,13 +194,15 @@ enum DensityError[K]:
   */
 final class StudyResultArchive[K, U <: Unit2D, P, S, D] private[codec] (
     private[codec] val owner: DensityArchiveCodec[K, U, P, S, D],
-    private[codec] val payload: Json,
+    private[codec] val payloadDescription: CanonicalDoc,
     private[codec] val rows: Vector[Vector[(K, Json)]],
     private[codec] val identities: DocumentIdentities,
     val description: Vector[(String, Vector[Provenance.Param])],
     val stampClaim: Option[RunStamp[StudyPlan[K, U, P, S, D], StudyInput[K, U]]],
     private[codec] val original: Boolean
 )(using UnitLabel[U]):
+  private[codec] def payload: Either[CodecError, Json] = payloadDescription.json
+
   /** Verify a saved claim against freshly encoded plan/input documents.
     * None is explicitly legacy/unstamped, never a verified run stamp.
     */
@@ -237,7 +239,7 @@ final class StudyResultArchive[K, U <: Unit2D, P, S, D] private[codec] (
       }
       .flatMap { outcomes =>
         owner.result
-          .restoreDensities(payload, outcomes)
+          .restoreDensitiesDocument(payloadDescription, outcomes)
           .left
           .map(DensityError.Materialize(_))
       }
@@ -426,14 +428,11 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
   val ladder: SchemaLadder[StudyResultArchive[K, U, P, S, D]] =
     SchemaLadder
       .of[StudyResultArchive[K, U, P, S, D]]("study result densities", result.schema)(archive =>
-        Either.cond(
-          archive.original,
-          archive.payload,
-          CodecError.Unsupported("storage", "version 1 requires inline densities")
-        )
+        if archive.original then archive.payload
+        else Left(CodecError.Unsupported("storage", "version 1 requires inline densities"))
       )(read(_, true))
       .next(_.original, DensityWire.lift)(archive =>
-        Right(if archive.original then DensityWire.lift(archive.payload) else archive.payload)
+        archive.payload.map(p => if archive.original then DensityWire.lift(p) else p)
       )(read(_, false))
   val codec: VersionedCodec[StudyResultArchive[K, U, P, S, D]] = ladder.codec
 
@@ -442,7 +441,7 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
       storage: DensityStorage = DensityStorage.Recomputable
   ): Either[CodecError, DensityArchiveBundle[K, U, P, S, D]] =
     for
-      payload <- result.storageMetadata(value)
+      payload <- result.storageMetadataDocument(value)
       maps = value.scales.zipWithIndex.flatMap { (scale, s) =>
         scale.estimation.zipWithIndex.collect { case ((key, Right(mass)), i) =>
           (s, i, key, mass)
@@ -551,8 +550,8 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
                   .mapObject(_.add("storage", location))
         }
       }
-      saved = DensityWire.replaceOutcomes(payload, outcomes)
-      archive <- read(saved, storage == DensityStorage.Inline)
+      saved   <- DensityWire.replaceOutcomesDocument(payload, outcomes)
+      archive <- readDocument(saved, storage == DensityStorage.Inline)
     yield new DensityArchiveBundle(archive, chunks)
 
   /** Persist a completion-bound stamp under the existing version-2 ladder.
@@ -564,9 +563,9 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
   ): Either[CodecError, DensityArchiveBundle[K, U, P, S, D]] =
     for
       bundle <- encode(value.result, storage)
-      base =
-        if bundle.archive.original then DensityWire.lift(bundle.archive.payload)
-        else bundle.archive.payload
+      base   <- bundle.archive.payload.map(p =>
+        if bundle.archive.original then DensityWire.lift(p) else p
+      )
       payload = base.mapObject(_.add("runStamp", RunStampWire.write(value.stamp)))
       archive <- read(payload, false)
     yield new DensityArchiveBundle(archive, bundle.chunks)
@@ -646,14 +645,44 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
       payload: Json,
       original: Boolean
   ): Either[CodecError, StudyResultArchive[K, U, P, S, D]] =
+    readDocument(CanonicalDoc.Leaf(payload), original)
+
+  private[codec] def decodeDocument(
+      document: CanonicalDoc
+  ): Either[CodecError, StudyResultArchive[K, U, P, S, D]] =
+    val root = StructuredValue(document)
     for
-      _      <- Wire.requireId(payload, "layout", result.layout.id)
-      _      <- Wire.requireId(payload, "keySchema", result.keys.schema)
-      _      <- Wire.requireId(payload, "method", result.method.id)
-      _      <- Wire.requireId(payload, "scoreSchema", result.scores.schema)
-      _      <- Wire.requireId(payload, "differenceSchema", result.differences.schema)
-      symbol <- Wire.field[String](payload, "unit")
+      header <- root.header(Set("value"))
+      found  <- Wire.definition(header, "schema")
       _      <- Either.cond(
+        codec.schemas.contains(found),
+        (),
+        CodecError.UnsupportedSchema("study result densities", found, codec.schemas)
+      )
+      payload <- root.member("value")
+      archive <- readDocument(payload.document, found == result.schema)
+    yield archive
+
+  private[codec] def document(archive: StudyResultArchive[K, U, P, S, D]): CanonicalDoc =
+    CanonicalDoc.obj(
+      "schema" -> CanonicalDoc.Leaf(Wire.id(ladder.earliest(archive))),
+      "value"  -> archive.payloadDescription
+    )
+
+  private[codec] def readDocument(
+      stored: CanonicalDoc,
+      original: Boolean
+  ): Either[CodecError, StudyResultArchive[K, U, P, S, D]] =
+    val value = StructuredValue(stored)
+    for
+      payload <- value.header(Set("scales", "description"))
+      _       <- Wire.requireId(payload, "layout", result.layout.id)
+      _       <- Wire.requireId(payload, "keySchema", result.keys.schema)
+      _       <- Wire.requireId(payload, "method", result.method.id)
+      _       <- Wire.requireId(payload, "scoreSchema", result.scores.schema)
+      _       <- Wire.requireId(payload, "differenceSchema", result.differences.schema)
+      symbol  <- Wire.field[String](payload, "unit")
+      _       <- Either.cond(
         symbol == unit.symbol,
         (),
         CodecError.Field("unit", payload, s"expected ${unit.symbol}")
@@ -669,16 +698,23 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
             .map(Wire.at("runStamp"))
             .map(Some(_))
       identities  <- Wire.field[Json](payload, "identities").flatMap(DocumentIdentities.read)
-      fields      <- Wire.field[Vector[Json]](payload, "description")
-      description <- fields.traverse(j =>
+      description <- value.document match
+        case CanonicalDoc.Leaf(_) =>
+          Wire
+            .field[Vector[Json]](payload, "description")
+            .flatMap(
+              _.traverse(j =>
+                for
+                  name   <- Wire.field[String](j, "field")
+                  values <- ResultWire.readValues(j, "values")
+                yield name -> values
+              )
+            )
+        case _ => ResultWire.readFields(value)
+      scales        <- value.member("scales")
+      checkedScales <- scales.rows("scales") { (scaleValue, index) =>
         for
-          name   <- Wire.field[String](j, "field")
-          values <- ResultWire.readValues(j, "values")
-        yield name -> values
-      )
-      scales <- Wire.field[Vector[Json]](payload, "scales")
-      _      <- scales.zipWithIndex.traverse_ { (scale, index) =>
-        for
+          scale    <- scaleValue.header(Set("estimation", "analyses", "contrast"))
           estimate <- Wire.field[Json](scale, "estimate").flatMap(StudyWire.readEstimate[U])
           expected = estimate.parameters.flatMap((name, value) =>
             Vector(Provenance.Param.Text(name), value)
@@ -695,13 +731,14 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
               "estimate differs from the saved plan description"
             )
           )
-        yield ()
+        yield scaleValue
       }
-      rows <- scales.traverse(scale =>
-        Wire
-          .field[Vector[Json]](scale, "estimation")
-          .flatMap(_.traverse { row =>
+      rows <- checkedScales.traverse { scale =>
+        scale
+          .member("estimation")
+          .flatMap(_.rows("estimation") { (rowValue, _) =>
             for
+              row     <- rowValue.json
               key     <- Wire.field[Json](row, "key").flatMap(result.keys.decode)
               outcome <- Wire.field[Json](row, "outcome")
               kind    <- ResultWire.kind(outcome)
@@ -722,8 +759,10 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
                     _ <-
                       if original then
                         Either.cond(
-                          outcome.hcursor.downField("storage").focus.isEmpty &&
-                            outcome.hcursor.downField("values").focus.exists(_.isArray),
+                          outcome.hcursor.downField("storage").focus.isEmpty && outcome.hcursor
+                            .downField("values")
+                            .focus
+                            .exists(_.isArray),
                           (),
                           CodecError
                             .Field("values", outcome, "version 1 requires inline values")
@@ -734,49 +773,102 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
                   Left(CodecError.Field("kind", outcome, s"unknown density outcome $other"))
             yield key -> outcome
           })
-      )
-    yield
-      val inlineOnly = rows.flatten.forall { (_, outcome) =>
-        outcome.hcursor.get[String]("kind").contains("failure") ||
-        outcome.hcursor
+      }
+      inlineOnly = rows.flatten.forall { (_, outcome) =>
+        outcome.hcursor.get[String]("kind").contains("failure") || outcome.hcursor
           .downField("storage")
           .focus
           .forall(_.hcursor.get[String]("kind").contains("inline"))
       }
-      val normalized = if !inlineOnly then rows
-      else
-        rows.map(_.map { (key, outcome) =>
-          val unwrapped = outcome.hcursor
-            .downField("storage")
-            .focus
-            .fold(outcome)(storage =>
-              ResultWire.tagged(
-                "mass",
-                "grid"       -> outcome.hcursor.downField("grid").focus.getOrElse(Json.Null),
-                "values"     -> storage.hcursor.downField("values").focus.getOrElse(Json.Null),
-                "provenance" -> outcome.hcursor
-                  .downField("provenance")
-                  .focus
-                  .getOrElse(Json.Null)
+      normalized =
+        if !inlineOnly then rows
+        else
+          rows.map(_.map { (key, outcome) =>
+            val unwrapped = outcome.hcursor
+              .downField("storage")
+              .focus
+              .fold(outcome)(storage =>
+                ResultWire.tagged(
+                  "mass",
+                  "grid"   -> outcome.hcursor.downField("grid").focus.getOrElse(Json.Null),
+                  "values" -> storage.hcursor.downField("values").focus.getOrElse(Json.Null),
+                  "provenance" -> outcome.hcursor
+                    .downField("provenance")
+                    .focus
+                    .getOrElse(Json.Null)
+                )
               )
-            )
-          key -> unwrapped
-        })
-      val saved = if inlineOnly then
-        val inline = DensityWire.replaceOutcomes(payload, normalized.map(_.map(_._2)))
-        if stamp.nonEmpty then DensityWire.lift(inline) else inline
-      else payload
-      new StudyResultArchive(
-        this,
-        saved,
-        normalized,
-        identities,
-        description,
-        stamp,
-        inlineOnly && stamp.isEmpty
-      )
+            key -> unwrapped
+          })
+      saved <-
+        if inlineOnly then
+          val outcomes = normalized.map(_.map { (_, outcome) =>
+            if stamp.nonEmpty then DensityWire.liftOutcome(outcome) else outcome
+          })
+          DensityWire.replaceOutcomesDocument(stored, outcomes)
+        else Right(stored)
+    yield new StudyResultArchive(
+      this,
+      saved,
+      normalized,
+      identities,
+      description,
+      stamp,
+      inlineOnly && stamp.isEmpty
+    )
 
 private[codec] object DensityWire:
+  def replaceOutcomesDocument(
+      payload: CanonicalDoc,
+      outcomes: Vector[Vector[Json]]
+  ): Either[CodecError, CanonicalDoc] =
+    val value = StructuredValue(payload)
+    for
+      scales <- value.member("scales")
+      count  <- scales.size("scales")
+      _      <- Either.cond(
+        count == outcomes.size,
+        (),
+        CodecError.Unsupported(
+          "scales",
+          s"expected $count outcome scales, received ${outcomes.size}"
+        )
+      )
+      replaced <- scales.mapRows("scales") { (scale, s) =>
+        for
+          rows  <- scale.member("estimation")
+          count <- rows.size(s"scales[$s].estimation")
+          _     <- Either.cond(
+            count == outcomes(s).size,
+            (),
+            CodecError.Unsupported(
+              s"scales[$s].estimation",
+              s"expected $count outcomes, received ${outcomes(s).size}"
+            )
+          )
+          entries <- rows.mapRows(s"scales[$s].estimation")((row, r) =>
+            row.replace("outcome", CanonicalDoc.Leaf(outcomes(s)(r)))
+          )
+          result <- scale.replace("estimation", entries)
+        yield result
+      }
+      result <- value.replace("scales", replaced)
+    yield result
+
+  def liftOutcome(outcome: Json): Json =
+    if outcome.hcursor.get[String]("kind").contains("mass") then
+      outcome.mapObject(o =>
+        o.remove("values")
+          .add(
+            "storage",
+            Json.obj(
+              "kind"   -> Json.fromString("inline"),
+              "values" -> o("values").getOrElse(Json.Null)
+            )
+          )
+      )
+    else outcome
+
   def metadata[U <: Unit2D](mass: Mass[U]): Json = ResultWire.tagged(
     "mass",
     "grid"       -> Json.fromString(mass.grid.id.name),

@@ -398,6 +398,41 @@ trait ArtifactDecoders[K, U <: Unit2D]:
   def ledger(document: Json): Either[CodecError, AdmissionLedger[K]]
   def result(document: Json): Either[CodecError, LoadedResult[K, U]]
 
+  private[codec] def inputDocument(
+      document: CanonicalDoc
+  ): Either[CodecError, StudyInput[K, U]] = document match
+    case CanonicalDoc.Leaf(json) => input(json)
+    case _                       =>
+      Left(CodecError.Unsupported("compact input", "decoder has no structured input reader"))
+
+  private[codec] def ledgerDocument(
+      document: CanonicalDoc
+  ): Either[CodecError, AdmissionLedger[K]] = document match
+    case CanonicalDoc.Leaf(json) => ledger(json)
+    case _                       =>
+      Left(CodecError.Unsupported("compact ledger", "decoder has no structured ledger reader"))
+
+  private[codec] def resultDocument(
+      document: CanonicalDoc,
+      payloads: PayloadRef => Option[VerifiedPayload]
+  ): Either[CodecError, LoadedResult[K, U]] = document match
+    case CanonicalDoc.Leaf(json) => resultWithPayloads(json, payloads)
+    case _                       =>
+      Left(CodecError.Unsupported("compact result", "decoder has no structured result reader"))
+
+  private[codec] def inputDigestDocument(
+      document: CanonicalDoc,
+      value: StudyInput[K, U]
+  ): Either[CodecError, CanonicalDigest[StudyInput[K, U]]] = document match
+    case CanonicalDoc.Leaf(json) => inputDigest(json, value)
+    case _                       =>
+      Left(
+        CodecError.Unsupported(
+          "compact input digest",
+          "decoder has no structured input identity reader"
+        )
+      )
+
   /** A primary replay description, refused unless explicitly registered. */
   def importSpec(document: Json): Either[CodecError, ImportSpec[K, U]] =
     ArtifactDecoders.unregistered("import-spec", document)
@@ -532,8 +567,20 @@ object ArtifactDecoders:
     def input(document: Json)                                         = base.input(document)
     override def inputDigest(document: Json, input: StudyInput[K, U]) =
       base.inputDigest(document, input)
-    def ledger(document: Json) = base.ledger(document)
-    def result(document: Json) = base.result(document)
+    def ledger(document: Json)                                        = base.ledger(document)
+    def result(document: Json)                                        = base.result(document)
+    override private[codec] def inputDocument(document: CanonicalDoc) =
+      base.inputDocument(document)
+    override private[codec] def ledgerDocument(document: CanonicalDoc) =
+      base.ledgerDocument(document)
+    override private[codec] def resultDocument(
+        document: CanonicalDoc,
+        payloads: PayloadRef => Option[VerifiedPayload]
+    ) = base.resultDocument(document, payloads)
+    override private[codec] def inputDigestDocument(
+        document: CanonicalDoc,
+        value: StudyInput[K, U]
+    ) = base.inputDigestDocument(document, value)
     override def resultWithPayloads(
         document: Json,
         payloads: PayloadRef => Option[VerifiedPayload]
@@ -584,6 +631,15 @@ object ArtifactDecoders:
       results: StudyResultRegistry[K, U]
   )(using unit: UnitLabel[U]): ArtifactDecoders[K, U] =
     new ArtifactDecoders[K, U]:
+      private def registeredInput(
+          document: CanonicalDoc
+      ): Either[CodecError, StudyInputCodec[K, U]] = for
+        payload <- StructuredValue(document).member("value")
+        schema  <- payload.definition("keySchema")
+        codec   <- inputs.entries
+          .find(_.keys.schema == schema)
+          .toRight(CodecError.MissingKeySchema(schema))
+      yield codec
       def plan(document: Json)  = plans.decode(document)
       def input(document: Json) = inputs.decodeInput(document)
       override def inputDigest(document: Json, input: StudyInput[K, U]) =
@@ -597,6 +653,20 @@ object ArtifactDecoders:
         yield digest
       def ledger(document: Json) = inputs.decodeLedger(document)
       def result(document: Json) = results.decode(document)
+      override private[codec] def inputDocument(document: CanonicalDoc) =
+        registeredInput(document).flatMap(_.readInputDocument(document))
+      override private[codec] def ledgerDocument(document: CanonicalDoc) =
+        registeredInput(document).flatMap(_.readLedgerDocument(document))
+      override private[codec] def inputDigestDocument(
+          document: CanonicalDoc,
+          value: StudyInput[K, U]
+      ) =
+        registeredInput(document).flatMap(_.input.digest(value))
+      override private[codec] def resultDocument(
+          document: CanonicalDoc,
+          payloads: PayloadRef => Option[VerifiedPayload]
+      ) =
+        results.decodeDocumentWithPayloads(document, payloads)
       override def resultWithPayloads(
           document: Json,
           payloads: PayloadRef => Option[VerifiedPayload]
@@ -820,6 +890,16 @@ object ArtifactResolver:
       .leftMap(NonEmptyVector.one)
       .flatMap(resolveManifestIn(_, source, decoders, ByteOwnership.ShareOwned))
 
+  private[eyes4s] def resolveOwned[K, U <: Unit2D](
+      address: ByteDigest,
+      source: ByteSource,
+      decoders: ArtifactDecoders[K, U],
+      limits: CompactArtifactLimits
+  ): Resolution[ResolvedManifest[K, U]] =
+    manifest(address, source)
+      .leftMap(NonEmptyVector.one)
+      .flatMap(resolveManifestIn(_, source, decoders, ByteOwnership.ShareOwned, Some(limits)))
+
   private enum ByteOwnership:
     case SnapshotExternal, ShareOwned
 
@@ -835,14 +915,15 @@ object ArtifactResolver:
       manifest: ScientificManifest,
       source: ByteSource,
       decoders: ArtifactDecoders[K, U],
-      ownership: ByteOwnership
+      ownership: ByteOwnership,
+      compact: Option[CompactArtifactLimits] = None
   ): Resolution[ResolvedManifest[K, U]] =
     for
       verified <- accumulate(
         manifest.entries.map(entry => verify(entry, source, ownership).map(entry -> _))
       )
-      decoded <- decode(manifest, verified, decoders)
-      _       <- relations(manifest, decoded, verified, decoders)
+      decoded <- decode(manifest, verified, decoders, compact)
+      _       <- relations(manifest, decoded, verified, decoders, compact)
     yield assemble(manifest, decoded)
 
   private def read(
@@ -917,7 +998,8 @@ object ArtifactResolver:
   private def decode[K, U <: Unit2D](
       manifest: ScientificManifest,
       verified: Vector[(ManifestEntry, IArray[Byte])],
-      decoders: ArtifactDecoders[K, U]
+      decoders: ArtifactDecoders[K, U],
+      compact: Option[CompactArtifactLimits]
   ): Resolution[Map[ArtifactName, Decoded[K, U]]] =
     // A payload entry's layout is present by construction of ManifestEntry.
     val packed: Vector[(ManifestEntry, VerifiedPayload)] = verified.flatMap { (entry, bytes) =>
@@ -936,16 +1018,20 @@ object ArtifactResolver:
             .map(Decoded.SourceText(_))
       }
     val documents = verified.collect {
-      case (entry, bytes) if entry.media == MediaKind.JsonText =>
+      case (entry, bytes)
+          if entry.media == MediaKind.JsonText || entry.media == MediaKind.ColumnarJson =>
         entry -> bytes
     }
     // Study inputs first: a temporal input embedding its base by reference needs it.
     val inputs = documents.collect {
       case (entry, bytes) if entry.role == ArtifactRole.StudyInput =>
-        entry -> document(entry, bytes).flatMap(json =>
-          attempt(entry, decoders.input(json)).flatMap(value =>
-            checkIdentity(entry, value.hash).as(Decoded.Input(value))
-          )
+        entry -> documentDescription(entry, bytes, compact).flatMap(document =>
+          attempt(
+            entry,
+            document match
+              case CanonicalDoc.Leaf(json) => decoders.input(json)
+              case _                       => decoders.inputDocument(document)
+          ).flatMap(value => checkIdentity(entry, value.hash).as(Decoded.Input(value)))
         )
     }
     val decodedInputs = inputs.collect { case (entry, Right(Decoded.Input(value))) =>
@@ -953,9 +1039,14 @@ object ArtifactResolver:
     }.toMap
     val others = documents.collect {
       case (entry, bytes) if entry.role != ArtifactRole.StudyInput =>
-        entry -> document(entry, bytes).flatMap(json =>
-          decodeOne(manifest, entry, json, decoders, payloads, decodedInputs)
-        )
+        entry -> (if entry.media == MediaKind.ColumnarJson then
+                    documentDescription(entry, bytes, compact).flatMap(document =>
+                      decodeStructuredOne(manifest, entry, document, decoders, payloads)
+                    )
+                  else
+                    document(entry, bytes).flatMap(json =>
+                      decodeOne(manifest, entry, json, decoders, payloads, decodedInputs)
+                    ))
     }
     val all = (inputs ++ others ++ sources ++ packed.map((entry, payload) =>
       entry -> Right(Decoded.Payload(payload))
@@ -979,6 +1070,82 @@ object ArtifactResolver:
         ResolveError.Schema(entry.name, entry.schema, found)
       )
     yield json
+
+  private def documentDescription(
+      entry: ManifestEntry,
+      bytes: IArray[Byte],
+      compact: Option[CompactArtifactLimits]
+  ): Either[ResolveError, CanonicalDoc] =
+    if entry.media != MediaKind.ColumnarJson then
+      document(entry, bytes).map(CanonicalDoc.Leaf(_))
+    else
+      for
+        limits <- compact
+          .fold(CompactArtifacts.defaults)(Right(_))
+          .left
+          .map(ResolveError.Decode(entry.name, _))
+        graph <- CompactArtifacts
+          .decode(bytes, limits)
+          .left
+          .map(ResolveError.Decode(entry.name, _))
+        description = graph.canonical
+        header <- StructuredValue(description)
+          .header(Set("value"))
+          .left
+          .map(ResolveError.Decode(entry.name, _))
+        found <- Wire.definition(header, "schema").left.map(ResolveError.Decode(entry.name, _))
+        _     <- Either.cond(
+          found == entry.schema,
+          (),
+          ResolveError.Schema(entry.name, entry.schema, found)
+        )
+      yield description
+
+  private def decodeStructuredOne[K, U <: Unit2D](
+      manifest: ScientificManifest,
+      entry: ManifestEntry,
+      document: CanonicalDoc,
+      decoders: ArtifactDecoders[K, U],
+      payloads: Map[ArtifactName, VerifiedPayload]
+  ): Either[ResolveError, Decoded[K, U]] = entry.role match
+    case ArtifactRole.AdmissionLedger =>
+      attempt(entry, decoders.ledgerDocument(document)).map(Decoded.Ledger(_))
+    case ArtifactRole.StudyResult =>
+      for
+        payload <- StructuredValue(document)
+          .member("value")
+          .left
+          .map(ResolveError.Decode(entry.name, _))
+        stampValue <- payload.optional("runStamp").left.map(ResolveError.Decode(entry.name, _))
+        stamp      <- stampValue.traverse(_.json).left.map(ResolveError.Decode(entry.name, _))
+        related = manifest.relations
+          .collect {
+            case ManifestRelation.ResultPayloadOf(result, payload) if result == entry.name =>
+              payload
+          }
+          .flatMap(payloads.get)
+        loaded <- attempt(
+          entry,
+          decoders.resultDocument(document, ref => related.find(_.ref == ref))
+        )
+      yield Decoded.Result(
+        loaded,
+        ResultDocumentFacts(
+          entry.schema,
+          stamp,
+          ResultManifest.referencesDocument(document)
+        )
+      )
+    case other =>
+      Left(
+        ResolveError.Decode(
+          entry.name,
+          CodecError.Unsupported(
+            "columnar media",
+            s"role ${other.wire} does not support structured decoding"
+          )
+        )
+      )
 
   private def attempt[A](
       entry: ManifestEntry,
@@ -1093,20 +1260,24 @@ object ArtifactResolver:
       manifest: ScientificManifest,
       decoded: Map[ArtifactName, Decoded[K, U]],
       verified: Vector[(ManifestEntry, IArray[Byte])],
-      decoders: ArtifactDecoders[K, U]
+      decoders: ArtifactDecoders[K, U],
+      compact: Option[CompactArtifactLimits]
   ): Resolution[Unit] =
     // The canonical digest of a stored document, as a report's binding cites it.
     def digestOf(name: ArtifactName): Option[String] =
       verified
-        .collectFirst { case (entry, bytes) if entry.name == name => document(entry, bytes) }
+        .collectFirst {
+          case (entry, bytes) if entry.name == name =>
+            documentDescription(entry, bytes, compact)
+        }
         .flatMap(_.toOption)
-        .flatMap(json => CanonicalDigest.document[Json](json).toOption)
+        .flatMap(json => CanonicalDigest.streamed[Json](json).toOption)
         .map(_.sha256.hex)
-    def stored(name: ArtifactName): Either[ResolveError, Json] =
+    def storedDescription(name: ArtifactName): Either[ResolveError, CanonicalDoc] =
       verified
         .find(_._1.name == name)
         .toRight(ResolveError.Missing(name))
-        .flatMap((entry, bytes) => document(entry, bytes))
+        .flatMap((entry, bytes) => documentDescription(entry, bytes, compact))
 
     // Reuse the evidence extracted at decode time; no result JSON is retained.
     val resultReferences = decoded.collect { case (name, Decoded.Result(_, facts)) =>
@@ -1144,10 +1315,11 @@ object ArtifactResolver:
                 .document[LoadedStudy[K, U]](planDocument)
                 .left
                 .map(ResolveError.Decode(planName, _))
-              inputDocument <- stored(inputName)
-              currentInput  <- decoders
-                .inputDigest(inputDocument, input)
-                .left
+              inputDocument <- storedDescription(inputName)
+              currentInput  <- (inputDocument match
+                case CanonicalDoc.Leaf(json) => decoders.inputDigest(json, input)
+                case _ => decoders.inputDigestDocument(inputDocument, input)
+              ).left
                 .map(ResolveError.Decode(inputName, _))
             yield saved
               .check(

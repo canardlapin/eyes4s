@@ -1,7 +1,8 @@
 # Compact native archives
 
-Status: implementation in progress; not enabled in the native writer. Owner
-selected compact storage under the existing limits on 28 October 2026.
+Status: document layer qualified and landed; native integration implemented in
+an unqualified candidate. Owner selected compact storage under the existing
+limits on 28 October 2026. Full-cohort application qualification is pending.
 
 The current defaults remain 20,000,000 density cells, 1,000,000 structural rows,
 512 entries and 268,435,456 stored bytes. Existing JSON archives retain their
@@ -45,8 +46,8 @@ Private sizing estimates and compression of partitioned archives are not this pr
 
 ## Private document format, version 1
 
-This is an internal codec format, not an accepted native project media type yet.
-Its byte sequence is:
+This is an internal codec format. The unqualified native candidate admits it
+through the explicit media type described below. Its byte sequence is:
 
 1. ASCII `E4CD` and a version byte `1`.
 2. Node and shape counts as minimal unsigned LEB128 integers, at most 31 bits.
@@ -91,3 +92,47 @@ These measurements exclude density payloads and other native package files.
 The probe started from existing JSON and used explicit experimental constructor
 limits. It is document-level evidence, not a native-memory, typed restoration,
 application, legacy-compatibility or single-cohort capacity qualification.
+
+## Native candidate resource contract
+
+Ordinary native saves retain the existing JSON format. The candidate retries only
+structural-row and metadata/total-byte capacity refusals using columnar input,
+ledger and packed-result metadata. Density-cell and entry refusals remain refusals.
+Other failures never trigger a retry. All-JSON files retain their existing row
+accounting and refusals, including when opening them in the new reader.
+
+A compact entry is explicitly `application/vnd.eyes4s.columnar-json;version=1`.
+It carries the same logical input, ledger or result schema; it requires
+`eyes4s.manifest@2`. The manifest ladder writes ordinary graphs as v1, and v1
+refuses compact media. Only input, ledger and result roles admit this media.
+Old project files remain readable; an older reader cannot read a compact entry.
+
+For compact entries the whole archive's existing structural-row cap counts the
+physical variable-length array descriptors, object-key shape descriptors and
+shape-member descriptors. Object member values and node tags are primitive
+columns; they are not expanded into JSON object rows. This is format-specific
+accounting, not a claim that the study's logical row counts add up to less than
+one million. Each described array also retains an explicit item cap equal to
+`maxRows`, so a tiny shared dictionary cannot conceal an arbitrarily long table.
+Logical trial, fixation, record, attribute, failure and pair counts must be
+reported and compared independently during qualification.
+
+Additional decoded-work bounds are derived from that same host cap: at most
+`8 * maxRows` unique nodes, `64 * maxRows` references and
+`128 * maxRows` expanded traversal nodes per document, with depth at most 128.
+Counts are saturated only at the collection representation's integer bound.
+Stored bytes and text units are bounded by the host byte cap. A row/member JSON
+projection is limited to 65,536 nodes and a small object header to 524,288 nodes;
+large tables use row readers. Original JSON inputs already materialized by the
+legacy decoder retain their existing behavior. A compact representation that
+needs a larger projection refuses explicitly; the compact profile does not
+qualify arbitrary large embedded raw recordings.
+
+The whole native package still checks all stored bytes, density cells, entries
+and aggregate structural descriptors against the unchanged host limits before
+accepting it. Schema, physical SHA-256, source identity, plan/input/result
+bindings, packed-payload ownership, density digests and completed-result
+reconstruction remain required. Reopening uses retained results, with no
+analysis re-execution. Tests cover the actual fallback, copied-byte verification,
+unchanged facts and a legacy package that still refuses under the same tighter
+byte budget on both JVM and Scala.js.

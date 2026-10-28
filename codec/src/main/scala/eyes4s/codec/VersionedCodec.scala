@@ -193,13 +193,14 @@ final class VersionedCodec[A] private (
     * canonical document (see [[CanonicalDigest]]).
     */
   def digest(value: A): Either[CodecError, CanonicalDigest[A]] =
+    document(value).flatMap(CanonicalDigest.streamed)
+
+  private[codec] def document(value: A): Either[CodecError, CanonicalDoc] =
     canonical match
-      case None           => encode(value).flatMap(CanonicalDigest.document)
+      case None           => encode(value).map(CanonicalDoc.Leaf(_))
       case Some(describe) =>
-        describe(value).flatMap(payload =>
-          CanonicalDigest.streamed(
-            CanonicalDoc.obj("schema" -> CanonicalDoc.Leaf(Wire.id(schema)), "value" -> payload)
-          )
+        describe(value).map(payload =>
+          CanonicalDoc.obj("schema" -> CanonicalDoc.Leaf(Wire.id(schema)), "value" -> payload)
         )
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
