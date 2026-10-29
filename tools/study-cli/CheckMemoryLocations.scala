@@ -37,12 +37,15 @@ object CheckMemoryLocations:
     records
 
   def main(args: Array[String]): Unit =
-    require(args.length == 3, "Usage: CheckMemoryLocations locations.tsv pairs.tsv output.tsv")
+    require(
+      args.length == 4,
+      "Usage: CheckMemoryLocations locations.tsv pairs.tsv output.tsv bins.tsv"
+    )
     val frame  = get(Frame.screen("figrim-image-pixels", 1000, 1000))
     val grid   = get(Grid.over(frame, 10, 10))
     val points = rows(Path.of(args(0)), "trial_id\tx_px\ty_px")
       .groupMap(_.head)(r => Pt[Px](r(1).toDouble, r(2).toDouble))
-    val masses = points.map { case (id, ps) =>
+    val binned = points.map { case (id, ps) =>
       require(
         ps.forall(p => p.x.isFinite && p.y.isFinite && frame.contains(p)),
         s"Invalid point in $id"
@@ -50,8 +53,21 @@ object CheckMemoryLocations:
       val measure = get(PointMeasure.uniform(frame, IArray.from(ps)))
       val bins    = get(measure.binned(grid))
       require(bins.sum == ps.size.toDouble, s"Lost positions in $id")
-      id -> get(get(Surface.intensity(grid, bins, measure.provenance)).normalised)
+      id -> (bins, get(get(Surface.intensity(grid, bins, measure.provenance)).normalised))
     }
+    val masses  = binned.view.mapValues(_._2).toMap
+    val binRows = binned.toVector.sortBy(_._1).flatMap { case (id, (bins, _)) =>
+      bins.iterator.zipWithIndex.collect {
+        case (count, index) if count > 0 =>
+          Vector(id, (index % 10).toString, (index / 10).toString, count.toString)
+            .mkString("\t")
+      }
+    }
+    Files.writeString(
+      Path.of(args(3)),
+      ("trial_id\tbin_x\tbin_y\tcount" +: binRows).mkString("\n") + "\n",
+      UTF_8
+    )
     val pairs = rows(Path.of(args(1)), "pair_id\tfocal_id\tencoding_id\tcontrol_id")
     require(pairs.map(_.head).distinct.size == pairs.size, "Duplicate pair identifiers")
     val compare = Distribution.cosine[Px]

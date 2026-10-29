@@ -31,6 +31,11 @@ python3 -m venv .datasets/venv
 # Execute real eyes4s APIs, then compare every score with an independent oracle.
 .datasets/venv/bin/python tools/memory-datasets/datasets.py check figrim
 
+# Independently decode the original MAT in Octave and SciPy and compare all
+# metadata, raw coordinates, admissions, actual bin identities and executed pairs.
+# Requires Octave; this does not invoke sbt or download data.
+.datasets/venv/bin/python tools/memory-datasets/datasets.py audit figrim
+
 # Check every entry in manifest order, continuing through failures and blockers.
 # This does not fetch missing datasets. Exit 1 means at least one non-PASS.
 .datasets/venv/bin/python tools/memory-datasets/datasets.py check --all
@@ -50,6 +55,9 @@ required dependency or metadata is missing. Checks write a separate
 `<id>/check.json` including the source receipt digest, manifest-entry digest,
 Git revision/tree and dirty flag. A dirty flag means the commit alone cannot
 identify the exact executed tooling; qualify a committed candidate for sharing.
+The independent raw-input audit writes `audit.json` separately. Its PASS applies
+to admission fidelity, not participant linkage, chronological order or inference.
+See [the FIGRIM data contract](FIGRIM.md) for evidence and unresolved requirements.
 
 ## Inspect and fetch other sources
 
@@ -103,8 +111,10 @@ none of those files. Never use `git add -f` on the cache.
 The published MATLAB file supplies `enc`, `rec`, `rec2` Nx2 fixation locations
 and three recognition-response codes per image/observer slot. The adapter:
 
-1. Preserves image, release observer-slot index, phase and SDT codes. Missing
-   responses are retained without silently relabeling them; the check is not
+1. Preserves image, release observer-slot index, phase and SDT codes. Complete
+   ledgers also retain recording label, initials, original trial number, raw
+   floating coordinates, original row ordinal, duplicate family and disposition.
+   Missing responses are retained without silently relabeling them; the check is not
    stratified by accuracy. Observer slots are not asserted to be unique people
    across recording sessions.
 2. Follows the author's pixel-map convention: round to MATLAB image pixels,
@@ -112,7 +122,8 @@ and three recognition-response codes per image/observer slot. The adapter:
    every excluded coordinate and retrieval trial without an eligible pair.
 3. Builds uniformly weighted point measures on a 1000×1000 pixel frame with a
    10×10 grid using `PointMeasure`, `Grid` and `Surface`. It checks that binning
-   preserves the admitted location count.
+   preserves the admitted location count and verifies each occupied cell against
+   the NumPy histogram, including the cell's x/y identity.
 4. Computes `Distribution.cosine` for same-slot/same-image encoding versus
    retrieval and for one deterministic other-image encoding control from the
    same slot and scene category. The control is the first eligible filename in
@@ -122,9 +133,10 @@ and three recognition-response codes per image/observer slot. The adapter:
    products, with an absolute tolerance of `1e-12`. Missing, duplicate,
    nonfinite or numerically discrepant scores fail.
 
-The numerical oracle shares the converted coordinates and pair schedule. Source
-documentation and synthetic regressions support those upstream choices; the
-oracle alone cannot establish that their scientific interpretation is correct.
+The NumPy score oracle shares the converted coordinates and pair schedule. Run
+`audit figrim` for the additional independent Octave raw-input, cell and execution
+pair comparison. Numerical agreement alone cannot establish that the scientific
+interpretation is correct.
 
 On the initial local run, all 630 target images were inspected: 182,535 source
 locations, 182,532 admitted locations, 3 exclusions, 30,012 admitted trials and

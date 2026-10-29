@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MAX = 256 * 1024 * 1024
-RESERVED = {"receipt.json", "check.json", "inventory.json"}
+RESERVED = {"receipt.json", "check.json", "audit.json", "inventory.json"}
 
 
 def canonical_json(value):
@@ -388,7 +388,7 @@ def git_state():
         return {"head": None, "tree": None, "dirty": None}
 
 
-def check(item, cache):
+def check(item, cache, independent=False):
     integrity = verify(item, cache)
     analysis = item.get("analysis", {})
     receipt_exists = receipt_path(cache, item).exists()
@@ -405,7 +405,11 @@ def check(item, cache):
     else:
         try:
             import adapters
-            result = adapters.check(item, dataset_dir(cache, item), receipt)
+            if independent:
+                from figrim_audit import audit
+                result = audit(item, dataset_dir(cache, item), receipt)
+            else:
+                result = adapters.check(item, dataset_dir(cache, item), receipt)
         except ImportError:
             result = {"status": "BLOCKED", "reason": "analysis adapters unavailable"}
         except Exception as error:
@@ -419,7 +423,7 @@ def check(item, cache):
         "git": git_state(),
         "checked_at": datetime.now(timezone.utc).isoformat(),
     })
-    write_json(dataset_dir(cache, item) / "check.json", result)
+    write_json(dataset_dir(cache, item) / ("audit.json" if independent else "check.json"), result)
     return result
 
 
@@ -437,6 +441,8 @@ def main(argv=None):
     verify_parser = subcommands.add_parser("verify"); verify_parser.add_argument("id")
     check_parser = subcommands.add_parser("check")
     check_parser.add_argument("id", nargs="?"); check_parser.add_argument("--all", action="store_true")
+    audit_parser = subcommands.add_parser("audit")
+    audit_parser.add_argument("id")
     args = parser.parse_args(argv)
     try:
         manifest, cache = load_manifest(args.manifest), cache_root(args.cache)
@@ -452,6 +458,9 @@ def main(argv=None):
         elif args.command == "fetch": output, code = cmd_fetch(args, dataset(manifest, args.id), cache), 0
         elif args.command == "verify":
             output = verify(dataset(manifest, args.id), cache); code = 0 if output["status"] == "PASS" else 1
+        elif args.command == "audit":
+            output = check(dataset(manifest, args.id), cache, independent=True)
+            code = 0 if output["status"] == "PASS" else 1
         else:
             if bool(args.id) == bool(args.all): raise ValueError("check needs ID or --all")
             if args.all:

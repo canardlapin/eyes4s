@@ -11,6 +11,8 @@ import subprocess
 import tempfile
 from collections import defaultdict
 
+from figrim_contract import admit, configuration_error, families
+
 ROOT = Path(__file__).resolve().parents[2]
 # Double precision dot products over 100 nonnegative bins; allows accumulated
 # rounding, while rejecting changes to coordinates, keys, weighting or pairing.
@@ -34,49 +36,23 @@ def prepare_figrim(images, directory, duplicate_pairs):
     """
     import numpy as np
 
-    aliases = {b: a for a, b in duplicate_pairs}
+    admitted_trials, admission = admit(images, directory, duplicate_pairs)
+    aliases = families([i["filename"] for i in images], duplicate_pairs)
     points, metadata, exclusions, trials = [], [], [], {}
-    source_points = missing = 0
-    ids = set()
-    for item in images:
-        image = item["filename"]
-        if image in ids:
-            raise ValueError(f"Duplicate source image identifier: {image}")
-        ids.add(image)
-        for slot, user in enumerate(item["userdata"], 1):
-            fixes = user.get("fixations")
-            if not isinstance(fixes, dict):
-                missing += 3
-                continue
-            responses = np.atleast_1d(user["SDT"])
-            if responses.shape != (3,):
-                raise ValueError(f"SDT width for {image}/{slot}: {responses.shape}")
-            for phase_index, phase in enumerate(PHASES):
-                raw = np.asarray(fixes.get(phase, []), dtype=float)
-                if raw.size == 0:
-                    missing += 1
-                    continue
-                if raw.ndim == 1 and raw.shape == (2,):
-                    raw = raw.reshape(1, 2)
-                if raw.ndim != 2 or raw.shape[1] != 2:
-                    raise ValueError(f"Expected Nx2 locations for {image}/{slot}/{phase}: {raw.shape}")
-                key = (slot, image, phase)
-                trial_id = f"t{len(trials)}"
-                source_points += len(raw)
-                rounded = np.floor(raw + 0.5)
-                valid = np.all(np.isfinite(raw), axis=1) & np.all(rounded >= 1, axis=1) & np.all(rounded <= 1000, axis=1)
-                admitted = rounded[valid] - 1
-                for index in np.flatnonzero(~valid):
-                    exclusions.append([slot, image, phase, int(index) + 1, *raw[index], "outside published pixel bounds or nonfinite"])
-                if not len(admitted):
-                    exclusions.append([slot, image, phase, "", "", "", "no valid locations in trial"])
-                    continue
-                sdt = int(responses[phase_index])
-                # Preserve unrecognized/missing response sentinels verbatim in metadata.
-                # They are not needed for the unstratified spatial check.
-                trials[key] = (trial_id, admitted, item["category"], sdt)
-                points.extend([trial_id, int(x), int(y)] for x, y in admitted)
-                metadata.append([trial_id, slot, image, item["category"], phase, sdt, len(raw), len(admitted)])
+    for key, trial in admitted_trials.items():
+        slot, image, phase = key
+        trial_id = f"t{len(trials)}"
+        trials[key] = (trial_id, trial.points, trial.category, trial.sdt)
+        points.extend([trial_id, int(x), int(y)] for x, y in trial.points)
+        metadata.append([trial_id, slot, image, trial.category, phase, trial.sdt,
+                         trial.image_index, aliases[image]])
+    # Compatibility export; the complete lossless source is location-ledger.tsv.
+    with (directory / "location-ledger.tsv").open(newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            if row["admitted"] == "0":
+                image = images[int(row["image_index"]) - 1]["filename"]
+                exclusions.append([row["observer_slot"], image, row["phase"], row["ordinal"],
+                                   row["raw_x"], row["raw_y"], row["reason"]])
     encodings = defaultdict(list)
     for key, value in sorted(trials.items()):
         if key[2] == "enc":
@@ -101,7 +77,7 @@ def prepare_figrim(images, directory, duplicate_pairs):
         raise ValueError("No eligible encoding/retrieval pairs")
     write_table(directory / "locations.tsv", ["trial_id", "x_px", "y_px"], points)
     write_table(directory / "pairs.tsv", ["pair_id", "focal_id", "encoding_id", "control_id"], pairs)
-    write_table(directory / "trials.csv", ["trial_id", "observer_slot", "image", "category", "phase", "sdt", "source_locations", "admitted_locations"], metadata, ",")
+    write_table(directory / "trials.csv", ["trial_id", "observer_slot", "image", "category", "phase", "sdt", "image_index", "image_family"], metadata, ",")
     write_table(directory / "pair-metadata.csv", ["pair_id", "observer_slot", "image", "phase", "sdt", "control_image"], pair_metadata, ",")
     write_table(directory / "excluded-locations.csv", ["observer_slot", "image", "phase", "ordinal", "source_x", "source_y", "reason"], exclusions, ",")
     write_table(directory / "unpaired-trials.csv", ["observer_slot", "image", "phase", "reason"], unpaired, ",")
@@ -113,10 +89,7 @@ def prepare_figrim(images, directory, duplicate_pairs):
         histograms[trial_id] = h.ravel() / np.linalg.norm(h)
     expected = {pid: (float(histograms[f] @ histograms[e]), float(histograms[f] @ histograms[c]))
                 for pid, f, e, c in pairs}
-    counts = {"images": len(images), "observer_slots": len({k[0] for k in trials}),
-              "source_locations": source_points, "admitted_locations": len(points),
-              "excluded_locations": source_points - len(points), "missing_or_empty_phases": missing,
-              "admitted_trials": len(trials), "pairs": len(pairs), "unpaired_retrieval_trials": len(unpaired)}
+    counts = dict(admission["counts"], pairs=len(pairs), unpaired_retrieval_trials=len(unpaired))
     return expected, counts
 
 
@@ -138,14 +111,32 @@ def verify_results(path, expected):
     return maximum
 
 
+def verify_bins(directory):
+    """Check actual cell identities; global axis swaps can preserve all cosines."""
+    with (directory / "trials.csv").open(newline="") as f:
+        keys = {r["trial_id"]: (r["image_index"], r["observer_slot"], r["phase"])
+                for r in csv.DictReader(f)}
+    with (directory / "bins.tsv").open(newline="") as f:
+        expected = {(r["image_index"], r["observer_slot"], r["phase"], r["bin_x"], r["bin_y"]): int(r["count"])
+                    for r in csv.DictReader(f, delimiter="\t")}
+    observed = {}
+    with (directory / "scala-bins.tsv").open(newline="") as f:
+        for r in csv.DictReader(f, delimiter="\t"):
+            key = (*keys[r["trial_id"]], r["bin_x"], r["bin_y"])
+            count = float(r["count"])
+            if key in observed or not math.isfinite(count) or count <= 0 or count != int(count):
+                raise ValueError(f"Invalid or duplicate Scala bin: {key}")
+            observed[key] = int(count)
+    if observed != expected:
+        raise ValueError("Scala bin identities/counts disagree with raw admission histograms")
+
+
 def check(dataset, dataset_cache, receipt):
     if dataset["analysis"]["adapter"] != "figrim_locations":
         return {"status": "BLOCKED", "reason": "No implemented adapter"}
-    analysis = dataset["analysis"]
-    geometry = analysis.get("geometry", {})
-    if (geometry.get("width_px"), geometry.get("height_px"), geometry.get("x"), geometry.get("y"),
-            analysis.get("grid"), analysis.get("weighting")) != (1000, 1000, "right", "down", [10, 10], "uniform locations"):
-        return {"status": "BLOCKED", "reason": "FIGRIM adapter implements only the declared 1000x1000 right/down pixel frame, 10x10 grid and uniform weights"}
+    error = configuration_error(dataset)
+    if error:
+        return {"status": "BLOCKED", "reason": error}
     try:
         import scipy.io
         import scipy
@@ -162,7 +153,7 @@ def check(dataset, dataset_cache, receipt):
         images = scipy.io.loadmat(dataset_cache / required, simplify_cells=True)["allImages"]
         expected, counts = prepare_figrim(images, run, dataset["analysis"]["duplicate_image_pairs"])
         # sbt parses this inner command; do not permit a path to inject commands.
-        paths = [run / "locations.tsv", run / "pairs.tsv", run / "scores.tsv"]
+        paths = [run / "locations.tsv", run / "pairs.tsv", run / "scores.tsv", run / "scala-bins.tsv"]
         if any(any(c in str(p) for c in '\n\r";') for p in paths):
             raise ValueError("Unsupported character in cache path for sbt launcher")
         command = ["sbt", "-batch", "ioJVM / Test / runMain eyes4s.examples.CheckMemoryLocations " + " ".join('"' + str(p) + '"' for p in paths)]
@@ -174,6 +165,7 @@ def check(dataset, dataset_cache, receipt):
         if result.returncode:
             return {"status": "FAIL", "reason": f"eyes4s runner exited {result.returncode}; see {run / 'sbt.log'}", "run_directory": str(run)}
         error = verify_results(run / "scores.tsv", expected)
+        verify_bins(run)
         artifacts = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in run.iterdir() if p.is_file()}
         return {"status": "PASS", "reason": "Location-only spatial qualification passed; not temporal replay, inference or paper replication",
                 "scope": "all target-image locations; uniform 10x10 pixel-grid cosine; one deterministic same-observer-slot same-category control per eligible retrieval",
