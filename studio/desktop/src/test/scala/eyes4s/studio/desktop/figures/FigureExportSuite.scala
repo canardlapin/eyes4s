@@ -20,7 +20,7 @@ import cats.instances.future.*
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.figures.*
-import eyes4s.studio.app.maps.Isolines
+import eyes4s.studio.app.maps.{GridPoint, Isolines}
 import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.core.figures.ReferenceReads
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
@@ -127,6 +127,20 @@ class FigureExportSuite extends munit.FunSuite:
   private def unescape(s: String): String =
     s.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")
 
+  /** The paths Intaglio draws for cased segments (canardlapin/intaglio#30): chains joined through
+    * vertices shared by exactly two segments, split at every other vertex, plus one path per loop.
+    */
+  private def runs(segments: Vector[(GridPoint, GridPoint)]): Int =
+    val degree =
+      segments.flatMap((a, b) => Vector(a, b)).groupMapReduce(identity)(_ => 1)(_ + _)
+    val parent = scala.collection.mutable.HashMap.empty[GridPoint, GridPoint]
+    def find(p: GridPoint): GridPoint =
+      val q = parent.getOrElseUpdate(p, p)
+      if q == p then p else { val r = find(q); parent(p) = r; r }
+    segments.foreach((a, b) => parent(find(a)) = find(b))
+    val loops = degree.keys.groupBy(find).count((_, ps) => ps.forall(p => degree(p) == 2))
+    degree.values.filter(_ != 2).sum / 2 + loops
+
   test("the exported SVG matches its golden (fonts aside)") {
     page().map { p =>
       val maps = p.panels.find(_.letter.value == "C").map(_.body) match
@@ -138,13 +152,14 @@ class FigureExportSuite extends munit.FunSuite:
         maps.tiles.map(_.map)
       )
       assert(maps.maps.contains("shared limits"), maps.maps)
-      val svg            = withoutFonts(svgOf(p))
-      val rasters        = """data-name="map-tile-map""".r.findAllMatchIn(svg).size
-      val contours       = """data-name="map-tile-isolines""".r.findAllMatchIn(svg).size
+      val svg      = withoutFonts(svgOf(p))
+      val rasters  = """data-name="map-tile-map""".r.findAllMatchIn(svg).size
+      val contours = """data-name="map-tile-isolines""".r.findAllMatchIn(svg).size
+      // Intaglio draws each unbranched run of cased segments as one path (canardlapin/intaglio#30).
       val servedContours = maps.tiles
         .map(_.map)
         .collect { case TileMap.Drawn(grid, _, _) =>
-          Isolines.of(grid).flatMap(_.segments).size
+          Isolines.of(grid).map(level => runs(level.segments)).sum
         }
         .sum
       assertEquals(rasters, maps.tiles.size)

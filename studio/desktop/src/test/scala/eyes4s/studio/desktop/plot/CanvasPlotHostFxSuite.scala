@@ -26,6 +26,7 @@ import intaglio.{
   Interval,
   Point,
   RasterDimensions,
+  RasterInterpolation,
   RasterImage,
   Rgba32,
   Scene,
@@ -542,7 +543,14 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     val image = RasterImage.tabulate(RasterDimensions.unsafe(side, side))((x, y) =>
       Rgba32.unsafe(x * 40, y * 40, 0)
     )
-    val grob = Grob.imageUnsafe(image, Point.npcUnsafe(0.5, 0.5), Size.npcUnsafe(0.5, 0.5))
+    // Smooth, not nearest: Intaglio resamples nearest rasters to device pixels before drawing,
+    // which would give both scenes' images the same size and hide which cache drew them.
+    val grob = Grob.imageUnsafe(
+      image,
+      Point.npcUnsafe(0.5, 0.5),
+      Size.npcUnsafe(0.5, 0.5),
+      interpolation = RasterInterpolation.Smooth
+    )
     right(
       PlotScene(
         id,
