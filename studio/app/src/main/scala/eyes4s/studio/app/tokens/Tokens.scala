@@ -49,7 +49,10 @@ enum ThemedToken(val cssName: String) derives CanEqual:
   case HairlineStrong extends ThemedToken("hairline-strong")
 
   /** Plot gridlines and the across-scales row rules. */
-  case PlotGrid    extends ThemedToken("plot-grid")
+  case PlotGrid extends ThemedToken("plot-grid")
+
+  /** The shadow under a popup (the state menu). */
+  case PopupShadow extends ThemedToken("popup-shadow")
   case Ink         extends ThemedToken("ink")
   case Ink2        extends ThemedToken("ink-2")
   case Ink3        extends ThemedToken("ink-3")
@@ -276,6 +279,7 @@ object Tokens:
       case ThemedToken.Hairline       => Colour.srgb(0xdedad2)
       case ThemedToken.HairlineStrong => Colour.srgb(0xcbc6bc)
       case ThemedToken.PlotGrid       => Colour.srgb(0xe6e3dc)
+      case ThemedToken.PopupShadow    => Colour.srgba(0x000000, 18)
       case ThemedToken.Ink            => Colour.srgb(0x1c1e21)
       case ThemedToken.Ink2           => Colour.srgb(0x474b52)
       case ThemedToken.Ink3           => Colour.srgb(0x61666d)
@@ -310,6 +314,7 @@ object Tokens:
       case ThemedToken.Hairline       => Colour.srgb(0x303237)
       case ThemedToken.HairlineStrong => Colour.srgb(0x3d4046)
       case ThemedToken.PlotGrid       => Colour.srgb(0x2a2c30)
+      case ThemedToken.PopupShadow    => Colour.srgba(0x000000, 50)
       case ThemedToken.Ink            => Colour.srgb(0xeceae5)
       case ThemedToken.Ink2           => Colour.srgb(0xbdbab3)
       case ThemedToken.Ink3           => Colour.srgb(0x9a978f)

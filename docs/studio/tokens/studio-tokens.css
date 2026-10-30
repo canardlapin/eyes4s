@@ -26,6 +26,7 @@
   --hairline: #DEDAD2;
   --hairline-strong: #CBC6BC;
   --plot-grid: #E6E3DC;
+  --popup-shadow: rgba(0,0,0,.18);
   --ink: #1C1E21;
   --ink-2: #474B52;
   --ink-3: #61666D;
@@ -84,6 +85,7 @@
   --hairline: #303237;
   --hairline-strong: #3D4046;
   --plot-grid: #2A2C30;
+  --popup-shadow: rgba(0,0,0,.5);
   --ink: #ECEAE5;
   --ink-2: #BDBAB3;
   --ink-3: #9A978F;

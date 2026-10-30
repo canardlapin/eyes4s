@@ -249,6 +249,7 @@ object TokenUsage:
     t(Hairline)       -> "decorative 1px separators and card borders",
     t(HairlineStrong) -> "decorative 1px rules under headers and around groups",
     t(PlotGrid)       -> "plot gridlines: decorative, values are read from the axes",
+    t(PopupShadow)    -> "a popup's shadow: depth, not information",
     p(PaperRule)      -> "axis spines, paired-participant lines, caption rule: decorative",
     p(Screen)         -> "stimulus depiction: the blank screen a participant saw",
     p(DivNeg)         -> "map fill; values are read from the legend and table twin",
