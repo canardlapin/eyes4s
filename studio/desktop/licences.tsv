@@ -23,6 +23,7 @@ dependency	io.github.canardlapin	intaglio-core_3	*	Apache-2.0	canardlapin
 dependency	io.github.canardlapin	intaglio-interaction_3	*	Apache-2.0	canardlapin
 dependency	io.github.canardlapin	intaglio-java2d_3	*	Apache-2.0	canardlapin
 dependency	io.github.canardlapin	intaglio-javafx_3	*	Apache-2.0	canardlapin
+dependency	io.github.canardlapin	intaglio-jvm-text_3	*	Apache-2.0	canardlapin
 dependency	io.github.canardlapin	intaglio-pdf_3	*	Apache-2.0	canardlapin
 dependency	io.github.canardlapin	intaglio-svg_3	*	Apache-2.0	canardlapin
 dependency	org.apache.pdfbox	pdfbox	*	Apache-2.0	The Apache Software Foundation
