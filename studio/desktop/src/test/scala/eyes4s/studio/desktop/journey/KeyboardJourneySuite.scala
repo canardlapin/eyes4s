@@ -140,6 +140,26 @@ class KeyboardJourneySuite extends GoldenWindow:
 
   private def space(fx: FxStage): Unit = fx.robot.press(KeyCode.SPACE)
 
+  /** Tab to the state button, open its menu with Space, and choose `label`.
+    * The menu is its own popup window: Tab inside it reaches the button, so
+    * its Space is its fire.
+    */
+  private def stateAction(fx: FxStage, w: StudioWindow, label: String): Unit =
+    tabToNamed(fx, "Study state:")
+    space(fx)
+    val b = runOnFx {
+      val state = w.shell.appBar.state
+      assert(state.menu.isShowing, "the state menu did not open")
+      state.content
+        .lookupAll(".state-action")
+        .asScala
+        .collectFirst { case b: javafx.scene.control.Button if b.getText == label => b }
+        .getOrElse(fail(s"no '$label' in the state menu: ${state.drawnMenu}"))
+    }
+    assert(!runOnFx(b.isDisabled), s"'$label' is disabled")
+    runOnFx { b.requestFocus(); b.fire() }
+    fx.awaitLayout()
+
   /** Tab to the combo box named `prefix`, then step it with ↓ (↑ once past
     * the end) until `wanted` holds of its value's text.
     */
@@ -325,9 +345,22 @@ class KeyboardJourneySuite extends GoldenWindow:
       w.session.await(w.session.fixture.get.complete(job)).fold(e => fail(e.toString), identity)
       eventually(fx, "run 6 ready")(w.runtime.model.jobs.ready.exists(_.run == run6))
       audit(w, "run 6 ready")
-      // The jobs chip's Show.
-      tabToNamed(fx, "Run 6 ready")
+      // The state button opens its menu with the first action focused: the
+      // Run section's Show run 6. The menu is its own popup window, so the
+      // focused button's Space is its fire.
+      tabToNamed(fx, "Study state:")
       space(fx)
+      val show = runOnFx {
+        val state = w.shell.appBar.state
+        assert(state.menu.isShowing, "the state menu did not open")
+        state.content.getScene.getFocusOwner
+      }
+      assertEquals(
+        runOnFx(show.asInstanceOf[javafx.scene.control.Button].getText),
+        "Show run 6"
+      )
+      runOnFx(show.asInstanceOf[javafx.scene.control.Button].fire())
+      fx.awaitLayout()
       eventually(fx, "run 6 shown")(
         w.runtime.model.document.presentation.shownRun.contains(run6)
       )
@@ -395,18 +428,16 @@ class KeyboardJourneySuite extends GoldenWindow:
       w.session
         .await(w.session.fixture.get.declare(StoryMoments.rev5, r3))
         .fold(e => fail(e.toString), identity)
-      // The context strip's draft chip, then rev 5's pair rows in Analysis.
-      tabToNamed(fx, "Draft rev 5")
-      space(fx)
+      // The state menu's Review in Analysis, then rev 5's pair rows there.
+      stateAction(fx, w, "Review in Analysis")
       eventually(fx, "rev 5's pair rows")(
         shownTexts(w).exists(_.contains("Save & run rev 5 · 44,845 pairs"))
       )
       audit(w, "rev 5 in Analysis")
-      // Discard draft from Compare's context strip, then the confirmation's.
+      // Discard draft from the state menu in Compare, then the confirmation's.
       chord(fx, CommandRegistry.compare)
       eventually(fx, "Compare settled")(model(w).perspective == Perspective.Compare)
-      tabToNamed(fx, "Discard draft")
-      space(fx)
+      stateAction(fx, w, "Discard draft")
       tabTo(fx, "the confirmation's Discard draft")(n =>
         n.getStyleClass.contains("confirm-action")
       )

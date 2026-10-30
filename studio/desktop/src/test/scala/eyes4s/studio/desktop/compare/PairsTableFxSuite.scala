@@ -109,9 +109,9 @@ class PairsTableFxSuite extends ShellFxSuite:
       val bounds  = runOnFx(content.localToScene(content.getBoundsInLocal))
       assert(bounds.getWidth > 600, s"$id width ${bounds.getWidth}")
       assert(bounds.getHeight > 200, s"$id height ${bounds.getHeight}")
-      assertEqualsDouble(runOnFx(w.shell.appBar.node.getHeight), 44.0, 1.0)
-      assertEqualsDouble(runOnFx(w.shell.contextStrip.node.getHeight), 32.0, 1.0)
-      assertEqualsDouble(runOnFx(w.shell.statusBar.node.getHeight), 24.0, 1.0)
+      assertEqualsDouble(runOnFx(w.shell.appBar.node.getHeight), 48.0, 1.0)
+      assertEqualsDouble(runOnFx(w.shell.contextStrip.node.getHeight), 34.0, 1.0)
+      assertEqualsDouble(runOnFx(w.shell.statusBar.node.getHeight), 26.0, 1.0)
       if label == "scale-profile" then
         eventually(fx, "the profile actually draws, not just its table values") {
           w.summary.scaleProfile.plotHost.status.get match

@@ -46,6 +46,7 @@ class IconCatalogSuite extends StudioFxSuite:
   private val ticketIcons = List(
     "chevron-down",
     "chevron-right",
+    "close",
     "back",
     "forward",
     "minimize",
@@ -139,7 +140,7 @@ class IconCatalogSuite extends StudioFxSuite:
     }
     assertEquals(
       Icon.values.toList.filter(_.source == IconSource.Drawn).map(_.id),
-      List("search", "warning", "display-cue", "display-unknown")
+      List("close", "search", "warning", "display-cue", "display-unknown")
     )
   }
 

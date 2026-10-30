@@ -171,10 +171,17 @@ final class StateButton(dispatch: Intent => Unit):
         case (None, None) => if menu.isShowing then fill(vm.menu)
       ()
 
-  /** Open the menu at its sections. */
+  /** Open the menu at its sections, the first enabled button focused, so
+    * the keyboard reaches it at once.
+    */
   def open(): Unit = shown.foreach { vm =>
     vm.confirm.fold(fill(vm.menu))(c => fill(Vector(c)))
     place()
+    content
+      .lookupAll(".state-action")
+      .asScala
+      .collectFirst { case b: Button if !b.isDisabled => b }
+      .foreach(_.requestFocus())
   }
 
   private def ask(c: StateSectionVM): Unit =
@@ -217,6 +224,13 @@ final class StateButton(dispatch: Intent => Unit):
           Option.when(s.default.contains(i))("state-default")
         val b = Fx.button(a, dispatch, classes*)
         b.setDefaultButton(s.default.contains(i))
+        // Choosing closes the menu, then acts; the confirmation's own
+        // answers clear the question, so closing it dispatches nothing more.
+        b.setOnAction { _ =>
+          confirming = false
+          menu.hide()
+          dispatch(a.intent)
+        }
         b
       }
       val row = HBox((if s.default.isDefined then Fx.spacer() +: buttons else buttons)*)
