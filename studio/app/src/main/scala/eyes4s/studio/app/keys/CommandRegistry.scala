@@ -105,15 +105,14 @@ object CommandRegistry:
       always(Intent.SwitchPerspective(p))
     )
 
-  val data: AppCommand    = perspective(Perspective.Data, Key.Digit1, MessageId.PerspectiveData)
-  val explore: AppCommand =
-    perspective(Perspective.Explore, Key.Digit2, MessageId.PerspectiveExplore)
+  // The four perspectives, ⌘1–⌘4, in the switcher's order (overhaul v4).
+  val data: AppCommand = perspective(Perspective.Data, Key.Digit1, MessageId.PerspectiveData)
   val analysis: AppCommand =
-    perspective(Perspective.Analysis, Key.Digit3, MessageId.PerspectiveAnalysis)
-  val compare: AppCommand =
-    perspective(Perspective.Compare, Key.Digit4, MessageId.PerspectiveCompare)
-  val figures: AppCommand =
-    perspective(Perspective.Figures, Key.Digit5, MessageId.PerspectiveFigures)
+    perspective(Perspective.Analysis, Key.Digit2, MessageId.PerspectiveAnalysis)
+  val results: AppCommand =
+    perspective(Perspective.Results, Key.Digit3, MessageId.PerspectiveResults)
+  val report: AppCommand =
+    perspective(Perspective.Report, Key.Digit4, MessageId.PerspectiveReport)
 
   val back: AppCommand = AppCommand(
     CommandId.declared("navigate.back"),
@@ -362,10 +361,9 @@ object CommandRegistry:
   /** Every command, in menu order. */
   val all: Vector[AppCommand] = Vector(
     data,
-    explore,
     analysis,
-    compare,
-    figures,
+    results,
+    report,
     back,
     forward,
     undo,
@@ -487,7 +485,6 @@ object CommandRegistry:
 
   def forPerspective(p: Perspective): AppCommand = p match
     case Perspective.Data     => data
-    case Perspective.Explore  => explore
     case Perspective.Analysis => analysis
-    case Perspective.Compare  => compare
-    case Perspective.Figures  => figures
+    case Perspective.Results  => results
+    case Perspective.Report   => report

@@ -86,7 +86,7 @@ class ContextStripFxSuite extends ShellFxSuite:
     assertEquals(runOnFx(w.host.active), Some("compare.query"))
     // From the pair, explain the record: the trail crosses into Explore.
     dispatch(fx, w, Intent.Explain(Place.At(StoryModels.record)))
-    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Explore)
+    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Results)
     assertEquals(runOnFx(w.host.active), Some("explore"))
     val labels = crumbs(w).map(b => runOnFx(drawn(b)))
     assertEquals(
@@ -96,11 +96,11 @@ class ContextStripFxSuite extends ShellFxSuite:
     assert(runOnFx(crumbs(w).last.getPseudoClassStates.contains(Fx.Current)))
     // The fixation crumb stays in Explore, at the fixation.
     fx.robot.click(crumb(w, "enc_03 · fixation 6"))
-    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Explore)
+    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Results)
     assertEquals(runOnFx(drawn(crumbs(w).last)), "enc_03 · fixation 6")
     // The pair crumb crosses back into Compare's query layout, where it was.
     fx.robot.click(crumb(w, "pair ret_07 × enc_03"))
-    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Compare)
+    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Results)
     assertEquals(runOnFx(w.host.active), Some("compare.query"))
     assertEquals(location(w), StoryModels.t2Compare.location)
     // ⌘[ ⌘[ retrace to the record; the Back button is the same command.

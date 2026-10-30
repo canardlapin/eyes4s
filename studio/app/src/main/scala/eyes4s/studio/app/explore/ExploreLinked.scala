@@ -16,9 +16,10 @@
 
 package eyes4s.studio.app.explore
 
+import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.document.{Perspective, SourceRole}
+import eyes4s.studio.core.document.SourceRole
 import eyes4s.studio.core.selection.{RecordNumber, StudioRef}
 
 /** Linked selection in Explore (ticket S6.6; Explore.dc.html, interactive).
@@ -96,11 +97,12 @@ object ExploreLinked:
 
   /** The navigation that brings Explore's trail to the selected fixation and
     * its record (the trail's fixation and record crumbs), when the trail is
-    * not already there. Only in Explore, and only for the trial view's trial.
+    * not already there. Only in Results' drill, and only for the trial
+    * view's trial.
     */
   def follow(view: ExploreTrialView, m: AppModel): Option[Intent] =
     for
-      f      <- selected(view, m) if m.perspective == Perspective.Explore
+      f      <- selected(view, m) if StudioLayouts.drilling(m.perspective, m.location.trail)
       record <- crumb(view, f)
       if !m.location.trail.lastOption.contains(Place.At(record))
     yield Intent.Follow(Place.At(record))

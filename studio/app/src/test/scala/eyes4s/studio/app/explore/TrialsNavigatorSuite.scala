@@ -213,7 +213,7 @@ class TrialsNavigatorSuite extends munit.FunSuite:
       )
       val explored =
         AppModel.update(model, Intent.Explain(Place.At(StudioRef.Trial(p17ret09))))._1
-      assertEquals(explored.perspective, Perspective.Explore)
+      assertEquals(explored.perspective, Perspective.Results)
       assertEquals(TrialsNavigator.selected(explored), Some(p17ret09))
       // The selected trial's phase opens.
       val now = TrialsNavigatorVM.trials(nav, explored)

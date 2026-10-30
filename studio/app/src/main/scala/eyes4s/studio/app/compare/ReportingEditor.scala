@@ -278,7 +278,7 @@ object ReportingEditor:
 
   /** Compare's summary of spec `id`. */
   def show(id: ReportingId): Intent =
-    Intent.Navigate(Location(Perspective.Compare, Vector(Place.Summary(id))))
+    Intent.Navigate(Location(Perspective.Results, Vector(Place.Summary(id))))
 
   /** An id for a new spec named `name`, distinct from the document's: its
     * ASCII letters and digits, lower case, runs of anything else one `-`.

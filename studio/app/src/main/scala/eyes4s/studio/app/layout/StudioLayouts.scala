@@ -21,6 +21,7 @@ import cats.data.NonEmptyVector
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.MessageId
 import eyes4s.studio.core.document.Perspective
+import eyes4s.studio.core.selection.StudioRef
 
 /** The studio's perspectives and default pane layouts, pane for pane as the
   * boards in docs/studio/design/ draw them (LayoutSpecSuite checks every
@@ -179,7 +180,7 @@ object StudioLayouts:
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
-    Perspective.Explore,
+    Perspective.Results,
     columns(
       navigator(
         PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
@@ -260,7 +261,7 @@ object StudioLayouts:
   /** Results.dc.html: study → participants. */
   val compareSummary: PerspectiveLayout = layout(
     "compare.summary",
-    Perspective.Compare,
+    Perspective.Results,
     columns(
       navigator(pane("compare.participants", "Participants", Navigator)),
       split(
@@ -286,7 +287,7 @@ object StudioLayouts:
   /** Main.dc.html: query → pair → maps. */
   val compareQuery: PerspectiveLayout = layout(
     "compare.query",
-    Perspective.Compare,
+    Perspective.Results,
     columns(
       navigator(
         pane("compare.queries", "Queries", Navigator),
@@ -324,7 +325,7 @@ object StudioLayouts:
   /** Figures.dc.html. */
   val figures: PerspectiveLayout = layout(
     "figures",
-    Perspective.Figures,
+    Perspective.Report,
     columns(
       navigator(pane("figures.figures", "Figures", Navigator)),
       split(
@@ -371,19 +372,39 @@ object StudioLayouts:
   val spec: LayoutSpec = LayoutSpec(
     Vector(
       Perspective.Data     -> NonEmptyVector.of(dataVerify, dataFirstRun),
-      Perspective.Explore  -> NonEmptyVector.one(explore),
       Perspective.Analysis -> NonEmptyVector.one(analysis),
-      Perspective.Compare  -> NonEmptyVector.of(compareQuery, compareSummary),
-      Perspective.Figures  -> NonEmptyVector.one(figures)
+      Perspective.Results  -> NonEmptyVector.of(compareQuery, compareSummary, explore),
+      Perspective.Report   -> NonEmptyVector.one(figures)
     )
   )
 
-  /** Compare shows the summary layout at the Summary crumb (or with no
-    * trail) and the query layout at any deeper crumb.
+  /** Results shows the summary layout at the Summary crumb, the drill (a
+    * trial, its fixations and records: Explore before v4) once the trail
+    * reaches a trial, fixation or record, or a participant reached outside a
+    * summary, and the pair layout at any other crumb. With no trail there is
+    * no summary yet (Results' root trail is the summary once one exists), so
+    * it shows the drill's trial browser.
     */
-  def compareLayout(trail: Vector[Place]): CompareLayout = trail.lastOption match
-    case None | Some(Place.Summary(_)) => CompareLayout.Summary
-    case _                             => CompareLayout.Query
+  def compareLayout(trail: Vector[Place]): CompareLayout =
+    val fromSummary = trail.exists {
+      case Place.Summary(_) | Place.Group(_, _) => true
+      case _                                    => false
+    }
+    trail.lastOption match
+      case None                   => CompareLayout.Drill
+      case Some(Place.Summary(_)) => CompareLayout.Summary
+      case Some(Place.At(ref))    =>
+        ref match
+          case StudioRef.Trial(_) | StudioRef.Fixation(_, _) |
+              StudioRef.SourceRecord(_, _, _, _) | StudioRef.TrialGroup(_, _) =>
+            CompareLayout.Drill
+          case StudioRef.Participant(_) if !fromSummary => CompareLayout.Drill
+          case _                                        => CompareLayout.Query
+      case _ => CompareLayout.Query
+
+  /** Whether `perspective` at `trail` shows Results' drill. */
+  def drilling(perspective: Perspective, trail: Vector[Place]): Boolean =
+    perspective == Perspective.Results && compareLayout(trail) == CompareLayout.Drill
 
   /** The layout a perspective shows: Data's first-run layout until a dataset
     * exists, and Compare's by trail depth.
@@ -395,13 +416,13 @@ object StudioLayouts:
   ): PerspectiveLayout =
     perspective match
       case Perspective.Data     => if hasData then dataVerify else dataFirstRun
-      case Perspective.Explore  => explore
       case Perspective.Analysis => analysis
-      case Perspective.Compare  =>
+      case Perspective.Results  =>
         compareLayout(trail) match
           case CompareLayout.Summary => compareSummary
           case CompareLayout.Query   => compareQuery
-      case Perspective.Figures => figures
+          case CompareLayout.Drill   => explore
+      case Perspective.Report => figures
 
   /** Every structural rule a declaration must satisfy; empty when sound. */
   def problems(spec: LayoutSpec): Vector[LayoutError] =

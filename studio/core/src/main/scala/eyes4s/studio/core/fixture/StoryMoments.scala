@@ -370,7 +370,7 @@ object StoryMoments:
         rep   <- byResponse
         f1    <- figure1
         f2    <- figure2
-        view  <- presentation(Perspective.Compare, run7)
+        view  <- presentation(Perspective.Results, run7)
         doc   <- StudioDocument.of(
           Vector(d2, d3),
           Vector(a3, a4),
@@ -396,7 +396,7 @@ object StoryMoments:
         rep  <- byResponseContrasted
         f1   <- figure1
         f2   <- figure2
-        view <- presentation(Perspective.Compare, run7)
+        view <- presentation(Perspective.Results, run7)
         doc  <- StudioDocument.of(
           Vector(d2, d3),
           Vector(a3, a4, a5),

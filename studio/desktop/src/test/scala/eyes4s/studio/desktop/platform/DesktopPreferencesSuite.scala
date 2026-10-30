@@ -46,7 +46,7 @@ class DesktopPreferencesSuite extends munit.FunSuite:
         val file       = dir.resolve("preferences.json")
         val paths      = Vector.tabulate(10)(i => host(dir.resolve(s"project-$i.eyes")))
         val exportPath = host(dir.resolve("exports"))
-        val layout     = SavedLayout(Perspective.Compare, LayoutBlob("{\"fixture\":true}"))
+        val layout     = SavedLayout(Perspective.Results, LayoutBlob("{\"fixture\":true}"))
         val changes: Vector[UserPreferences => UserPreferences] =
           paths.map(path =>
             (p: UserPreferences) => p.withRecent(p.recent.opened(path))

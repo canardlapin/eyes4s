@@ -191,7 +191,7 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
       )
       fx.robot.click(node)
       fx.awaitLayout()
-      assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Explore, q)
+      assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Results, q)
       assertEquals(
         runOnFx(w.runtime.model.location.trail.lastOption),
         Some(Place.At(StudioRef.Trial(q))),

@@ -137,7 +137,7 @@ object StoryModels:
     play(
       opened(t2),
       _ => draftReady(t2),
-      _ => Intent.Navigate(Location(Perspective.Compare, queryTrail)),
+      _ => Intent.Navigate(Location(Perspective.Results, queryTrail)),
       m => select(m, "compare.contrast", pair)
     )
   )
@@ -149,7 +149,7 @@ object StoryModels:
       _ =>
         Intent.Navigate(
           Location(
-            Perspective.Explore,
+            Perspective.Results,
             queryTrail ++ Vector(
               Place.At(StudioRef.Fixation(p17enc03, fixation6)),
               Place.At(record)
@@ -182,7 +182,7 @@ object StoryModels:
       _ =>
         Intent.Navigate(
           Location(
-            Perspective.Figures,
+            Perspective.Report,
             Vector(Place.Figures, Place.Figure(ok(FigureId.of(1))), Place.At(panelD))
           )
         ),

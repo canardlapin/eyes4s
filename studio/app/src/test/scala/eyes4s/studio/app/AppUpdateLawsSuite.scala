@@ -368,8 +368,8 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
   test("A crumb crosses perspectives: the pair crumb in Explore returns to Compare · query") {
     val m0      = StoryModels.t2Explore
     val (m1, _) = AppModel.update(m0, Intent.OpenCrumb(4))
-    assertEquals(m1.perspective, Perspective.Compare)
-    assertEquals(m1.location, Location(Perspective.Compare, StoryModels.queryTrail))
+    assertEquals(m1.perspective, Perspective.Results)
+    assertEquals(m1.location, Location(Perspective.Results, StoryModels.queryTrail))
     assertEquals(m1.layout.id.value, "compare.query")
     val (m2, _) = AppModel.update(m1, Intent.OpenCrumb(0))
     assertEquals(m2.layout.id.value, "compare.summary")

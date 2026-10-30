@@ -63,10 +63,9 @@ final class Labels(model: AppModel, messages: Messages):
 
   def perspective(p: Perspective): String = messages(p match
     case Perspective.Data     => PerspectiveData
-    case Perspective.Explore  => PerspectiveExplore
     case Perspective.Analysis => PerspectiveAnalysis
-    case Perspective.Compare  => PerspectiveCompare
-    case Perspective.Figures  => PerspectiveFigures)
+    case Perspective.Results  => PerspectiveResults
+    case Perspective.Report   => PerspectiveReport)
 
   def stage(kind: StageKind): String = messages(kind match
     case StageKind.Estimating  => StageEstimating

@@ -633,3 +633,34 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(spec(Vector(out, keep, out)), spec(Vector(keep, out)))
     assertEquals(spec(Vector(out, keep)).map(_.filters), Right(Vector(keep, out)))
   }
+
+/** Documents saved before v4 name five perspectives; they open in four. */
+class PerspectiveMigrationSuite extends munit.FunSuite:
+  import io.circe.parser.decode
+
+  test("Compare and Explore open as Results, Figures as Report; the v4 names stand") {
+    Vector(
+      "Compare" -> Perspective.Results,
+      "Explore" -> Perspective.Results,
+      "Figures" -> Perspective.Report,
+      "Data"    -> Perspective.Data,
+      "Results" -> Perspective.Results,
+      "Report"  -> Perspective.Report
+    ).foreach { (name, p) =>
+      assertEquals(decode[Perspective](s"""{"$name":{}}"""), Right(p), name)
+    }
+    assert(decode[Perspective]("""{"Nowhere":{}}""").isLeft)
+    // Written with the v4 names only.
+    assertEquals(
+      io.circe.syntax.EncoderOps(Perspective.Report).asJson.noSpaces,
+      """{"Report":{}}"""
+    )
+  }
+
+  test("a renamed perspective's saved layout is dropped; the others are kept") {
+    val stored =
+      """{"perspective":{"Explore":{}},"theme":{"Light":{}},"stage":{"Dark":{}},"mapOpacity":0.6,"underlay":false,"shownRun":null,"layouts":[{"perspective":{"Data":{}},"layout":"d"},{"perspective":{"Compare":{}},"layout":"c"},{"perspective":{"Explore":{}},"layout":"e"},{"perspective":{"Figures":{}},"layout":"f"}]}"""
+    val p = decode[PresentationState](stored).fold(e => fail(e.toString), identity)
+    assertEquals(p.perspective, Perspective.Results)
+    assertEquals(p.layouts, Vector(SavedLayout(Perspective.Data, LayoutBlob("d"))))
+  }

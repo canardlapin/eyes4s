@@ -36,7 +36,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
 
   private def snapshot(model: AppModel): String = ShellText.render(Shell.project(model))
 
-  private val perspectives = "Data | Explore | Analysis | Compare | Figures"
+  private val perspectives = "Data | Analysis | Results | Report"
 
   private def switcher(current: String): String =
     perspectives.replace(current, s"$current (current)")
@@ -72,7 +72,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       snapshot(StoryModels.t2Compare),
       s"""|window: memory-study.eyes
           |app.project: memory-study
-          |app.perspectives: ${switcher("Compare")}
+          |app.perspectives: ${switcher("Results")}
           |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
           |context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / *pair ret_07 × enc_03 · matched*
@@ -85,7 +85,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       snapshot(StoryModels.t2Explore),
       s"""|window: memory-study.eyes
           |app.project: memory-study
-          |app.perspectives: ${switcher("Explore")}
+          |app.perspectives: ${switcher("Results")}
           |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
           |context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / pair ret_07 × enc_03 / enc_03 · fixation 6 / *fixations.csv record 7,214*
@@ -111,7 +111,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       snapshot(StoryModels.t2Figures),
       s"""|window: memory-study.eyes
           |app.project: memory-study
-          |app.perspectives: ${switcher("Figures")}
+          |app.perspectives: ${switcher("Report")}
           |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
           |context.trail: Figures / Figure 1 / *Panel D*
@@ -124,7 +124,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       snapshot(StoryModels.t3Summary),
       s"""|window: memory-study.eyes
           |app.project: memory-study
-          |app.perspectives: ${switcher("Compare")}
+          |app.perspectives: ${switcher("Results")}
           |app.state: Showing run 7 | Data r3 | Run 8 · comparing 21,400 / 44,845
           |app.state.cancel: Cancel run 8
           |app.state.progress: 48%
@@ -287,7 +287,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       )
     )
     val model = AppModel
-      .update(AppModel.open(none, None), Intent.SwitchPerspective(Perspective.Compare))
+      .update(AppModel.open(none, None), Intent.SwitchPerspective(Perspective.Results))
       ._1
     val banner = Shell.banner(model)
     assertEquals(banner.map(_.lead), Some("Compare · No run yet"))
@@ -302,6 +302,6 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     val t2 = StoryModels.t2Compare
     for p <- Perspective.values do
       val model = AppModel.update(t2, Intent.SwitchPerspective(p))._1
-      val shown = p == Perspective.Compare || p == Perspective.Figures
+      val shown = p == Perspective.Results || p == Perspective.Report
       assertEquals(Shell.banner(model).isDefined, shown, p)
   }

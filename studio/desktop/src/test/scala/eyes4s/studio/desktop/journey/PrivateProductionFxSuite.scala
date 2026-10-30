@@ -387,7 +387,7 @@ class PrivateProductionFxSuite extends ShellFxSuite:
             fx,
             w,
             Intent
-              .Navigate(Location(Perspective.Compare, Vector(Place.Summary(reportingSpec.id))))
+              .Navigate(Location(Perspective.Results, Vector(Place.Summary(reportingSpec.id))))
           )
           dispatch(
             fx,
@@ -592,7 +592,7 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           dispatch(
             fx,
             w,
-            Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figure(savedFigure.id))))
+            Intent.Navigate(Location(Perspective.Report, Vector(Place.Figure(savedFigure.id))))
           )
           until(fx, "figure export data served") {
             w.figures.vm.bundle.exists(b => BundleItem.Default.subsetOf(b.written.toSet))

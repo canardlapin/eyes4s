@@ -65,35 +65,27 @@ enum Place derives CanEqual:
 
 object Place:
 
-  /** The perspective that shows `trail`'s last place. Fixation and record
-    * places cross into Explore; a participant belongs to Compare when the
-    * trail came from a summary, and to Explore otherwise.
+  /** The perspective that shows `trail`'s last place: trials, fixations,
+    * records and participants are Results' (its drill or its summary), as
+    * are summaries and pairs; Results picks the layout by the trail
+    * (`StudioLayouts.compareLayout`).
     */
   def home(trail: Vector[Place]): Option[Perspective] =
-    val fromSummary = trail.exists {
-      case Summary(_) | Group(_, _) => true
-      case _                        => false
-    }
     trail.lastOption.map {
       case NewProject | Dataset(_) | Source(_) | DataView(_) => Perspective.Data
       case Analyses | Family(_) | Lineage(_) | Revision(_) | Run(_) | Field(_) =>
         Perspective.Analysis
-      case Summary(_) | Group(_, _) => Perspective.Compare
-      case Figures | Figure(_)      => Perspective.Figures
+      case Summary(_) | Group(_, _) => Perspective.Results
+      case Figures | Figure(_)      => Perspective.Report
       case At(ref)                  =>
         ref match
-          case StudioRef.Trial(_) | StudioRef.Fixation(_, _) |
-              StudioRef.SourceRecord(_, _, _, _) | StudioRef.TrialGroup(_, _) =>
-            Perspective.Explore
-          case StudioRef.Participant(_) =>
-            if fromSummary then Perspective.Compare else Perspective.Explore
-          case StudioRef.FigurePanel(_, _) => Perspective.Figures
+          case StudioRef.FigurePanel(_, _) => Perspective.Report
           case StudioRef.WindowTally(_, _) | StudioRef.PlacementTally(_, _) |
               StudioRef.InventoryCount(_, _) | StudioRef.DisplayTally(_, _) |
               StudioRef.TrialPlacementTally(_, _) =>
             Perspective.Data
           case StudioRef.DesignTally(_, _) => Perspective.Analysis
-          case _                           => Perspective.Compare
+          case _                           => Perspective.Results
     }
 
 /** Where the user is: a perspective and its trail. */

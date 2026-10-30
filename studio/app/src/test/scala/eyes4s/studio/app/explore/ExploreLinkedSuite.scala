@@ -124,7 +124,7 @@ class ExploreLinkedSuite extends munit.FunSuite:
       assertEquals(ExploreLinked.follow(v, r3m), Some(Intent.Follow(Place.At(record(3)))))
       // Outside Explore the trail is not moved.
       val compare = AppModel
-        .update(m8, Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))
+        .update(m8, Intent.Navigate(Location(Perspective.Results, StoryModels.queryTrail)))
         ._1
       assertEquals(ExploreLinked.follow(v, compare), None)
     }
@@ -182,9 +182,9 @@ class ExploreLinkedSuite extends munit.FunSuite:
         AppModel.update(followed, Intent.Forward)._1.location,
         AppModel.update(back, Intent.Forward)._1.location
       )
-      // A follow never switches perspective.
+      // A follow never leaves the drill: at the pair it does nothing.
       val compare = AppModel
-        .update(m8, Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))
+        .update(m8, Intent.Navigate(Location(Perspective.Results, StoryModels.queryTrail)))
         ._1
       assertEquals(AppModel.update(compare, follow)._1, compare)
     }
@@ -200,8 +200,8 @@ class ExploreLinkedSuite extends munit.FunSuite:
       val crumb = AppModel.update(m8, Intent.OpenCrumb(2))._1
       assertNotEquals(crumb.location, m8.location)
       assertEquals(TrailFollow.deferred(m8, v, crumb), None)
-      // Nor is a perspective switched (⌘3) before it runs.
-      val switched = AppModel.update(m8, Intent.SwitchPerspective(Perspective.Compare))._1
+      // Nor is a perspective switched (⌘2) before it runs.
+      val switched = AppModel.update(m8, Intent.SwitchPerspective(Perspective.Analysis))._1
       assertEquals(TrailFollow.deferred(m8, v, switched), None)
       // A selection changed in between asks for its own follow, not this one.
       val m9 = selecting(m8, "explore.timeline", fixation(9))

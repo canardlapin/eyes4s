@@ -127,7 +127,7 @@ object TrialsNavigator:
     * (a trial, or a fixation or record within one).
     */
   def selected(model: AppModel): Option[TrialKey] =
-    model.navigation.trail(Perspective.Explore).reverseIterator.collectFirst {
+    model.navigation.trail(Perspective.Results).reverseIterator.collectFirst {
       Function.unlift {
         case Place.At(ref) =>
           (ref +: Lineage.structural.ancestors(ref)).collectFirst { case StudioRef.Trial(k) =>

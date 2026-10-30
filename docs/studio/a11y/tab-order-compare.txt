@@ -1,5 +1,5 @@
 menu-button: Project memory-study
-toggle-button: Compare (⌘4)
+toggle-button: Results (⌘3)
 button: Study state: Run 7 · current | Data r3 | Analysis rev 5 · not run. Opens the state menu
 button: Back (⌘[)
 button: Summary · by retrieval response

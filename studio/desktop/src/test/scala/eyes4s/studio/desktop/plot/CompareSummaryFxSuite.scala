@@ -487,7 +487,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     assert(runOnFx(host.vm.participants.get.toOption.get eq previousSource))
     runOnFx(
       runtime.dispatch(
-        Intent.SwitchPerspective(eyes4s.studio.core.document.Perspective.Explore)
+        Intent.SwitchPerspective(eyes4s.studio.core.document.Perspective.Results)
       )
     )
     assert(runOnFx(host.vm.participants.get.toOption.get eq previousSource))
@@ -620,7 +620,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
         w,
         Intent.Navigate(
           Location(
-            eyes4s.studio.core.document.Perspective.Explore,
+            eyes4s.studio.core.document.Perspective.Results,
             Vector(Place.At(StudioRef.Participant("P17")))
           )
         )

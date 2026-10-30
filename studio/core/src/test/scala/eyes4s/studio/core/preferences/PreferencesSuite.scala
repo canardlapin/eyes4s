@@ -82,7 +82,7 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
         AppearanceChoice.System,
         StageAppearance.Mid,
         RecentProjects.of(Vector(path("/a/memory-study.eyes"), path("/b/pilot.eyes"))),
-        Vector(SavedLayout(Perspective.Compare, LayoutBlob("""{"root":1}"""))),
+        Vector(SavedLayout(Perspective.Results, LayoutBlob("""{"root":1}"""))),
         Some(path("/Users/me/exports"))
       )
     )
@@ -239,12 +239,12 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
   }
 
   test("one user layout per perspective, kept in perspective order") {
-    val compare = SavedLayout(Perspective.Compare, LayoutBlob("c"))
+    val compare = SavedLayout(Perspective.Results, LayoutBlob("c"))
     val data    = SavedLayout(Perspective.Data, LayoutBlob("d"))
     val p       = UserPreferences.defaults.withLayout(compare).withLayout(data)
     assertEquals(p.layouts, Vector(data, compare))
-    val replaced = p.withLayout(SavedLayout(Perspective.Compare, LayoutBlob("c2")))
-    assertEquals(replaced.layout(Perspective.Compare).map(_.layout.text), Some("c2"))
+    val replaced = p.withLayout(SavedLayout(Perspective.Results, LayoutBlob("c2")))
+    assertEquals(replaced.layout(Perspective.Results).map(_.layout.text), Some("c2"))
     assertEquals(replaced.layouts.size, 2)
     assertEquals(
       UserPreferences.of(

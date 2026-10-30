@@ -64,7 +64,7 @@ class TrailModelSuite extends munit.FunSuite:
   private def compareSummary: AppModel =
     play(
       t2Compare,
-      _ => Intent.SwitchPerspective(Perspective.Compare),
+      _ => Intent.SwitchPerspective(Perspective.Results),
       _ => Intent.OpenCrumb(0)
     )
 
@@ -72,7 +72,7 @@ class TrailModelSuite extends munit.FunSuite:
     val start = compareSummary
     assertEquals(start.location.trail, Vector(Place.Summary(reporting)))
     val m = AppModel.update(start, Intent.Explain(Place.At(p17In(Some(remembered)))))._1
-    assertEquals(m.perspective, Perspective.Compare)
+    assertEquals(m.perspective, Perspective.Results)
     assertEquals(crumbs(m), Vector("Summary · by retrieval response", "Remembered", "P17"))
     assertEquals(
       crumbs(m).mkString(" › "),
@@ -159,13 +159,13 @@ class TrailModelSuite extends munit.FunSuite:
     }
   }
 
-  test("the perspective follows the target: fixation and record cross into Explore") {
+  test("the target stays in Results: fixation and record open its drill") {
     val start         = compareSummary
     val (atRecord, _) = AppModel.run(
       start,
       chain.drop(1).map(Intent.Explain(_))
     )
-    assertEquals(atRecord.perspective, Perspective.Explore)
+    assertEquals(atRecord.perspective, Perspective.Results)
     assertEquals(atRecord.location.trail, chain)
     assertEquals(
       crumbs(atRecord),
@@ -180,29 +180,28 @@ class TrailModelSuite extends munit.FunSuite:
         "fixations.csv record 7,214"
       )
     )
-    // The trail survives the switch: Compare still shows where it was left.
-    assertEquals(atRecord.navigation.trail(Perspective.Compare), chain.take(6))
+    // Results keeps one trail, now at the record (overhaul v4).
+    assertEquals(atRecord.navigation.trail(Perspective.Results), chain)
   }
 
-  test("E2E-17: a crumb round-trip into Explore and back is lossless") {
+  test("E2E-17: a crumb round-trip from the drill to the pair and back is lossless") {
     val explore = t2Explore
-    assertEquals(explore.perspective, Perspective.Explore)
+    assertEquals(explore.perspective, Perspective.Results)
     val before = explore.location
-    // Open the pair crumb: it crosses into Compare with the prefix.
+    // Open the pair crumb: Results shows the pair, with the prefix.
     val atPair = AppModel.update(explore, Intent.OpenCrumb(4))._1
-    assertEquals(atPair.perspective, Perspective.Compare)
+    assertEquals(atPair.perspective, Perspective.Results)
     assertEquals(atPair.location.trail, queryTrail)
-    assertEquals(atPair.navigation.trail(Perspective.Explore), before.trail)
+    assertEquals(atPair.navigation.trail(Perspective.Results), queryTrail)
     // Back returns to the record exactly; forward to the pair.
     val back = AppModel.update(atPair, Intent.Back)._1
     assertEquals(back.location, before)
     assertEquals(back.selection, explore.selection)
     val forward = AppModel.update(back, Intent.Forward)._1
     assertEquals(forward.location, atPair.location)
-    // ⌘2 from Compare returns to Explore at the record, the trail intact.
-    val switched = AppModel.update(forward, Intent.SwitchPerspective(Perspective.Explore))._1
-    assertEquals(switched.location, before)
-    assertEquals(crumbs(switched), crumbs(explore))
+    // ⌘3 in Results stays where it is.
+    val switched = AppModel.update(forward, Intent.SwitchPerspective(Perspective.Results))._1
+    assertEquals(switched.location, forward.location)
   }
 
   test("back and forward cross perspectives in order") {
@@ -217,9 +216,9 @@ class TrailModelSuite extends munit.FunSuite:
     )
     val visited = Vector(
       Perspective.Analysis,
-      Perspective.Explore,
-      Perspective.Compare,
-      Perspective.Compare
+      Perspective.Results,
+      Perspective.Results,
+      Perspective.Results
     )
     val (back, seen) = (1 to 3).foldLeft((m1, Vector(m1.perspective))) { case ((m, ps), _) =>
       val n = AppModel.update(m, Intent.Back)._1
@@ -285,43 +284,40 @@ class TrailModelSuite extends munit.FunSuite:
         assertEquals(AppModel.update(landed, Intent.Back)._1.location, m.location, board)
   }
 
-  test("S1.6: Explore's crumbs name the perspective they open; the current crumb says so") {
+  test("S1.6: the drill's crumbs stay in Results; the current crumb says so") {
     val trail = Shell.context(t2Explore).trail
     assertEquals(
       trail.map(_.accessible),
       Vector(
-        "Summary · by retrieval response, opens in Compare",
-        "Remembered, opens in Compare",
-        "P17, opens in Compare",
-        "ret_07 · beach-042, opens in Compare",
-        "pair ret_07 × enc_03, opens in Compare",
+        "Summary · by retrieval response",
+        "Remembered",
+        "P17",
+        "ret_07 · beach-042",
+        "pair ret_07 × enc_03",
         "enc_03 · fixation 6",
         "fixations.csv record 7,214, current location"
       )
     )
-    assertEquals(
-      trail.map(_.opens.isDefined),
-      Vector(true, true, true, true, true, false, false)
-    )
+    assertEquals(trail.map(_.opens.isDefined), Vector.fill(7)(false))
   }
 
   test("S1.6 · E2E-17: the fixation and record crumbs cross into Explore and back") {
     // Compare at the pair: open the record, which crosses into Explore.
     val compare  = t2Compare
     val atRecord = AppModel.update(compare, Intent.Explain(Place.At(record)))._1
-    assertEquals(atRecord.perspective, Perspective.Explore)
+    assertEquals(atRecord.perspective, Perspective.Results)
     val crumbsThere = Shell.context(atRecord).trail
     assertEquals(crumbsThere.last.label, "fixations.csv record 7,214")
     assertEquals(crumbsThere(crumbsThere.size - 2).label, "enc_03 · fixation 6")
     // The fixation crumb stays in Explore and truncates the trail there.
     val fixationCrumb = crumbsThere.size - 2
     val atFixation    = AppModel.update(atRecord, crumbsThere(fixationCrumb).intent)._1
-    assertEquals(atFixation.perspective, Perspective.Explore)
+    assertEquals(atFixation.perspective, Perspective.Results)
     assertEquals(atFixation.location.trail.last, Place.At(fixation))
     // The pair crumb goes back to Compare, exactly where it was left.
     val pairCrumb = Shell.context(atFixation).trail.indexWhere(_.label.startsWith("pair"))
     val back      = AppModel.update(atFixation, Intent.OpenCrumb(pairCrumb))._1
-    assertEquals(back.perspective, Perspective.Compare)
+    assertEquals(back.perspective, Perspective.Results)
     assertEquals(back.location, compare.location)
     // ⌘[ twice retraces the round trip: fixation, then record.
     val (retraced, _) = AppModel.run(back, Vector(Intent.Back, Intent.Back))

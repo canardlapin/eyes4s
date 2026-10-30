@@ -90,14 +90,14 @@ class KeymapFxSuite extends ShellFxSuite:
         assertEquals(!item.isDisable, c.enabled(model(w)), item.getId)
         assert(!item.getText.contains("{") && item.getText.nonEmpty, item.getText)
       }
-      // A menu item is its command: View › Compare, Go › Back.
+      // A menu item is its command: View › Analysis, Go › Back.
       def fire(id: String): Unit =
         runOnFx(items.find(_.getId == id).get.fire())
         fx.awaitLayout()
-      fire("perspective.explore")
-      assertEquals(model(w).perspective, Perspective.Explore)
+      fire("perspective.analysis")
+      assertEquals(model(w).perspective, Perspective.Analysis)
       fire("navigate.back")
-      assertEquals(model(w).perspective, Perspective.Compare)
+      assertEquals(model(w).perspective, Perspective.Results)
       // The menus follow the model: Forward is enabled now.
       val forward = runOnFx(
         w.shell.menus.flatMap(_.getItems.asScala).find(_.getId == "navigate.forward").get
@@ -282,15 +282,15 @@ class KeymapFxSuite extends ShellFxSuite:
     }
     seen.toSet
 
-  fxStage.test("keyboard only: ⌘1–5, F6 and ⌃⇥ reach every pane of every layout") { fx =>
+  fxStage.test("keyboard only: ⌘1–4, F6 and ⌃⇥ reach every pane of every layout") { fx =>
     val w       = boot(fx, StoryModels.t2Compare)
     val reached = scala.collection.mutable.Set.empty[String]
-    Vector(Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5).foreach { k =>
+    Vector(Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4).foreach { k =>
       press(fx, KeyChord.command(k))
       reached ++= tour(fx, w)
     }
-    // Compare's summary layout: Tab to its crumb, Space.
-    press(fx, KeyChord.command(Key.Digit4))
+    // Results' summary layout: Tab to its crumb, Space.
+    press(fx, KeyChord.command(Key.Digit3))
     val summary = runOnFx(w.shell.contextStrip.crumbs.head)
     var steps   = 0
     while !runOnFx(fx.scene.getFocusOwner eq summary) && steps < 40 do
@@ -300,6 +300,11 @@ class KeymapFxSuite extends ShellFxSuite:
     fx.robot.press(KeyCode.SPACE)
     assertEquals(runOnFx(w.host.active), Some("compare.summary"))
     reached ++= tour(fx, w)
+    // Results' drill, where the trail reaches a record (t2's Explore board).
+    runOnFx(w.close())
+    val drill = boot(fx, StoryModels.t2Explore)
+    assertEquals(runOnFx(drill.host.active), Some("explore"))
+    reached ++= tour(fx, drill)
     val declared = StudioLayouts.spec.all
       .filterNot(_ == StudioLayouts.dataFirstRun) // shown only before any dataset
       .flatMap(_.panes.map(_.id.value))

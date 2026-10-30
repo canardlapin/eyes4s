@@ -228,7 +228,7 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       assertEquals(crumbs.drop(1), Vector("Remembered", "P17"))
       assert(crumbs.head.startsWith("Summary · "), crumbs.toString)
       dispatch(fx, w, Intent.Dispatch(Command.CreateFigure(run, reporting.id, panels)))
-      dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      dispatch(fx, w, Intent.Navigate(Location(Perspective.Report, Vector(Place.Figures))))
       until(fx, "all edits saved") { !w.runtime.model.save.edited }
       val document = runOnFx(w.runtime.model.document)
       val stored   = timed("warm archive verification") {

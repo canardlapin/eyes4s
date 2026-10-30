@@ -298,7 +298,14 @@ class KeyboardJourneySuite extends GoldenWindow:
       audit(w, "after repair")
       // --- Explore P17 enc_03 -----------------------------------------------
 
-      chord(fx, CommandRegistry.explore)
+      // Results' trial browser. Until Port 6 gives trial browsing its keyboard
+      // path in Data › Trials, the browser is opened by location: Results
+      // keeps one trail, and here it is at the summary.
+      dispatch(
+        fx,
+        w,
+        Intent.Navigate(eyes4s.studio.app.nav.Location(Perspective.Results, Vector.empty))
+      )
       tabToNamed(fx, "Filter trials")
       fx.robot.typeText("P17")
       val trials = tabToNamed(fx, "Trials of r3")
@@ -368,7 +375,16 @@ class KeyboardJourneySuite extends GoldenWindow:
       audit(w, "run 6 shown")
       // --- Compare P17 ret_07, then the summary ------------------------------
 
-      chord(fx, CommandRegistry.compare)
+      // Results keeps one trail, left at the trial browsed above: the summary
+      // is opened by location until Port 6 moves trial browsing to Data.
+      val reporting = model(w).document.reporting.head.id
+      dispatch(
+        fx,
+        w,
+        Intent.Navigate(
+          eyes4s.studio.app.nav.Location(Perspective.Results, Vector(Place.Summary(reporting)))
+        )
+      )
       // Select 2° from the reports, then move the cursor before activating.
       eventually(fx, "the 2° report is available")(
         w.summary.vm.scales.exists(c => c.scale == sigma2 && c.available)
@@ -435,8 +451,8 @@ class KeyboardJourneySuite extends GoldenWindow:
       )
       audit(w, "rev 5 in Analysis")
       // Discard draft from the state menu in Compare, then the confirmation's.
-      chord(fx, CommandRegistry.compare)
-      eventually(fx, "Compare settled")(model(w).perspective == Perspective.Compare)
+      chord(fx, CommandRegistry.results)
+      eventually(fx, "Compare settled")(model(w).perspective == Perspective.Results)
       stateAction(fx, w, "Discard draft")
       tabTo(fx, "the confirmation's Discard draft")(n =>
         n.getStyleClass.contains("confirm-action")
@@ -447,7 +463,7 @@ class KeyboardJourneySuite extends GoldenWindow:
       audit(w, "after the discard")
       // --- Figures and the export bundle -----------------------------------
 
-      chord(fx, CommandRegistry.figures)
+      chord(fx, CommandRegistry.report)
       tabToNamed(fx, "New figure")
       space(fx)
       eventually(fx, "Figure 3")(w.runtime.model.document.figures.exists(_.id.number == 3))
@@ -460,7 +476,7 @@ class KeyboardJourneySuite extends GoldenWindow:
           )
         )
       )
-      chord(fx, CommandRegistry.figures)
+      chord(fx, CommandRegistry.report)
       def template(menuName: String, kind: NewPanel): Unit =
         val menu = tabToNamed(fx, menuName).asInstanceOf[MenuButton]
         eventually(fx, s"${kind.label} available")(
@@ -514,7 +530,7 @@ class KeyboardJourneySuite extends GoldenWindow:
         Files.isRegularFile(bundleDir.resolve("README.txt"))
       )
       audit(w, "after the export")
-      chord(fx, CommandRegistry.compare)
+      chord(fx, CommandRegistry.results)
 
       // Saved: the window's project folder holds the journey.
       eventually(fx, "the project is saved")(!w.runtime.model.save.edited)

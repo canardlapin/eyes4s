@@ -137,7 +137,7 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
     runOnFx(v.rows.getSelectionModel.select(ret09))
     press(fx, v, KeyCode.ENTER)
     val m = runOnFx(w.runtime.model)
-    assertEquals(m.perspective, Perspective.Explore)
+    assertEquals(m.perspective, Perspective.Results)
     assertEquals(m.location.trail.lastOption, Some(Place.At(StudioRef.Trial(p17ret09))))
     // The selection follows Explore's trial; the retrieval phase opens on it.
     assertEquals(

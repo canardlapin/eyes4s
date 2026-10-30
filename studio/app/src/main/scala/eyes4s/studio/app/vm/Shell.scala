@@ -22,6 +22,7 @@ import eyes4s.studio.core.backend.{ProgressTotal, RunId}
 import eyes4s.studio.core.execution.{ExecutionJob, JobPhase, Meter, MeterTotal}
 import eyes4s.studio.core.backend.AnalysisRevision
 import eyes4s.studio.app.keys.CommandRegistry
+import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
 import eyes4s.studio.core.document.{
@@ -388,8 +389,8 @@ object Shell:
         if pendingDataset.exists(_ => m.perspective == Perspective.Data) then None
         else newer(m.freshness.badge).orElse(ended),
         notes,
-        // Explore is view-only: the boards show no draft chip there.
-        draftChip.filter(_ => m.perspective != Perspective.Explore)
+        // The drill is view-only: no draft chip there.
+        draftChip.filter(_ => !StudioLayouts.drilling(m.perspective, m.location.trail))
       )
 
     // --- Banner ------------------------------------------------------------------
@@ -450,7 +451,7 @@ object Shell:
         )
       case Banner.DraftNotRun(shown, draft, diff, data) =>
         val figure = openFigure
-          .filter(_ => m.perspective == Perspective.Figures)
+          .filter(_ => m.perspective == Perspective.Report)
           .flatMap(f => doc.figures.find(_.id == f))
           .flatMap(f => doc.run(f.run).map(r => (f.id, r)))
         val lead = figure.fold(messages(BannerShowing, shown.id.label, shown.analysis.label)) {
@@ -461,7 +462,7 @@ object Shell:
           Option.when(diff.nonEmpty)(describe(diff))).mkString(messages(ClauseSeparator))
         val clause = messages(BannerDraftNotRun, draft.id.label, what)
         val detail =
-          if m.perspective == Perspective.Figures then
+          if m.perspective == Perspective.Report then
             s"$clause ${messages(BannerFiguresNeverFollow)}"
           else clause
         DraftBannerVM(

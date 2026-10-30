@@ -104,7 +104,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
   }
 
   test(
-    "t2: rev 4 · run 7 · r3 current; draft rev 5 ready; banner in Compare and Figures only"
+    "t2: rev 4 · run 7 · r3 current; draft rev 5 ready; banner in Results and Report only"
   ) {
     val f = Freshness.of(t2, ready(t2))
     assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · current")
@@ -112,9 +112,9 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     assertEquals(f.draft.map(FreshnessText.draft), Some("Draft rev 5 · 1 change · ready"))
     assertEquals(FreshnessText.jobs(f.activity), "No jobs")
     val banner = "Showing run 7 (analysis rev 4). Draft rev 5 adds σ 8° and has not been run."
-    assertEquals(f.bannerFor(Perspective.Compare).map(FreshnessText.banner), Some(banner))
-    assertEquals(f.bannerFor(Perspective.Figures).map(FreshnessText.banner), Some(banner))
-    for p <- Vector(Perspective.Data, Perspective.Explore, Perspective.Analysis) do
+    assertEquals(f.bannerFor(Perspective.Results).map(FreshnessText.banner), Some(banner))
+    assertEquals(f.bannerFor(Perspective.Report).map(FreshnessText.banner), Some(banner))
+    for p <- Vector(Perspective.Data, Perspective.Analysis) do
       assertEquals(f.bannerFor(p), None)
     assertEquals(f.pending, Vector.empty)
     // Run 6 (rev 4, cancelled) is older than the shown run and changes nothing.
@@ -161,7 +161,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     )
     assertEquals(f.draft, None)
     assertEquals(
-      f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+      f.bannerFor(Perspective.Results).map(FreshnessText.banner),
       Some(
         "Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you " +
           "choose Show."
@@ -242,7 +242,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     assertEquals(f.pending, Vector.empty)
     assert(f.figures.forall(_.isStale))
     assertEquals(
-      f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+      f.bannerFor(Perspective.Results).map(FreshnessText.banner),
       Some("Showing run 5 (analysis rev 3, data r2), which is no longer current.")
     )
   }
@@ -326,7 +326,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     assertEquals(text(f), "Analysis rev 4 · run 7 · data r3 · current")
     assertEquals(f.standing(run7), Some(RunStanding.Current))
     assertEquals(
-      f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+      f.bannerFor(Perspective.Results).map(FreshnessText.banner),
       Some("Run 8 failed · 2 diagnostics — still showing run 7 (analysis rev 4).")
     )
     // Without the outcome (a reopened document) the count is not invented.
@@ -376,9 +376,9 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
     val f = Freshness.of(none, SessionFacts.empty)
     assertEquals(f.badge, Badge.NoRun(Some(rev4), Some(r3)))
     assertEquals(text(f), "Analysis rev 4 · no run yet · data r3")
-    assertEquals(f.bannerFor(Perspective.Compare), Some(Banner.NoRun(Some(rev4))))
+    assertEquals(f.bannerFor(Perspective.Results), Some(Banner.NoRun(Some(rev4))))
     assertEquals(
-      f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+      f.bannerFor(Perspective.Results).map(FreshnessText.banner),
       Some("Compare · No run yet")
     )
   }

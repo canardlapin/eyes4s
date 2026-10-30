@@ -95,7 +95,7 @@ class ParticipantsNavigatorSuite extends munit.FunSuite:
       val intent = ParticipantsNavigator.key(current, shown, NavigatorKey.Activate)._2.get
       val moved  = AppModel.update(model, intent)._1
       assertEquals(
-        moved.navigation.trail(Perspective.Compare),
+        moved.navigation.trail(Perspective.Results),
         Vector(Place.Summary(s.spec.get.id), Place.At(row.ref))
       )
       assert(vm(s, moved).rows.find(_.participant == "P17").get.selected)

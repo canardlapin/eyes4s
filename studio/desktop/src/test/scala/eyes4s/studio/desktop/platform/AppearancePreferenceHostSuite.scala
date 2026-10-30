@@ -126,7 +126,7 @@ class AppearancePreferenceHostSuite extends munit.FunSuite:
       val project =
         HostPath.of(dir.resolve("recent.eyes").toString).fold(e => fail(e.message), identity)
       val layout = eyes4s.studio.core.document.SavedLayout(
-        eyes4s.studio.core.document.Perspective.Compare,
+        eyes4s.studio.core.document.Perspective.Results,
         eyes4s.studio.core.document.LayoutBlob("{\"retained\":true}")
       )
       val latest = UserPreferences.defaults

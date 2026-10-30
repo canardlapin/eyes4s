@@ -224,14 +224,14 @@ object DocumentSamples:
       "presentation.layouts",
       right(
         PresentationState.of(
-          Perspective.Figures,
+          Perspective.Report,
           Theme.Dark,
           StageAppearance.Mid,
           right(MapOpacity.of(0.4)),
           true,
           Some(RunId(7)),
           Vector(
-            SavedLayout(Perspective.Figures, LayoutBlob("""{"root":"figures"}""")),
+            SavedLayout(Perspective.Report, LayoutBlob("""{"root":"figures"}""")),
             SavedLayout(Perspective.Data, LayoutBlob("""{"root":"data"}"""))
           )
         )

@@ -28,7 +28,8 @@ import eyes4s.studio.core.backend.{
   TrialKey,
   TrialPreview
 }
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
+import eyes4s.studio.app.layout.StudioLayouts
+import eyes4s.studio.core.document.DatasetRevisionSpec
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.desktop.trial.{
@@ -160,7 +161,7 @@ final class ExploreTrialViewHost(
   def sync(m: AppModel): Unit =
     input.project(m.selection)
     stepping = stepping.project(m.selection)._1
-    started = started || m.perspective == Perspective.Explore
+    started = started || StudioLayouts.drilling(m.perspective, m.location.trail)
     if started then
       val (next, effects) = ExploreTrialView.sync(view, m)
       view = next

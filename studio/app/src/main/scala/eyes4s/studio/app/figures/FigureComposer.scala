@@ -444,7 +444,7 @@ object FigureComposer:
   /** The figure the Figures trail is on, else the document's first. */
   def shownFigure(model: AppModel): Option[FigureId] =
     model.navigation
-      .trail(Perspective.Figures)
+      .trail(Perspective.Report)
       .collect { case Place.Figure(f) => f }
       .lastOption
       .filter(f => model.document.figures.exists(_.id == f))
@@ -454,7 +454,7 @@ object FigureComposer:
   def shownPanel(model: AppModel): Option[PanelLetter] =
     val figure = shownFigure(model)
     model.navigation
-      .trail(Perspective.Figures)
+      .trail(Perspective.Report)
       .collect {
         case Place.At(StudioRef.FigurePanel(f, letter)) if figure.contains(f) => letter
       }
@@ -462,7 +462,7 @@ object FigureComposer:
 
   private def figureTrail(figure: FigureId, panel: Option[PanelLetter]): Location =
     Location(
-      Perspective.Figures,
+      Perspective.Report,
       Vector(Place.Figures, Place.Figure(figure)) ++
         panel.map(l => Place.At(StudioRef.FigurePanel(figure, l)))
     )
@@ -885,7 +885,7 @@ object FigureComposer:
         (c.copy(problem = None), show :+ ComposerEffect.App(go))
 
   private def summaryOf(reporting: ReportingId): Intent =
-    Intent.Navigate(Location(Perspective.Compare, Vector(Place.Summary(reporting))))
+    Intent.Navigate(Location(Perspective.Results, Vector(Place.Summary(reporting))))
 
   // -------------------------------------------------------------------------
   // The view

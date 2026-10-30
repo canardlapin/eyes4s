@@ -214,13 +214,16 @@ class LayoutSpecSuite extends munit.FunSuite:
     )
   }
 
-  test("Compare: summary layout at the Summary crumb, query layout below it") {
+  test("Results: summary at the Summary crumb, the pair below it, the drill at a record") {
     val t = StoryModels.queryTrail
-    assertEquals(compareLayout(Vector.empty), CompareLayout.Summary)
+    // No trail: no summary yet, so the drill's trial browser.
+    assertEquals(compareLayout(Vector.empty), CompareLayout.Drill)
+    assertEquals(compareLayout(t :+ Place.At(StoryModels.record)), CompareLayout.Drill)
+    assertEquals(layoutFor(Perspective.Results, Vector.empty, hasData = true), explore)
     assertEquals(compareLayout(t.take(1)), CompareLayout.Summary)
     for n <- 2 to t.size do assertEquals(compareLayout(t.take(n)), CompareLayout.Query, n)
-    assertEquals(layoutFor(Perspective.Compare, t, hasData = true), compareQuery)
-    assertEquals(layoutFor(Perspective.Compare, t.take(1), hasData = true), compareSummary)
+    assertEquals(layoutFor(Perspective.Results, t, hasData = true), compareQuery)
+    assertEquals(layoutFor(Perspective.Results, t.take(1), hasData = true), compareSummary)
   }
 
   test("Data shows the first-run layout until a dataset exists") {

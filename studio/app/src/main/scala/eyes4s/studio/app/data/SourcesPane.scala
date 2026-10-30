@@ -317,7 +317,7 @@ object SourcesPane:
           first.toVector.map(trial =>
             SourcesEffect.App(
               Intent.Navigate(
-                Location(Perspective.Explore, Vector(Place.At(StudioRef.Trial(trial))))
+                Location(Perspective.Results, Vector(Place.At(StudioRef.Trial(trial))))
               )
             )
           )

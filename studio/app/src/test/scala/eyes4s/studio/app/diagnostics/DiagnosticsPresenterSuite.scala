@@ -86,7 +86,7 @@ class DiagnosticsPresenterSuite extends munit.FunSuite:
     val m          = StoryModels.t2Analysis
     val (_, go)    = DiagnosticsPresenter.open(remedy, ViewSelection.initial(view, m.selection))
     val (after, _) = AppModel.run(m, go)
-    assertEquals(after.perspective, Perspective.Explore)
+    assertEquals(after.perspective, Perspective.Results)
     assertEquals(after.location.trail.last, Place.At(StudioRef.Trial(ret05)))
     assertEquals(after.selection.selected, Vector(ret05, enc04, enc04b).map(StudioRef.Trial(_)))
     assertEquals(after.notice, None)

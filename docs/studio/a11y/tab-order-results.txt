@@ -1,5 +1,5 @@
 MENU_BUTTON: Project memory-study
-TOGGLE_BUTTON: Compare (⌘4)
+TOGGLE_BUTTON: Results (⌘3)
 BUTTON: Study state: Showing run 7 | Data r3 | Run 8 · comparing 21,400 / 44,845. Opens the state menu
 BUTTON: Cancel run 8
 BUTTON: Summary · by retrieval response, current location

@@ -27,6 +27,7 @@ import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.command.Command
+import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.core.document.{CoreBinding, Perspective, Preset, SourceRole}
 import eyes4s.studio.core.selection.*
 import eyes4s.studio.desktop.StudioWindow
@@ -96,17 +97,18 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
     w.runtime.model.perspective == p && (p match
       case Perspective.Data =>
         w.columnMapping.loaded.isDone && w.geometry.shownPictures.nonEmpty
-      case Perspective.Explore  => w.explore.state.trial.exists(trialReady(w, _))
+      case Perspective.Results if StudioLayouts.drilling(p, w.runtime.model.location.trail) =>
+        w.explore.state.trial.exists(trialReady(w, _))
       case Perspective.Analysis =>
         w.resolvedDesign.state.preview match
           case DesignPreview.Preparing | DesignPreview.Counting(_, _, _, _) => false
           case _                                                            => true
-      case Perspective.Compare =>
+      case Perspective.Results =>
         w.summary.summary.summary.exists {
           case SummaryAnswer.Answered(r) => w.summary.summary.reports.size == r.scales.size * 2
           case _                         => false
         } && w.summary.participantPlot.plot.nonEmpty
-      case Perspective.Figures =>
+      case Perspective.Report =>
         w.figures.vm.page.exists(page =>
           page.panels.nonEmpty && page.panels.forall(panel =>
             panel.body match
@@ -277,7 +279,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           val keys = Vector("enc_03", "enc_04").map(TrialKey("P17", Phase.Encoding, _, 1))
           def navigate(key: TrialKey): Unit = w.runtime.dispatch(
             Intent.Navigate(
-              Location(Perspective.Explore, Vector(Place.At(StudioRef.Trial(key))))
+              Location(Perspective.Results, Vector(Place.At(StudioRef.Trial(key))))
             )
           )
           keys.foreach { key =>
@@ -380,11 +382,11 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           dispatch(
             fx,
             w,
-            Intent.Navigate(Location(Perspective.Compare, Vector(Place.Summary(reporting.id))))
+            Intent.Navigate(Location(Perspective.Results, Vector(Place.Summary(reporting.id))))
           )
-          until("summary reports", 180)(perspectiveReady(w, Perspective.Compare))
-          dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
-          until("figure", 180)(perspectiveReady(w, Perspective.Figures))
+          until("summary reports", 180)(perspectiveReady(w, Perspective.Results))
+          dispatch(fx, w, Intent.Navigate(Location(Perspective.Report, Vector(Place.Figures))))
+          until("figure", 180)(perspectiveReady(w, Perspective.Report))
           dispatch(
             fx,
             w,
@@ -396,7 +398,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             measureSelection("linked-selection-after-reports")
           Perspective.values.foreach { target =>
             val away =
-              if target == Perspective.Explore then Perspective.Data else Perspective.Explore
+              if target == Perspective.Results then Perspective.Data else Perspective.Results
             measure(
               s"perspective-${target.toString}",
               50,

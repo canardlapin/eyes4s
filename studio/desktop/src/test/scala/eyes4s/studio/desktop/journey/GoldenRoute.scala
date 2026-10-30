@@ -754,7 +754,7 @@ object GoldenRoute:
             .dispatch(
               Intent.Navigate(
                 eyes4s.studio.app.nav.Location(
-                  Perspective.Figures,
+                  Perspective.Report,
                   Vector(
                     eyes4s.studio.app.nav.Place.Figures,
                     eyes4s.studio.app.nav.Place.Figure(figure)
@@ -843,8 +843,8 @@ object GoldenRoute:
               d.dispatch(
                 Intent.Navigate(
                   eyes4s.studio.app.nav.Location(
-                    Perspective.Compare,
-                    d.model.navigation.at(Perspective.Compare).trail
+                    Perspective.Results,
+                    d.model.navigation.at(Perspective.Results).trail
                   )
                 )
               )

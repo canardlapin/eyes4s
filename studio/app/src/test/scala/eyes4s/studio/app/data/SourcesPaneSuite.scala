@@ -163,7 +163,7 @@ class SourcesPaneSuite extends munit.FunSuite:
         SourcesEffect.App(
           Intent.Navigate(
             Location(
-              Perspective.Explore,
+              Perspective.Results,
               Vector(Place.At(StudioRef.Trial(TrialKey("P01", Phase.Encoding, "enc_08", 1))))
             )
           )

@@ -414,7 +414,7 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                   )
                 )
                 dispatch(fx, w, Intent.ShowRun(run))
-                dispatch(fx, w, Intent.SwitchPerspective(Perspective.Compare))
+                dispatch(fx, w, Intent.SwitchPerspective(Perspective.Results))
                 val wanted = sources.filter(j => get(j.hcursor.get[String]("phase")) == phase)
                 until(fx, "all query results delivered to the view") {
                   w.summary.summary.queries.exists {

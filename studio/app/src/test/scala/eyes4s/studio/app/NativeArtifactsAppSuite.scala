@@ -80,8 +80,8 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
     )
     val theme =
       if bound.document.presentation.theme == Theme.Light then Theme.Dark else Theme.Light
-    val perspective = if bound.perspective == Perspective.Compare then Perspective.Figures
-    else Perspective.Compare
+    val perspective = if bound.perspective == Perspective.Results then Perspective.Report
+    else Perspective.Results
     val commands = Vector(
       Command.SetTheme(theme),
       Command.PutReporting(renamed),

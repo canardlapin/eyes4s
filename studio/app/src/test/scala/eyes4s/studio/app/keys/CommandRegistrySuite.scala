@@ -31,16 +31,15 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     assertEquals(shortcuts.distinct.size, shortcuts.size)
   }
 
-  test("the System board's keyboard model: ⌘1–5, ⌘[ ⌘], ⌘Z ⌘⇧Z, F6, ⌘⇧↩") {
+  test("the keyboard model: ⌘1–4, ⌘[ ⌘], ⌘Z ⌘⇧Z, F6, ⌘⇧↩") {
     val table = CommandRegistry.all.flatMap(c => c.shortcut.map(s => c.id.value -> s.render))
     assertEquals(
       table,
       Vector(
         "perspective.data"     -> "⌘1",
-        "perspective.explore"  -> "⌘2",
-        "perspective.analysis" -> "⌘3",
-        "perspective.compare"  -> "⌘4",
-        "perspective.figures"  -> "⌘5",
+        "perspective.analysis" -> "⌘2",
+        "perspective.results"  -> "⌘3",
+        "perspective.report"   -> "⌘4",
         "navigate.back"        -> "⌘[",
         "navigate.forward"     -> "⌘]",
         "edit.undo"            -> "⌘Z",
@@ -102,7 +101,7 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     def sectionOf(c: AppCommand) = CommandRegistry.menus.collectFirst {
       case (s, cs) if cs.contains(c) => s
     }
-    assertEquals(sectionOf(CommandRegistry.compare), Some(MenuSection.View))
+    assertEquals(sectionOf(CommandRegistry.results), Some(MenuSection.View))
     assertEquals(sectionOf(CommandRegistry.back), Some(MenuSection.Go))
     assertEquals(sectionOf(CommandRegistry.undo), Some(MenuSection.Edit))
     assertEquals(sectionOf(CommandRegistry.nextPane), Some(MenuSection.Window))
@@ -144,7 +143,7 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     val rows  = table.linesIterator.filter(_.startsWith("| ")).drop(1).toVector
     assertEquals(rows.size, CommandRegistry.all.size)
     Vector(
-      "| View | Compare | `⌘4` | `perspective.compare` |",
+      "| View | Results | `⌘3` | `perspective.results` |",
       "| Go | Back | `⌘[` | `navigate.back` |",
       "| Go | Forward | `⌘]` | `navigate.forward` |",
       "| Window | Next pane | `F6` | `pane.next` |",

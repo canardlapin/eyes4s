@@ -312,7 +312,7 @@ class TimelineFxSuite extends ShellFxSuite:
         w,
         eyes4s.studio.app.Intent.Navigate(
           eyes4s.studio.app.nav.Location(
-            eyes4s.studio.core.document.Perspective.Explore,
+            eyes4s.studio.core.document.Perspective.Results,
             Vector(eyes4s.studio.app.nav.Place.At(StudioRef.Trial(enc04)))
           )
         )

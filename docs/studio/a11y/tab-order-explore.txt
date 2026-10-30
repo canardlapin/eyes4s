@@ -1,12 +1,12 @@
 menu-button: Project memory-study
-toggle-button: Explore (⌘2)
+toggle-button: Results (⌘3)
 button: Study state: Run 7 · current | Data r3 | Analysis rev 5 · not run. Opens the state menu
 button: Back (⌘[)
-button: Summary · by retrieval response, opens in Compare
-button: Remembered, opens in Compare
-button: P17, opens in Compare
-button: ret_07 · beach-042, opens in Compare
-button: pair ret_07 × enc_03, opens in Compare
+button: Summary · by retrieval response
+button: Remembered
+button: P17
+button: ret_07 · beach-042
+button: pair ret_07 × enc_03
 button: enc_03 · fixation 6
 button: fixations.csv record 7,214, current location
 list: Trials

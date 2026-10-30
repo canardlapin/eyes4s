@@ -175,7 +175,7 @@ class SourcesFxSuite extends ShellFxSuite:
       // Show 2 trials opens the first in Explore.
       runOnFx(v.showTrials.fire())
       fx.awaitLayout()
-      assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Explore)
+      assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Results)
       assertEquals(
         runOnFx(w.runtime.model.location.trail.last),
         Place.At(StudioRef.Trial(TrialKey("P01", Phase.Encoding, "enc_15", 1)))

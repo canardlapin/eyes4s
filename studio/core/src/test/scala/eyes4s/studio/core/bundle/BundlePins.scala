@@ -39,7 +39,7 @@ object BundlePins:
   )
 
   val t2ManifestSha256: String =
-    "fff7dbbd28ebec8091e9c18b56205b5d8d2d1b33c8829fbd25b2258ad45adc1e"
+    "2389e03994771b8a270927bf0ca13d8d281e0926889ff91f8624c5efc5375b46"
 
   /** The t2 bundle's manifest as the pre-release version 1 wrote it: no
     * sharing options (everything travelled) and no science digest. Written

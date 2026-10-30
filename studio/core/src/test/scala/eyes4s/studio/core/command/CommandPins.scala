@@ -98,7 +98,7 @@ object CommandPins:
     "SaveAndRun.studio" ->
       """{"SaveAndRun":{"studio":{"preset":{"Custom":{}},"name":"σ 8° added","description":"rerun"}}}""",
     "SaveLayout" ->
-      """{"SaveLayout":{"perspective":{"Figures":{}},"layout":"{\"root\":\"figures\"}"}}""",
+      """{"SaveLayout":{"perspective":{"Report":{}},"layout":"{\"root\":\"figures\"}"}}""",
     "SaveLayout.clear" ->
       """{"SaveLayout":{"perspective":{"Data":{}},"layout":null}}""",
     "SetGeometry" ->
@@ -114,7 +114,7 @@ object CommandPins:
     "SetPanelSelection" ->
       """{"SetPanelSelection":{"figure":1,"panel":"A","selection":{"AllQueries":{}}}}""",
     "SetPerspective" ->
-      """{"SetPerspective":{"perspective":{"Compare":{}}}}""",
+      """{"SetPerspective":{"perspective":{"Results":{}}}}""",
     "SetStage" ->
       """{"SetStage":{"stage":{"Mid":{}}}}""",
     "SetTheme" ->
@@ -146,7 +146,7 @@ object CommandPins:
     "entry.UndoView" ->
       """{"UndoView":{}}""",
     "journal.0" ->
-      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"bdc86c34ae4af5a2862be64ee7bcbacf8178e3cf605f051d8d3ddc39a78b9a09"}}}""",
+      """{"schema":{"name":"studio.journal","version":1},"value":{"Start":{"base":"2c5242819dff61d85e0e1ed9a3e04f64590b3a6600903b65aef00259fe1df540"}}}""",
     "journal.1" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Apply":{"command":{"SetPanelSelection":{"figure":1,"panel":"A","selection":{"AllQueries":{}}}}}},"seq":1}}}""",
     "journal.2" ->

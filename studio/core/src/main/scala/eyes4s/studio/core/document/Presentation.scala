@@ -19,11 +19,39 @@ package eyes4s.studio.core.document
 import eyes4s.studio.core.backend.RunId
 import io.circe.{Codec, Decoder, Encoder}
 
-/** The five perspectives (DESIGN_SPEC section 2). */
-enum Perspective derives CanEqual, Codec.AsObject:
-  case Data, Explore, Analysis, Compare, Figures
+/** The four perspectives (overhaul v4, owner decision 2026-10-29): Data,
+  * Analysis, Results and Report. Results holds what Compare and Explore
+  * held (the summary, the pair and the drill to a trial, fixation and
+  * record); Report is Figures.
+  */
+enum Perspective derives CanEqual:
+  case Data, Analysis, Results, Report
 
   def label: String = productPrefix
+
+object Perspective:
+
+  /** A perspective a document saved before v4 names: Compare and Explore
+    * are Results, Figures is Report.
+    */
+  def named(name: String): Option[Perspective] = name match
+    case "Compare" | "Explore" => Some(Results)
+    case "Figures"             => Some(Report)
+    case other                 => values.find(_.productPrefix == other)
+
+  /** Whether a saved name is one v4 renamed (its saved layout is dropped). */
+  def renamed(name: String): Boolean = Set("Compare", "Explore", "Figures")(name)
+
+  // The enum's object form, `{"Results":{}}`, as before; the old names decode.
+  given Encoder[Perspective] =
+    Encoder.instance(p => io.circe.Json.obj(p.productPrefix -> io.circe.Json.obj()))
+
+  given Decoder[Perspective] = Decoder.instance { c =>
+    c.keys.flatMap(_.headOption) match
+      case Some(name) =>
+        named(name).toRight(io.circe.DecodingFailure(s"unknown perspective '$name'", c.history))
+      case None => Left(io.circe.DecodingFailure("a perspective is an object", c.history))
+  }
 
 enum Theme derives CanEqual, Codec.AsObject:
   case Light, Dark
@@ -63,6 +91,18 @@ object LayoutBlob:
 final case class SavedLayout(perspective: Perspective, layout: LayoutBlob)
     derives CanEqual,
       Codec.AsObject
+
+object SavedLayout:
+
+  /** A saved layout as stored, or none for a perspective v4 renamed: its
+    * arrangement was Compare's, Explore's or Figures', which the v4 layouts
+    * replace, so it reopens at the defaults.
+    */
+  val stored: Decoder[Option[SavedLayout]] = Decoder.instance { c =>
+    val name = c.downField("perspective").keys.flatMap(_.headOption)
+    if name.exists(Perspective.renamed) then Right(None)
+    else c.as[SavedLayout].map(Some(_))
+  }
 
 /** How the project is being looked at. Kept strictly apart from the
   * document's science: nothing here changes the scientific hash
@@ -142,8 +182,18 @@ object PresentationState:
     )(p => (p.perspective, p.theme, p.stage, p.mapOpacity, p.underlay, p.shownRun, p.layouts))
 
   given Decoder[PresentationState] =
+    given Decoder[Vector[Option[SavedLayout]]] = Decoder.decodeVector(using SavedLayout.stored)
     Decoder
-      .forProduct7(
+      .forProduct7[
+        Either[DocumentError, PresentationState],
+        Perspective,
+        Theme,
+        StageAppearance,
+        MapOpacity,
+        Boolean,
+        Option[RunId],
+        Vector[Option[SavedLayout]]
+      ](
         "perspective",
         "theme",
         "stage",
@@ -151,5 +201,5 @@ object PresentationState:
         "underlay",
         "shownRun",
         "layouts"
-      )(of)
+      )((p, t, s, o, u, r, l) => of(p, t, s, o, u, r, l.flatten))
       .emap(_.left.map(_.message))

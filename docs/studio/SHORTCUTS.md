@@ -45,10 +45,9 @@ Verified by hand on macOS: pending. The hand check covers:
 | Edit | Undo view change | — | `view.undo` |
 | Edit | Redo view change | — | `view.redo` |
 | View | Data | `⌘1` | `perspective.data` |
-| View | Explore | `⌘2` | `perspective.explore` |
-| View | Analysis | `⌘3` | `perspective.analysis` |
-| View | Compare | `⌘4` | `perspective.compare` |
-| View | Figures | `⌘5` | `perspective.figures` |
+| View | Analysis | `⌘2` | `perspective.analysis` |
+| View | Results | `⌘3` | `perspective.results` |
+| View | Report | `⌘4` | `perspective.report` |
 | View | Reset perspective | — | `view.reset-perspective` |
 | View | Appearance › Light | — | `view.appearance-light` |
 | View | Appearance › Dark | — | `view.appearance-dark` |

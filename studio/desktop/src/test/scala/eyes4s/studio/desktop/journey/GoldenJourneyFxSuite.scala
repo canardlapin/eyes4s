@@ -234,7 +234,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
 
       // Explore P17 enc_03.
       dispatch(fx, w, Intent.Explain(Place.At(StudioRef.Trial(p17enc03))))
-      assertEquals(model(w).perspective, Perspective.Explore)
+      assertEquals(model(w).perspective, Perspective.Results)
 
       // Analysis rev 4: a draft on r3, Review draft, then Save & run.
       dispatch(fx, w, Intent.Dispatch(Command.StartDraft(rev3, Some(r3), Vector.empty)))
@@ -259,7 +259,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
 
       // Compare P17 ret_07: its readout is fixture.json's, as FIXTURE.md says.
       dispatch(fx, w, Intent.Explain(Place.At(StudioRef.QueryContrast(run6, sigma2, p17ret07))))
-      assertEquals(model(w).perspective, Perspective.Compare)
+      assertEquals(model(w).perspective, Perspective.Results)
       eventually(fx, "the contrast readout") {
         val t = shown(w)
         t.contains("+0.62") && t.exists(_.contains("0.94")) && t.exists(_.contains("0.32"))
@@ -271,10 +271,10 @@ class GoldenJourneyFxSuite extends GoldenWindow:
         fx,
         w,
         Intent.Navigate(
-          Location(Perspective.Compare, Vector(Place.Summary(StoryModels.reporting)))
+          Location(Perspective.Results, Vector(Place.Summary(StoryModels.reporting)))
         )
       )
-      assertEquals(model(w).perspective, Perspective.Compare)
+      assertEquals(model(w).perspective, Perspective.Results)
       // Report rows are served at every scale. Select the journey's 2° explicitly.
       eventually(fx, "the 2° summary report")(
         w.summary.vm.scales.exists(c => c.scale == sigma2 && c.available)
@@ -317,7 +317,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       eventually(fx, "no draft")(w.runtime.model.document.draft.isEmpty)
 
       // New figure: Figure 3 on the shown run, its two default panels.
-      dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      dispatch(fx, w, Intent.Navigate(Location(Perspective.Report, Vector(Place.Figures))))
       press(fx, w, "New figure")
       eventually(fx, "Figure 3")(w.runtime.model.document.figures.exists(_.id.number == 3))
       assertEquals(
@@ -334,7 +334,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
           Place.At(StudioRef.Pair(run6, sigma2, PairDesign.Matched, p17ret07, p17enc03))
         )
       )
-      dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      dispatch(fx, w, Intent.Navigate(Location(Perspective.Report, Vector(Place.Figures))))
       def template(menuName: String, kind: NewPanel): Unit =
         val menu = control(fx, w, menuName) { case m: MenuButton => m }
         eventually(fx, s"${kind.label} available")(
@@ -365,7 +365,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
         fx,
         w,
         Intent.Navigate(
-          Location(Perspective.Figures, Vector(Place.Figures, Place.Figure(figure)))
+          Location(Perspective.Report, Vector(Place.Figures, Place.Figure(figure)))
         )
       )
       // The bundle's snapshot row (not the appearance's "includes images").
@@ -394,8 +394,8 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       )
       fx.snapshot(StudioTheme.Light)
       // Back to Compare, as the headless route returns: View › Compare (⌘4).
-      choose(fx, w, CommandRegistry.compare.id)
-      assertEquals(model(w).perspective, Perspective.Compare)
+      choose(fx, w, CommandRegistry.results.id)
+      assertEquals(model(w).perspective, Perspective.Results)
 
       // Saved: the window's project folder holds the journey.
       eventually(fx, "the project is saved")(!w.runtime.model.save.edited)

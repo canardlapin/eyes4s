@@ -50,7 +50,7 @@ class FigureAppearanceSuite extends munit.FunSuite:
       .update(
         model,
         Intent.Navigate(
-          Location(Perspective.Figures, Vector(Place.Figures, Place.Figure(figure)))
+          Location(Perspective.Report, Vector(Place.Figures, Place.Figure(figure)))
         )
       )
       ._1

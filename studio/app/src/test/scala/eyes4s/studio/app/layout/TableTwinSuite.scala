@@ -85,7 +85,7 @@ class TableTwinSuite extends munit.FunSuite:
     )
     val layout = PerspectiveLayout(
       LayoutId("t"),
-      eyes4s.studio.core.document.Perspective.Explore,
+      eyes4s.studio.core.document.Perspective.Results,
       root,
       eyes4s.studio.app.text.MessageId.TabShowTable
     )

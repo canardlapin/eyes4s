@@ -214,14 +214,14 @@ object CommandSamples:
     ),
     "SetFigureMethods.none" -> SetFigureMethods(figure1.id, None),
     "RetitlePanel"          -> RetitlePanel(figure1.id, panelA, "Encoding gaze · P17"),
-    "SetPerspective"        -> SetPerspective(Perspective.Compare),
+    "SetPerspective"        -> SetPerspective(Perspective.Results),
     "SetTheme"              -> SetTheme(Theme.Dark),
     "SetStage"              -> SetStage(StageAppearance.Mid),
     "SetMapOpacity"         -> SetMapOpacity(right(MapOpacity.of(0.4))),
     "SetUnderlay"           -> SetUnderlay(true),
     "ShowRun"               -> ShowRun(Some(run7)),
     "ShowRun.none"          -> ShowRun(None),
-    "SaveLayout" -> SaveLayout(Perspective.Figures, Some(LayoutBlob("""{"root":"figures"}"""))),
+    "SaveLayout" -> SaveLayout(Perspective.Report, Some(LayoutBlob("""{"root":"figures"}"""))),
     "SaveLayout.clear" -> SaveLayout(Perspective.Data, None)
   )
 

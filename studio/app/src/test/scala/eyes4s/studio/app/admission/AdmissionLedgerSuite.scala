@@ -252,7 +252,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       val (_, explain) =
         AdmissionLedger.update(ledger, model, LedgerIntent.OpenTrial(first.trial))
       val explored = perform(model, explain)._1
-      assertEquals(explored.perspective, Perspective.Explore)
+      assertEquals(explored.perspective, Perspective.Results)
       assertEquals(explored.location.trail.last, eyes4s.studio.app.nav.Place.At(first.ref))
       // Back returns to the open count; Close returns to the ledger.
       val back = AppModel.update(explored, Intent.Back)._1

@@ -58,7 +58,7 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
             javafx.scene.input.KeyEvent.KEY_PRESSED,
             "",
             "",
-            javafx.scene.input.KeyCode.DIGIT3,
+            javafx.scene.input.KeyCode.DIGIT2,
             false,
             !isMac,
             false,
@@ -73,7 +73,7 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
         assertEquals(w.themes.registered, 0)
         assert(w.host.node(id).exists(_ eq pane))
       }
-      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Figures))
+      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Report))
       runOnFx {
         assertEquals(w.host.dock.state.floating.size, 1)
         assert(w.host.node(id).exists(_ eq pane))
@@ -99,11 +99,11 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
       w.host.dock.popOut(w.host.dock.state.groupOf(w.host.dockId(id)).get.id)
       w.host.capture().collect { case (p, Some(blob)) => SavedLayout(p, blob) }
     }
-    assert(saved.exists(_.perspective == Perspective.Figures))
+    assert(saved.exists(_.perspective == Perspective.Report))
     runOnFx {
-      w.host.reset(Perspective.Figures)
+      w.host.reset(Perspective.Report)
       assertEquals(w.host.dock.state.floating.size, 0)
-      assertEquals(w.host.capture().toMap.apply(Perspective.Figures), None)
+      assertEquals(w.host.capture().toMap.apply(Perspective.Report), None)
       assertEquals(w.host.restore(saved, w.runtime.model), Vector.empty)
       assertEquals(w.host.dock.state.floating.size, 1)
       assertEquals(
@@ -130,21 +130,21 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
       val blob = LayoutBlob(ujson.write(ujson.Obj(w.host.active.get -> encoded)))
       runOnFx {
         assertEquals(
-          w.host.restore(Vector(SavedLayout(Perspective.Figures, blob)), w.runtime.model),
+          w.host.restore(Vector(SavedLayout(Perspective.Report, blob)), w.runtime.model),
           Vector.empty
         )
-        val saved = w.host.capture().toMap.apply(Perspective.Figures).get
+        val saved = w.host.capture().toMap.apply(Perspective.Report).get
         assert(saved.text.contains("future.studio.pane"))
         assert(saved.text.contains("\"keep\":42"))
         assert(!w.host.dock.view.lookupAll(".dock-unresolved").isEmpty)
       }
       dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
       runOnFx {
-        val inactive = w.host.capture().toMap.apply(Perspective.Figures).get
+        val inactive = w.host.capture().toMap.apply(Perspective.Report).get
         assert(inactive.text.contains("future.studio.pane"))
         assert(inactive.text.contains("\"keep\":42"))
       }
-      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Figures))
+      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Report))
       runOnFx {
         assert(!w.host.dock.view.lookupAll(".dock-unresolved").isEmpty)
         val known = LayoutBlob(
@@ -158,7 +158,7 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
           )
         )
         assertEquals(
-          w.host.restore(Vector(SavedLayout(Perspective.Figures, known)), w.runtime.model),
+          w.host.restore(Vector(SavedLayout(Perspective.Report, known)), w.runtime.model),
           Vector.empty
         )
         assert(w.host.dock.view.lookupAll(".dock-unresolved").isEmpty)

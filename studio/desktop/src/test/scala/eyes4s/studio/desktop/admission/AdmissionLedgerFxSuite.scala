@@ -200,7 +200,7 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
     )
     fx.awaitLayout()
     val m = runOnFx(w.runtime.model)
-    assertEquals(m.perspective, Perspective.Explore)
+    assertEquals(m.perspective, Perspective.Results)
     assertEquals(m.location.trail.lastOption, Some(Place.At(StudioRef.Trial(first.trial))))
   }
 

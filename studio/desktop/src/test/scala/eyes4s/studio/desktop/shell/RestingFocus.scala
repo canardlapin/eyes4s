@@ -110,10 +110,10 @@ object RestingFocus:
     * Explore comes from Compare and explores no trial, unlike the board.
     */
   def moment(story: StoryMoment, p: Perspective): Option[Board] = (story, p) match
-    case (StoryMoment.T2, Perspective.Compare)  => Some(Board.Main)
+    case (StoryMoment.T2, Perspective.Results)  => Some(Board.Main)
     case (StoryMoment.T2, Perspective.Analysis) => Some(Board.Analysis)
-    case (StoryMoment.T2, Perspective.Figures)  => Some(Board.Figures)
-    case (StoryMoment.T3, Perspective.Compare)  => Some(Board.Results)
+    case (StoryMoment.T2, Perspective.Report)   => Some(Board.Figures)
+    case (StoryMoment.T3, Perspective.Results)  => Some(Board.Results)
     case _                                      => None
 
   /** A composite's cursor as a window holds it: its input state and the

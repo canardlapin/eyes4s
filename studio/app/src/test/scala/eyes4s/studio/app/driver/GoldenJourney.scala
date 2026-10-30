@@ -287,7 +287,7 @@ object GoldenJourney:
         "explore P17 enc_03",
         Intent.Explain(Place.At(StudioRef.Trial(p17enc03)))
       ),
-      check("in Explore")(d => expect("perspective", Perspective.Explore, d.model.perspective)),
+      check("in Explore")(d => expect("perspective", Perspective.Results, d.model.perspective)),
       crumbs("explore trail", "P17", "enc_03"),
       Step(
         "enc_03 in the ledger and its fixations",
@@ -402,7 +402,14 @@ object GoldenJourney:
     val query = StudioRef.QueryContrast(run6, sigma2, p17ret07)
 
     val compare = Scenario.of[Future](
-      Step.intent[Future]("Compare", Intent.SwitchPerspective(Perspective.Compare)),
+      Step.intent[Future]("Results", Intent.SwitchPerspective(Perspective.Results)),
+      // Results keeps one trail (overhaul v4): the trials browsed before
+      // left it at a trial, so the summary is opened by name. (Port 6 moves
+      // that browsing to Data › Trials, and Results then reopens here.)
+      Step.intent[Future](
+        "the Results summary",
+        Intent.Navigate(Location(Perspective.Results, Vector(Place.Summary(reporting))))
+      ),
       crumbs("summary root", "Summary · by retrieval response"),
       drill(session, "group Remembered")(_.find(_ == Place.Group(reporting, remembered))),
       drill(session, "participant P17")(_.find(_ == Place.At(remembered17))),
@@ -451,7 +458,7 @@ object GoldenJourney:
       ),
       drill(session, "fixation 6")(_.lift(5)),
       check("fixation crosses into Explore")(d =>
-        expect("perspective", Perspective.Explore, d.model.perspective)
+        expect("perspective", Perspective.Results, d.model.perspective)
       ),
       drill(session, "record")(_.headOption),
       check("the whole trail")(d =>
@@ -467,7 +474,7 @@ object GoldenJourney:
     val summary = Scenario.of[Future](
       Step.intent[Future]("the summary crumb", Intent.OpenCrumb(0)),
       check("summary layout")(d =>
-        expect("perspective", Perspective.Compare, d.model.perspective)
+        expect("perspective", Perspective.Results, d.model.perspective)
       ),
       Step(
         "the summary facts and explicit reports agree with fixture.json",

@@ -529,7 +529,7 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
           case _                                             => false
         }
         _ <- h.dispatch(Intent.ShowRun(first))
-        _ <- h.dispatch(Intent.SwitchPerspective(Perspective.Compare))
+        _ <- h.dispatch(Intent.SwitchPerspective(Perspective.Results))
         shown = banner
         saved = h.model.get().document.analyses.last.recipe
         _ <- h.dispatch(

@@ -135,7 +135,7 @@ object CompareSummary:
     */
   def reporting(m: AppModel): Option[ReportingId] =
     m.navigation
-      .trail(Perspective.Compare)
+      .trail(Perspective.Results)
       .collectFirst {
         case Place.Summary(r)  => r
         case Place.Group(r, _) => r
@@ -148,7 +148,7 @@ object CompareSummary:
     val run  = shownRun(m)
     val rep  = reporting(m)
     val spec = rep.flatMap(id => reportingSpec(m.document, id))
-    val refs = m.navigation.trail(Perspective.Compare).reverseIterator.collect {
+    val refs = m.navigation.trail(Perspective.Results).reverseIterator.collect {
       case Place.At(ref) => ref
     } ++ m.selection.selected.reverseIterator
     val context = refs.flatMap(ref => selectedScale(ref, run).map(ref -> _)).nextOption()

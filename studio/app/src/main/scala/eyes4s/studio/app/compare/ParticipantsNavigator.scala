@@ -130,7 +130,7 @@ object ParticipantsNavigator:
                       home.contains(p.ref),
                       Intent.Navigate(
                         Location(
-                          Perspective.Compare,
+                          Perspective.Results,
                           Vector(Place.Summary(spec.id), Place.At(p.ref))
                         )
                       )

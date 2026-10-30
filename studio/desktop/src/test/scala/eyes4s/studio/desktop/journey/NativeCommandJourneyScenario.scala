@@ -100,7 +100,7 @@ object NativeCommandJourneyScenario:
             _ <- future(
               journey.command(Command.CreateFigure(requestedRun, reporting.id, panels))
             )
-            _      <- future(journey.command(Command.SetPerspective(Perspective.Figures)))
+            _      <- future(journey.command(Command.SetPerspective(Perspective.Report)))
             output <- NativeCommandJourneyReadback.capture(
               journey.model.document,
               NativeCommandJourneyReadback.Port.from(journey.session)

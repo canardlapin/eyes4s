@@ -105,7 +105,7 @@ class StorySeedSuite extends CatsEffectSuite:
       assertEquals(f.draft.map(FreshnessText.draft), Some("Draft rev 5 · 1 change · ready"))
       assertEquals(FreshnessText.jobs(f.activity), "No jobs")
       assertEquals(
-        f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+        f.bannerFor(Perspective.Results).map(FreshnessText.banner),
         Some("Showing run 7 (analysis rev 4). Draft rev 5 adds σ 8° and has not been run.")
       )
       assertEquals(f.bannerFor(Perspective.Analysis), None)
@@ -134,7 +134,7 @@ class StorySeedSuite extends CatsEffectSuite:
       assertEquals(FreshnessText.newer(f.badge), Some("Rev 5 · run 8 running · 48%"))
       assertEquals(FreshnessText.jobs(f.activity), "Run 8 · Comparing · 21,400 / 44,845 pairs")
       assertEquals(
-        f.bannerFor(Perspective.Compare).map(FreshnessText.banner),
+        f.bannerFor(Perspective.Results).map(FreshnessText.banner),
         Some(
           "Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until " +
             "you choose Show."

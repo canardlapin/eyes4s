@@ -61,7 +61,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         model,
         Intent.Navigate(
           Location(
-            Perspective.Figures,
+            Perspective.Report,
             Vector(Place.Figures, Place.Figure(figure)) ++
               panel.map(l => Place.At(StudioRef.FigurePanel(figure, letter(l))))
           )
@@ -467,7 +467,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
           ComposerEffect.App(
             Intent.Navigate(
               Location(
-                Perspective.Figures,
+                Perspective.Report,
                 Vector(
                   Place.Figures,
                   Place.Figure(figure1),
@@ -539,7 +539,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         ComposerEffect.App(Intent.Dispatch(create)),
         ComposerEffect.App(
           Intent.Navigate(
-            Location(Perspective.Figures, Vector(Place.Figures, Place.Figure(figure3)))
+            Location(Perspective.Report, Vector(Place.Figures, Place.Figure(figure3)))
           )
         )
       )
@@ -574,7 +574,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   private def withPair: AppModel =
     val compare = StoryModels.play(
       t2,
-      _ => Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail))
+      _ => Intent.Navigate(Location(Perspective.Results, StoryModels.queryTrail))
     )
     val (_, made) =
       FigureComposer.update(FigureComposer.empty, compare, ComposerIntent.NewFigure)
@@ -606,7 +606,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         ComposerEffect.App(
           Intent.Navigate(
             Location(
-              Perspective.Figures,
+              Perspective.Report,
               Vector(
                 Place.Figures,
                 Place.Figure(figure3),
@@ -765,7 +765,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         ComposerEffect.App(
           Intent.Navigate(
             Location(
-              Perspective.Compare,
+              Perspective.Results,
               Vector(Place.Summary(t2.document.figures.head.reporting))
             )
           )
@@ -1032,7 +1032,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   test("Start figure with a template constructs exact board A–E through composer intents") {
     val compare = StoryModels.play(
       t2,
-      _ => Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail))
+      _ => Intent.Navigate(Location(Perspective.Results, StoryModels.queryTrail))
     )
     val (_, effects) = FigureComposer.update(
       FigureComposer.empty,

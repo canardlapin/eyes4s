@@ -71,9 +71,8 @@ class VisualParitySuite extends StoryCaptureFixture:
       case StoryMoment.T1 => StoryModels.t1Data
       case StoryMoment.T2 =>
         p match
-          case Perspective.Explore  => StoryModels.t2Explore
           case Perspective.Analysis => StoryModels.t2Analysis
-          case Perspective.Figures  => StoryModels.t2Figures
+          case Perspective.Report   => StoryModels.t2Figures
           case _                    => StoryModels.t2Compare
       case StoryMoment.T3 => StoryModels.t3Summary
     AppModel.update(base, Intent.SwitchPerspective(p))._1
@@ -95,7 +94,10 @@ class VisualParitySuite extends StoryCaptureFixture:
           case DesignPreview.Preparing | DesignPreview.Counting(_, _, _, _) => false
           case _                                                            => true
       }
-    if moment == StoryMoment.T2 && p == Perspective.Explore then
+    if moment == StoryMoment.T2 &&
+      eyes4s.studio.app.layout.StudioLayouts
+        .drilling(p, runOnFx(w.runtime.model.location.trail))
+    then
       eventually(fx, "stored stimulus, preview map and timeline") {
         (w.explore.trialView.status.get match
           case TrialViewStatus.Shown(s) =>
@@ -103,19 +105,19 @@ class VisualParitySuite extends StoryCaptureFixture:
           case _ => false
         ) && w.timeline.vm.enabled
       }
-    if moment == StoryMoment.T2 && p == Perspective.Compare then
+    if moment == StoryMoment.T2 && p == Perspective.Results then
       eventually(fx, "stored Compare maps and trial panels") {
         Vector(w.summary.panels.queryView, w.summary.panels.referenceView)
           .forall(_.status.get match
             case TrialViewStatus.Shown(s) => s.map.nonEmpty
             case _                        => false)
       }
-    if moment == StoryMoment.T3 && p == Perspective.Compare then
+    if moment == StoryMoment.T3 && p == Perspective.Results then
       eventually(fx, "Results plot and24overall participant rows") {
         w.summary.participantPlot.status.get
           .isInstanceOf[PlotTwinStatus.Shown] && w.summary.participants.rows.size == 24
       }
-    if p == Perspective.Figures then
+    if p == Perspective.Report then
       eventually(fx, "figure panel inputs and density grids are terminal") {
         w.figures.vm.page.forall(_.panels.forall(_.body match
           case PanelBody.Waiting(_) => false

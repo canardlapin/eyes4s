@@ -407,7 +407,7 @@ class CompareSummarySuite extends munit.FunSuite:
           Vector(
             eyes4s.studio.app.Intent.Navigate(
               eyes4s.studio.app.nav.Location(
-                eyes4s.studio.core.document.Perspective.Compare,
+                eyes4s.studio.core.document.Perspective.Results,
                 Vector(Place.Summary(reporting), Place.At(row.ref))
               )
             )
@@ -452,7 +452,7 @@ class CompareSummarySuite extends munit.FunSuite:
           Vector(
             eyes4s.studio.app.Intent.Navigate(
               eyes4s.studio.app.nav.Location(
-                eyes4s.studio.core.document.Perspective.Compare,
+                eyes4s.studio.core.document.Perspective.Results,
                 expected
               )
             )

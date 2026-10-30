@@ -207,7 +207,7 @@ object TrialPanels:
 
   /** Where Compare's trail points: its last query contrast or pair. */
   def focusOf(m: AppModel): Option[PanelFocus] =
-    m.navigation.trail(Perspective.Compare).reverseIterator.collectFirst {
+    m.navigation.trail(Perspective.Results).reverseIterator.collectFirst {
       case Place.At(StudioRef.QueryContrast(run, scale, key)) =>
         PanelFocus(run, scale, key, None)
       case Place.At(StudioRef.Pair(run, scale, design, focal, reference)) =>

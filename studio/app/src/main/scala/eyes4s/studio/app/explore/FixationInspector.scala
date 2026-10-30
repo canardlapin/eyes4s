@@ -189,7 +189,7 @@ object FixationInspector:
       .flatMap(r => m.document.analysis(r.analysis))
       .map(_.recipe.scales.values)
     val visited = m.navigation
-      .trail(Perspective.Compare)
+      .trail(Perspective.Results)
       .reverseIterator
       .collectFirst {
         case Place.At(StudioRef.QueryContrast(`run`, scale, _)) => scale

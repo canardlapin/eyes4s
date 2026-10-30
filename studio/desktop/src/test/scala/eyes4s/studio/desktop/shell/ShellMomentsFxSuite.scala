@@ -115,7 +115,7 @@ class ShellMomentsFxSuite extends ShellFxSuite:
       // The board's resting focus ring, by keyboard (REVIEW ticket 28).
       RestingFocus.moment(story, p).foreach(RestingFocus.show(fx, w, _))
       fx.snapshot(StudioTheme.Light)
-      if p == Perspective.Compare then
+      if p == Perspective.Results then
         RestingFocus.clear(fx, w)
         val sheets = StudioStyles.stylesheets(Theme.Dark).fold(e => fail(e.message), identity)
         runOnFx(w.root.getStylesheets.setAll(sheets*))

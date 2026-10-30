@@ -160,7 +160,7 @@ object QueriesNavigator:
     * Explicit participant navigation takes precedence over an older plot selection.
     */
   def selection(m: AppModel): Vector[StudioRef] =
-    m.navigation.trail(Perspective.Compare).reverse.collect { case Place.At(ref) =>
+    m.navigation.trail(Perspective.Results).reverse.collect { case Place.At(ref) =>
       ref
     } ++ m.selection.selected.reverse
 

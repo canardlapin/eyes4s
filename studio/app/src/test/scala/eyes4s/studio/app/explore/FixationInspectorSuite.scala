@@ -202,7 +202,7 @@ class FixationInspectorSuite extends munit.FunSuite:
       m,
       Intent.Navigate(
         Location(
-          Perspective.Compare,
+          Perspective.Results,
           Vector(Place.At(StudioRef.QueryContrast(StoryMoments.run5, sigma1, enc03)))
         )
       )
@@ -220,7 +220,7 @@ class FixationInspectorSuite extends munit.FunSuite:
       m,
       Intent.Navigate(
         Location(
-          Perspective.Compare,
+          Perspective.Results,
           Vector(Place.At(StudioRef.QueryContrast(StoryMoments.run7, sigma1, enc03)))
         )
       )
@@ -250,7 +250,7 @@ class FixationInspectorSuite extends munit.FunSuite:
       run6,
       Intent.Navigate(
         Location(
-          Perspective.Compare,
+          Perspective.Results,
           Vector(
             Place.At(StudioRef.QueryContrast(StoryMoments.run6, StoryModels.sigma2, enc03))
           )

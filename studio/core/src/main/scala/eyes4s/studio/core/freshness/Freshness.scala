@@ -219,8 +219,8 @@ final case class Freshness(
 ) derives CanEqual:
   /** The banner as a perspective shows it: only Compare and Figures do. */
   def bannerFor(perspective: Perspective): Option[Banner] = perspective match
-    case Perspective.Compare | Perspective.Figures => banner
-    case _                                         => None
+    case Perspective.Results | Perspective.Report => banner
+    case _                                        => None
 
   def standing(run: RunId): Option[RunStanding] = runs.find(_.run.id == run).map(_.standing)
 

@@ -490,7 +490,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals(step(eligible, DesignIntent.OpenRow(ret09))._2, Vector.empty)
     // Opening lands on the trial in Explore, with its participant above it.
     val (m, _) = AppModel.update(model, Intent.Explain(Place.At(StudioRef.Trial(ret11))))
-    assertEquals(m.perspective, eyes4s.studio.core.document.Perspective.Explore)
+    assertEquals(m.perspective, eyes4s.studio.core.document.Perspective.Results)
     assertEquals(m.location.trail.last, Place.At(StudioRef.Trial(ret11)))
   }
 

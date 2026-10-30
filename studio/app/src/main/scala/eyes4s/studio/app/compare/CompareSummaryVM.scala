@@ -469,7 +469,7 @@ object CompareSummaryVM:
           Vector(
             Intent.Navigate(
               eyes4s.studio.app.nav.Location(
-                Perspective.Compare,
+                Perspective.Results,
                 Vector(Place.Summary(rep), Place.Group(rep, group), Place.At(ref))
               )
             )
@@ -490,7 +490,7 @@ object CompareSummaryVM:
           Vector(
             Intent.Navigate(
               eyes4s.studio.app.nav.Location(
-                Perspective.Compare,
+                Perspective.Results,
                 Vector(Place.Summary(rep), Place.At(ref))
               )
             )

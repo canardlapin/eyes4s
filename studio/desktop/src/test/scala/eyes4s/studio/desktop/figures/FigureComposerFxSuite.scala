@@ -304,7 +304,7 @@ class FigureComposerFxSuite extends ShellFxSuite:
       val back = runOnFx(w.runtime.model.location)
       runOnFx(
         w.runtime.dispatch(
-          Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail))
+          Intent.Navigate(Location(Perspective.Results, StoryModels.queryTrail))
         )
       )
       runOnFx(w.runtime.dispatch(Intent.Navigate(back)))
@@ -459,10 +459,10 @@ class FigureComposerFxSuite extends ShellFxSuite:
     val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
     loaded(fx, w)
     runOnFx(
-      w.runtime.dispatch(Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))
+      w.runtime.dispatch(Intent.Navigate(Location(Perspective.Results, StoryModels.queryTrail)))
     )
     runOnFx(
-      w.runtime.dispatch(Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      w.runtime.dispatch(Intent.Navigate(Location(Perspective.Report, Vector(Place.Figures))))
     )
     eventually(fx, "all starting templates available")(
       runOnFx(w.figures.startFigure.getItems.asScala.forall(!_.isDisable))

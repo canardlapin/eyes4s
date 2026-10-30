@@ -68,7 +68,7 @@ class TrialExtentFxSuite extends ShellFxSuite:
         opened,
         eyes4s.studio.app.Intent.Navigate(
           Location(
-            Perspective.Explore,
+            Perspective.Results,
             Vector(
               Place.At(StudioRef.Participant("P17")),
               Place.At(StudioRef.Trial(TrialDurationNativeFixture.trial)),

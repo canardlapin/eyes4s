@@ -25,8 +25,7 @@ package eyes4s.studio.app.text
 enum MessageId derives CanEqual:
   // --- App bar and window --------------------------------------------------
   case AppName, UntitledProject, WindowTitle, Workspace
-  case PerspectiveData, PerspectiveExplore, PerspectiveAnalysis, PerspectiveCompare
-  case PerspectiveFigures
+  case PerspectiveData, PerspectiveAnalysis, PerspectiveResults, PerspectiveReport
 
   // --- Jobs chip and status job slot ----------------------------------------
   case JobsIdle, JobsIdleAccessible, JobTitle, JobQueued, JobCancelling
@@ -151,10 +150,9 @@ object Catalogue:
       case UntitledProject        => "Untitled project"
       case WindowTitle            => "{0}.eyes"
       case PerspectiveData        => "Data"
-      case PerspectiveExplore     => "Explore"
       case PerspectiveAnalysis    => "Analysis"
-      case PerspectiveCompare     => "Compare"
-      case PerspectiveFigures     => "Figures"
+      case PerspectiveResults     => "Results"
+      case PerspectiveReport      => "Report"
 
       case JobsIdle             => "No jobs"
       case JobsIdleAccessible   => "Jobs: none running"

@@ -80,8 +80,12 @@ class A11yRenderSuite extends ShellFxSuite:
       eventually(fx, "the geometry panel's pictures and counts") {
         w.geometry.shownPictures.isDefined && w.geometry.state.placement.toOption.isDefined
       }
-    if perspective == eyes4s.studio.core.document.Perspective.Explore then
-      eventually(fx, "Explore inspector and navigation are served") {
+    if eyes4s.studio.app.layout.StudioLayouts.drilling(
+        perspective,
+        runOnFx(w.runtime.model.location.trail)
+      )
+    then
+      eventually(fx, "the drill's inspector and navigation are served") {
         val inspector = w.inspector.current
         val nav       = w.navigator.state
         Vector(

@@ -145,9 +145,11 @@ final case class PerspectiveLayout(
   def selectedPane(group: LayoutNode.Group): PaneDecl =
     group.panes.toVector.lift(group.selected).getOrElse(group.panes.head)
 
-/** Which Compare layout the trail asks for (DESIGN_SPEC section 2). */
+/** Which Results layout the trail asks for: the summary, the pair (query),
+  * or the drill to a trial (overhaul v4).
+  */
 enum CompareLayout derives CanEqual:
-  case Summary, Query
+  case Summary, Query, Drill
 
 /** The perspectives and their default layouts, declared UI-neutrally
   * (DESIGN_SPEC section 13). A shell maps them to its docking library.

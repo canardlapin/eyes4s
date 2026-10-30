@@ -102,7 +102,7 @@ class AppShellFxSuite extends ShellFxSuite:
     val lines = texts(w)
     val board = Vector(
       "app.project: memory-study",
-      "app.perspectives: Data | Explore | Analysis | Compare (current) | Figures",
+      "app.perspectives: Data | Analysis | Results (current) | Report",
       "app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run",
       "context.nav: Back (⌘[) | [Forward (⌘])]",
       "context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / *pair ret_07 × enc_03 · matched*",
@@ -155,14 +155,13 @@ class AppShellFxSuite extends ShellFxSuite:
 
   // --- Perspectives: ⌘1–5, retained panes, Compare by trail depth ------------
 
-  fxStage.test("⌘1–⌘5 switch perspectives; the toggle group follows the model") { fx =>
+  fxStage.test("⌘1–⌘4 switch perspectives; the toggle group follows the model") { fx =>
     val w    = boot(fx, StoryModels.t2Compare)
     val keys = Vector(
       KeyCode.DIGIT1 -> (Perspective.Data, "data.verify"),
-      KeyCode.DIGIT2 -> (Perspective.Explore, "explore"),
-      KeyCode.DIGIT3 -> (Perspective.Analysis, "analysis"),
-      KeyCode.DIGIT4 -> (Perspective.Compare, "compare.query"),
-      KeyCode.DIGIT5 -> (Perspective.Figures, "figures")
+      KeyCode.DIGIT2 -> (Perspective.Analysis, "analysis"),
+      KeyCode.DIGIT3 -> (Perspective.Results, "compare.query"),
+      KeyCode.DIGIT4 -> (Perspective.Report, "figures")
     )
     keys.foreach { case (key, (p, layout)) =>
       fx.robot.press(key, shortcut)
@@ -187,16 +186,20 @@ class AppShellFxSuite extends ShellFxSuite:
     val panes            = w.host.panes
     def node(id: String) =
       runOnFx(w.host.node(StudioPaneId.of(id).fold(e => fail(e.message), identity)))
-    // Every perspective, twice, and Compare's two layouts.
-    val tour = Vector(1, 2, 3, 4, 5, 1, 2, 3, 4, 5).map(d => KeyCode.valueOf(s"DIGIT$d"))
-    tour.take(5).foreach(fx.robot.press(_, shortcut))
+    // Every perspective, twice, and Results' three layouts: the pair, the
+    // drill (a record) and the summary.
+    val tour = Vector(1, 2, 3, 4, 1, 2, 3, 4).map(d => KeyCode.valueOf(s"DIGIT$d"))
+    tour.take(4).foreach(fx.robot.press(_, shortcut))
     val first = runOnFx(panes.creations.map(id => id -> panes.node(id)).toMap)
-    tour.drop(5).foreach(fx.robot.press(_, shortcut))
-    fx.robot.press(KeyCode.DIGIT4, shortcut)
+    tour.drop(4).foreach(fx.robot.press(_, shortcut))
+    fx.robot.press(KeyCode.DIGIT3, shortcut)
+    assertEquals(runOnFx(w.host.active), Some("compare.query"))
+    dispatch(fx, w, Intent.Explain(eyes4s.studio.app.nav.Place.At(StoryModels.record)))
+    assertEquals(runOnFx(w.host.active), Some("explore"))
     dispatch(fx, w, Intent.OpenCrumb(0))
     assertEquals(runOnFx(w.host.active), Some("compare.summary"))
     dispatch(fx, w, Intent.Back)
-    assertEquals(runOnFx(w.host.active), Some("compare.query"))
+    assertEquals(runOnFx(w.host.active), Some("explore"))
     val built = runOnFx(panes.creations)
     assertEquals(built.distinct, built, "a pane was built twice")
     assertEquals(runOnFx(panes.disposals), Vector.empty)
@@ -228,7 +231,7 @@ class AppShellFxSuite extends ShellFxSuite:
       fx,
       w,
       Intent.Navigate(
-        eyes4s.studio.app.nav.Location(Perspective.Compare, StoryModels.queryTrail.take(3))
+        eyes4s.studio.app.nav.Location(Perspective.Results, StoryModels.queryTrail.take(3))
       )
     )
     assertEquals(runOnFx(w.host.active), Some("compare.query"))
@@ -398,7 +401,7 @@ class AppShellFxSuite extends ShellFxSuite:
     assertEquals(activeOf(a), Some(pairs))
     runOnFx(a.captureLayouts())
     val presentation = runOnFx(a.runtime.model.document.presentation)
-    assertEquals(presentation.layouts.map(_.perspective), Vector(Perspective.Compare))
+    assertEquals(presentation.layouts.map(_.perspective), Vector(Perspective.Results))
     // The presentation state round-trips as the S2.3 bundle writes it.
     val json = presentation.asJson
     assertEquals(json.as[PresentationState], Right(presentation))
@@ -541,9 +544,9 @@ class AppShellFxSuite extends ShellFxSuite:
       fx =>
         val broken = at(
           StoryModels.t2Compare,
-          Intent.Dispatch(Command.SaveLayout(Perspective.Compare, Some(LayoutBlob(text))))
+          Intent.Dispatch(Command.SaveLayout(Perspective.Results, Some(LayoutBlob(text))))
         )
-        assertEquals(AppModel.savedLayout(broken, Perspective.Compare), Some(LayoutBlob(text)))
+        assertEquals(AppModel.savedLayout(broken, Perspective.Results), Some(LayoutBlob(text)))
         val w = boot(fx, broken)
         assertEquals(runOnFx(w.host.active), Some("compare.query"))
         val pairs =
@@ -554,10 +557,10 @@ class AppShellFxSuite extends ShellFxSuite:
         )
         assert(runOnFx(w.shell.notice.node.isVisible))
         val notice = runOnFx(drawn(w.shell.notice.text))
-        assert(notice.startsWith("The saved layout of Compare could not be read ("), notice)
+        assert(notice.startsWith("The saved layout of Results could not be read ("), notice)
         assert(notice.endsWith("); it shows the default layout."), notice)
         runOnFx(w.runtime.model.notice) match
-          case Some(Notice.LayoutsReset(ps, _)) => assertEquals(ps, Vector(Perspective.Compare))
+          case Some(Notice.LayoutsReset(ps, _)) => assertEquals(ps, Vector(Perspective.Results))
           case other                            => fail(s"expected LayoutsReset, got $other")
         // The next capture replaces the unreadable layout with the default.
         runOnFx(w.captureLayouts())

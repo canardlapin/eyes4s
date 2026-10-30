@@ -27,7 +27,7 @@ class StudioScenesSuite extends munit.FunSuite:
   test("the intents scene compiles and renders to SVG, including the initial model") {
     val initial = AppModel.newProject.fold(e => fail(e.message), identity)
     val moved   = AppModel
-      .update(initial, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      .update(initial, Intent.Navigate(Location(Perspective.Report, Vector(Place.Figures))))
       ._1
     Seq(initial, moved).foreach { model =>
       val svg = StudioScenes.intents(model).flatMap(SvgRenderer.render(_)).map(_.value)

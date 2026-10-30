@@ -82,7 +82,7 @@ class ExplainNavigationSuite extends munit.FunSuite:
           start,
           Vector(Intent.Explain(groups.head), Intent.Explain(Place.At(rememberedP17)))
         )
-        assertEquals(m.perspective, Perspective.Compare)
+        assertEquals(m.perspective, Perspective.Results)
         assertEquals(
           Shell.context(m).trail.map(_.label).mkString(" › "),
           "Summary · by retrieval response › Remembered › P17"

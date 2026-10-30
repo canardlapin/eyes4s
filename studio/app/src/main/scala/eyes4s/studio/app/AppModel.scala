@@ -725,12 +725,11 @@ object AppModel:
       Perspective.Data -> document.datasets.lastOption.fold(Vector(Place.NewProject))(d =>
         Vector(Place.Dataset(d.id))
       ),
-      Perspective.Explore  -> Vector.empty,
       Perspective.Analysis -> Vector(Place.Analyses),
-      Perspective.Compare  -> document.reporting.headOption
+      Perspective.Results  -> document.reporting.headOption
         .map(r => Place.Summary(r.id))
         .toVector,
-      Perspective.Figures -> Vector(Place.Figures)
+      Perspective.Report -> Vector(Place.Figures)
     )
 
   /** A new, untitled project with no dataset and no analysis (the DataEmpty
@@ -860,7 +859,11 @@ object AppModel:
       navigate(m, Location(Place.home(trail).getOrElse(m.perspective), trail))
     case Intent.Follow(target) =>
       val trail = Provenance.explain(m.location.trail, target)
-      if Place.home(trail).getOrElse(m.perspective) != m.perspective then (m, none)
+      // A follow moves the drill's trail only: never the perspective, nor
+      // Results' summary or pair.
+      if Place.home(trail).getOrElse(m.perspective) != m.perspective ||
+        !StudioLayouts.drilling(m.perspective, m.location.trail)
+      then (m, none)
       else (m.copy(navigation = m.navigation.replace(Location(m.perspective, trail))), none)
 
     case Intent.Select(input) =>

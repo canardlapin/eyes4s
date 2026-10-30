@@ -162,8 +162,12 @@ class A11yTreeSuite extends ShellFxSuite:
           }
         // Explore's inspector rebuilds its links when any of its reads arrives.
         // Wait for all reads before deriving stops or starting the Tab walk.
-        if runOnFx(w.runtime.model.perspective) == Perspective.Explore then
-          eventually(fx, "Explore inspector and navigation are served") {
+        if runOnFx(
+            eyes4s.studio.app.layout.StudioLayouts
+              .drilling(w.runtime.model.perspective, w.runtime.model.location.trail)
+          )
+        then
+          eventually(fx, "the drill's inspector and navigation are served") {
             val inspector = w.inspector.current
             val nav       = w.navigator.state
             Vector(
@@ -187,7 +191,7 @@ class A11yTreeSuite extends ShellFxSuite:
             w.summary.participantTable.source.isDefined &&
             w.summary.vm.scales.forall(_.available)
           }
-        else if runOnFx(w.runtime.model.perspective) == Perspective.Compare then
+        else if runOnFx(w.runtime.model.perspective) == Perspective.Results then
           eventually(fx, "Compare navigation and contrast are served") {
             val nav = w.summary.navigatorVM
             val cv  = w.summary.contrastVM
@@ -197,7 +201,7 @@ class A11yTreeSuite extends ShellFxSuite:
         // Native report reads add the plots, generated methods and export
         // controls. Derive the stops after those reads have been rendered,
         // so they cannot arrive halfway through the keyboard traversal.
-        if runOnFx(w.runtime.model.perspective) == Perspective.Figures then
+        if runOnFx(w.runtime.model.perspective) == Perspective.Report then
           eventually(fx, "Figures reports, methods and bundle are served") {
             val view = w.figures.vm
             view.page.exists(p =>
@@ -424,7 +428,7 @@ class A11yTreeSuite extends ShellFxSuite:
     }
     val crumb  = runOnFx(w.shell.contextStrip.crumbs.head)
     val toggle =
-      runOnFx(w.shell.appBar.switcher(eyes4s.studio.core.document.Perspective.Compare))
+      runOnFx(w.shell.appBar.switcher(eyes4s.studio.core.document.Perspective.Results))
     val pane =
       runOnFx(w.host.node(runOnFx(w.runtime.model.focusedPane)).get.asInstanceOf[Region])
     assertEquals(ring(crumb), accent)

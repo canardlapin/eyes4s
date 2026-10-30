@@ -126,7 +126,7 @@ object DocumentPins:
     "presentation.default" ->
       """{"perspective":{"Data":{}},"theme":{"Light":{}},"stage":{"Dark":{}},"mapOpacity":0.6,"underlay":false,"shownRun":null,"layouts":[]}""",
     "presentation.layouts" ->
-      """{"perspective":{"Figures":{}},"theme":{"Dark":{}},"stage":{"Mid":{}},"mapOpacity":0.4,"underlay":true,"shownRun":7,"layouts":[{"perspective":{"Data":{}},"layout":"{\"root\":\"data\"}"},{"perspective":{"Figures":{}},"layout":"{\"root\":\"figures\"}"}]}""",
+      """{"perspective":{"Report":{}},"theme":{"Dark":{}},"stage":{"Mid":{}},"mapOpacity":0.4,"underlay":true,"shownRun":7,"layouts":[{"perspective":{"Data":{}},"layout":"{\"root\":\"data\"}"},{"perspective":{"Report":{}},"layout":"{\"root\":\"figures\"}"}]}""",
     "preset.Custom" ->
       """{"Custom":{}}""",
     "preset.PerceptionImagery" ->

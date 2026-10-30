@@ -84,7 +84,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
     runOnFx(w.inspector.follow("ret_07 contrast (matched reference)"))
     fx.awaitLayout()
     val m = runOnFx(w.runtime.model)
-    assertEquals(m.perspective, Perspective.Compare)
+    assertEquals(m.perspective, Perspective.Results)
     assertEquals(m.location.trail.last, Place.At(StoryModels.pair))
   }
 

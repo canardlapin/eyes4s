@@ -20,7 +20,8 @@ import eyes4s.studio.app.explore.*
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{DatasetRevision, LedgerEntry, LedgerPages}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
+import eyes4s.studio.app.layout.StudioLayouts
+import eyes4s.studio.core.document.DatasetRevisionSpec
 import eyes4s.studio.core.fixture.GoldenAssets
 import eyes4s.studio.core.assets.{AssetFile, AssetRef, AssetRegistry}
 import eyes4s.studio.core.bundle.InputKind
@@ -206,7 +207,7 @@ final class TrialsNavigatorHost(
 
   /** Follow the model. Nothing is read until Explore has been shown. */
   def sync(m: AppModel): Unit =
-    started = started || m.perspective == Perspective.Explore
+    started = started || StudioLayouts.drilling(m.perspective, m.location.trail)
     if started then
       val (next, effects) = TrialsNavigator.sync(navigator, m)
       navigator = next

@@ -47,7 +47,7 @@ class DescriptorEditorSuite extends munit.FunSuite:
     assertEquals(b.command(model), None)
   }
   test("switching away invalidates a pending answer") {
-    val other = AppModel.update(model, Intent.SwitchPerspective(Perspective.Explore))._1
+    val other = AppModel.update(model, Intent.SwitchPerspective(Perspective.Results))._1
     val reset = initial._1.sync(other)._1
     assertEquals(reset.target, None)
     assertEquals(reset.read(request, Right(answer(request.request.recipe))), reset)

@@ -77,29 +77,29 @@ class MenusSuite extends munit.FunSuite:
       run(
         t2,
         Intent.LayoutsCaptured(
-          Vector(Perspective.Compare -> Some(blob), Perspective.Data -> None)
+          Vector(Perspective.Results -> Some(blob), Perspective.Data -> None)
         )
       )
-    assertEquals(AppModel.savedLayout(saved, Perspective.Compare), Some(blob))
+    assertEquals(AppModel.savedLayout(saved, Perspective.Results), Some(blob))
     assertEquals(AppModel.savedLayout(saved, Perspective.Data), None)
     assertEquals(saved.document.science, t2.document.science)
     assertEquals(
       effects.collect { case AppEffect.Journal(e) => e },
-      Vector(JournalEntry.Apply(Command.SaveLayout(Perspective.Compare, Some(blob))))
+      Vector(JournalEntry.Apply(Command.SaveLayout(Perspective.Results, Some(blob))))
     )
     // The same capture again changes nothing and is not refused.
-    val again = run(saved, Intent.LayoutsCaptured(Vector(Perspective.Compare -> Some(blob))))
+    val again = run(saved, Intent.LayoutsCaptured(Vector(Perspective.Results -> Some(blob))))
     assertEquals(again, (saved, Vector.empty))
     assertEquals(again._1.notice, None)
     val both = run(
       saved,
       Intent.LayoutsCaptured(
-        Vector(Perspective.Compare -> None, Perspective.Figures -> Some(otherBlob))
+        Vector(Perspective.Results -> None, Perspective.Report -> Some(otherBlob))
       )
     )._1
     assertEquals(
       both.document.presentation.layouts.map(_.perspective),
-      Vector(Perspective.Figures)
+      Vector(Perspective.Report)
     )
   }
 
@@ -110,12 +110,12 @@ class MenusSuite extends munit.FunSuite:
     // Nothing saved: only the dock resets, and nothing is refused.
     assertEquals(
       run(t2, Intent.ResetPerspective),
-      (t2, Vector(AppEffect.ResetLayouts(Perspective.Compare)))
+      (t2, Vector(AppEffect.ResetLayouts(Perspective.Results)))
     )
-    val saved = run(t2, Intent.LayoutsCaptured(Vector(Perspective.Compare -> Some(blob))))._1
+    val saved = run(t2, Intent.LayoutsCaptured(Vector(Perspective.Results -> Some(blob))))._1
     val (reset, effects) = run(saved, Intent.ResetPerspective)
-    assertEquals(AppModel.savedLayout(reset, Perspective.Compare), None)
-    assertEquals(effects.last, AppEffect.ResetLayouts(Perspective.Compare))
+    assertEquals(AppModel.savedLayout(reset, Perspective.Results), None)
+    assertEquals(effects.last, AppEffect.ResetLayouts(Perspective.Results))
     assertEquals(reset.notice, None)
     // Focus and maximize return to the default arrangement's too.
     val focused = run(
@@ -138,13 +138,13 @@ class MenusSuite extends munit.FunSuite:
 
   test("unreadable saved layouts are a notice; the document is untouched") {
     val (m, effects) =
-      run(t2, Intent.LayoutsUnreadable(Vector(Perspective.Compare), "not JSON"))
+      run(t2, Intent.LayoutsUnreadable(Vector(Perspective.Results), "not JSON"))
     assertEquals(effects, Vector.empty)
     assertEquals(m.document, t2.document)
     assertEquals(
       Shell.project(m).notice.map(_.text),
       Some(
-        "The saved layout of Compare could not be read (not JSON); it shows the default layout."
+        "The saved layout of Results could not be read (not JSON); it shows the default layout."
       )
     )
   }

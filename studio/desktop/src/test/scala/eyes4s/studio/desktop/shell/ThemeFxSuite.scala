@@ -85,10 +85,10 @@ class ThemeFxSuite extends ShellFxSuite:
 
   private val moments: Vector[(Perspective, () => AppModel)] = Vector(
     Perspective.Data     -> (() => StoryModels.t1Data),
-    Perspective.Explore  -> (() => StoryModels.t2Explore),
+    Perspective.Results  -> (() => StoryModels.t2Explore),
     Perspective.Analysis -> (() => StoryModels.t2Analysis),
-    Perspective.Compare  -> (() => StoryModels.t2Compare),
-    Perspective.Figures  -> (() => StoryModels.t2Figures)
+    Perspective.Results  -> (() => StoryModels.t2Compare),
+    Perspective.Report   -> (() => StoryModels.t2Figures)
   )
 
   /** The View menu's Appearance choice `a`, as drawn. */
@@ -157,7 +157,7 @@ class ThemeFxSuite extends ShellFxSuite:
   // reports, pair, maps and ledger; Figures its page, methods and bundle.
   private def windowReady(w: StudioWindow): Boolean =
     if !inspectorReady(w) then false
-    else if w.runtime.model.perspective == Perspective.Compare then
+    else if w.runtime.model.perspective == Perspective.Results then
       val summary = w.summary.summary
       val panels  = w.summary.inspectorInputs.panels
       val why     = w.compareInspector.vm
@@ -176,7 +176,7 @@ class ThemeFxSuite extends ShellFxSuite:
       why.status.isEmpty && why.retry.isEmpty && why.why.exists(explanation =>
         !explanation.facts.exists(_.value == WhyText(WhyTextId.ExcludedReading))
       )
-    else if w.runtime.model.perspective != Perspective.Figures then true
+    else if w.runtime.model.perspective != Perspective.Report then true
     else
       val view = w.figures.vm
       view.page.exists(page =>

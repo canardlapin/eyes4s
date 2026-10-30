@@ -182,6 +182,6 @@ class PreflightFxSuite extends ShellFxSuite:
     runOnFx(w.preflight.remedy(card))
     fx.awaitLayout()
     val m = runOnFx(w.runtime.model)
-    assertEquals(m.perspective, Perspective.Explore)
+    assertEquals(m.perspective, Perspective.Results)
     assertEquals(m.selection.selected, (p11 +: refs).map(StudioRef.Trial(_)))
   }

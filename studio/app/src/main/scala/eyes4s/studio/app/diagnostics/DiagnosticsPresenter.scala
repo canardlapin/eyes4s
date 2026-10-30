@@ -235,6 +235,6 @@ object DiagnosticsPresenter:
     val refs           = remedy.trials.map(StudioRef.Trial(_))
     val (next, select) = selection.submit(SelectionMode.Replace, refs, InputCause.Pointer)
     val go             = refs.headOption.map(first =>
-      Intent.Navigate(Location(Perspective.Explore, Vector(Place.At(first))))
+      Intent.Navigate(Location(Perspective.Results, Vector(Place.At(first))))
     )
     (next, go.toVector :+ select)
