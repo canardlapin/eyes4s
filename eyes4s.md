@@ -1053,6 +1053,18 @@ Status (2026-09-17): Spearman, Tanimoto, χ² and exact W₁ are not implemented
 comparison matrix is tracked by `eyesim-compare`. `ScanMatch.similarity(substitution, gap)` is
 `Compare[Vector[A], Vector[A], Similarity]` over any AOI-label sequence.
 
+`FixationRevisits.analyze` is a direct within-scanpath analysis in `eyes4s-compare`, not a binary
+`Compare` or a metric. Its `RevisitConfig[U]` names the open radius, inclusive integer lag bounds,
+distance convention, incoming-step policy and work budget. It returns every input fixation with
+its eligibility, most-recent qualifying match and separate nearest-history distance. Optional
+`PointMeasure[U]` references are frame-checked through `Agreement`; weighted conditional
+expectations retain their denominators and unavailable support rather than dropping rows.
+Rolling coverage counts give `O(nL + nm)` time and `O(m)` working storage, plus returned rows,
+without pairwise matrices. Reference pooling belongs to the study design; saved-plan, codec,
+result-table and Studio integration are not yet supplied. The [method guide](docs/FIXATION_REVISITS.md)
+and [supplemental eyesim checks](PARITY.md#fixation-revisits-supplemental-eyesim-checks) state the
+precise estimand and evidence boundary.
+
 ### Layer 5 — design: trials, relations, pairings, reductions
 
 The key insight, and the one that kills `eyesim`'s flagship bug: **the join key is a type, not a

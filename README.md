@@ -91,6 +91,12 @@ geometry and timing, matched/control comparison, a saved/reloaded plan, and an R
 Then see [saved studies](docs/SAVED_STUDIES.md) for inspection and versioning, or
 [extending studies](docs/EXTENDING_STUDIES.md) to add a method in an independent consumer.
 
+For returns within one scanpath, use [fixation revisits](docs/FIXATION_REVISITS.md).
+The direct API retains every fixation, counts strict-radius matches within declared lag bounds,
+and optionally estimates conditional spatial expectations from a weighted reference measure.
+Its [eyesim checks](PARITY.md#fixation-revisits-supplemental-eyesim-checks) are pinned separately
+from the historical baseline; study-plan persistence and Studio integration remain subsequent work.
+
 ## Scope
 
 **v1.0** completes the baseline from raw samples or existing fixations through scanpaths,

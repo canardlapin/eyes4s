@@ -1,0 +1,21 @@
+{
+  "source_restored_sha256": "c0c829f80269745e7872a9a07a4c5915a94943d936735bd7577bacb4f8ef93d9",
+  "suite": "eyes4s.laws.FixationRevisitLawsSuite",
+  "platform": "JVM",
+  "mutants": [
+    {
+      "mutation": "mutant-inclusive-match",
+      "failed_laws": 2,
+      "total_laws": 8,
+      "log": "tools/revisit-reference/evidence/mutant-inclusive-match.log.gz",
+      "log_sha256": "57f808dbb6c7a27aea15a01c64a1535aa83b8aeae0295b93b27baeb13e0c289d"
+    },
+    {
+      "mutation": "mutant-no-expiry",
+      "failed_laws": 2,
+      "total_laws": 8,
+      "log": "tools/revisit-reference/evidence/mutant-no-expiry.log.gz",
+      "log_sha256": "b61dcb5098753a08ba9f1bc8a181242e17118975eb8ed48d877fbfb5b0a46014"
+    }
+  ]
+}

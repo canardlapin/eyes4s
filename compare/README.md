@@ -11,5 +11,11 @@ trapping time, and L_max. Embedding dimension, delay, inclusive fixed or
 target-rate radius selection, line minima, and the laminar axis are typed
 configuration rather than ignored numeric arguments.
 
+`FixationRevisits` scores lagged spatial returns with an exclusive radius and a
+named incoming-step policy. It retains one row per fixation, nearest and matched
+distances separately, and weighted conditional reference probabilities with explicit
+missing support. Rolling coverage avoids pairwise distance matrices. See the
+[revisit guide](../docs/FIXATION_REVISITS.md) for semantics and evidence.
+
 See `../PRD.md` for this module's requirements and `../.mote/` for its work
 items.

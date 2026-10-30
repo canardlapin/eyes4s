@@ -1,0 +1,314 @@
+{
+  "schema": 1,
+  "scope": "Pre-PR qualification for direct fixation revisits; not the full landing gate",
+  "candidate_commit": "7d7204c827ad55ecb7e837110ee61b072de84698",
+  "candidate_tree": "577b35acf3998f35a80d8a6cf1835a8cbb44f7fa",
+  "compiler_fingerprint": "bf76542d1a5b5f63ae29e91c355e43d89e90516d8ce3f631620d1d4079562661",
+  "main_at_review": "236fd98e5a169e536e25129db36b814a68269214",
+  "runtime": "Eclipse Adoptium JDK 25.0.4.1; JVM and Scala.js",
+  "checks": [
+    {
+      "phase": "docs-style",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/pr-docs-style.log.gz",
+      "uncompressed_sha256": "18dcba156aa606ec3edd0afdf3a16860d3e1c406e6b21d19999bf2332d46608e"
+    },
+    {
+      "phase": "inventory-prepare",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/pr-inventory-prepare.log.gz",
+      "uncompressed_sha256": "4f2fd2be86a667919b3a1a3a1441bd1f586c30ff6e0f761d38112617eace396c"
+    },
+    {
+      "phase": "tests-boundaries",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/pr-tests-boundaries.log.gz",
+      "uncompressed_sha256": "052b292c94873202a36ae3058ef607e7342b62e106371fc6dd65ef7ec4a92e8f"
+    },
+    {
+      "phase": "docs-verify",
+      "exit_code": 1,
+      "log": "tools/revisit-reference/evidence/pr-docs-verify.log.gz",
+      "uncompressed_sha256": "f8d8e8145c5e20da30456f85932e64217acfc60cebe4241faa5ccffbe1e33704"
+    },
+    {
+      "phase": "docs-final",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/pr-docs-final.log.gz",
+      "uncompressed_sha256": "717e4a77a2c3f949a98378a80ec838790f3a26caf44a75dfa44c0fa261f77ac1"
+    },
+    {
+      "phase": "docs-verify-final",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/pr-docs-verify-final.log.gz",
+      "uncompressed_sha256": "6560beba05068e9f0162e6ec8258a8b2c3fdb797bd98582cc496dedf53921752"
+    }
+  ],
+  "module_counts": [
+    {
+      "module": "kernel",
+      "platform": "jvm",
+      "suites": 23,
+      "tests": 251,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "kernel",
+      "platform": "js",
+      "suites": 22,
+      "tests": 250,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core",
+      "platform": "jvm",
+      "suites": 9,
+      "tests": 109,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "core",
+      "platform": "js",
+      "suites": 9,
+      "tests": 109,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "detect",
+      "platform": "jvm",
+      "suites": 8,
+      "tests": 86,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "detect",
+      "platform": "js",
+      "suites": 8,
+      "tests": 86,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "surface",
+      "platform": "jvm",
+      "suites": 11,
+      "tests": 94,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "surface",
+      "platform": "js",
+      "suites": 10,
+      "tests": 92,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "aoi",
+      "platform": "jvm",
+      "suites": 4,
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "aoi",
+      "platform": "js",
+      "suites": 4,
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "compare",
+      "platform": "jvm",
+      "suites": 17,
+      "tests": 205,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "compare",
+      "platform": "js",
+      "suites": 17,
+      "tests": 205,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "design",
+      "platform": "jvm",
+      "suites": 29,
+      "tests": 237,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "design",
+      "platform": "js",
+      "suites": 28,
+      "tests": 236,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "plan",
+      "platform": "jvm",
+      "suites": 48,
+      "tests": 410,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "plan",
+      "platform": "js",
+      "suites": 48,
+      "tests": 410,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "results",
+      "platform": "jvm",
+      "suites": 12,
+      "tests": 76,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "results",
+      "platform": "js",
+      "suites": 12,
+      "tests": 76,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "codec",
+      "platform": "jvm",
+      "suites": 84,
+      "tests": 526,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "codec",
+      "platform": "js",
+      "suites": 68,
+      "tests": 479,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "laws",
+      "platform": "jvm",
+      "suites": 59,
+      "tests": 1194,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "laws",
+      "platform": "js",
+      "suites": 54,
+      "tests": 1172,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "fs2",
+      "platform": "jvm",
+      "suites": 12,
+      "tests": 81,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "fs2",
+      "platform": "js",
+      "suites": 12,
+      "tests": 81,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "io",
+      "platform": "jvm",
+      "suites": 73,
+      "tests": 564,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "io",
+      "platform": "js",
+      "suites": 58,
+      "tests": 485,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "test_total": 7552,
+  "resolved_check_failure": "docs-verify refused an older rendered migration page after the DCO rebase refreshed source timestamps. docs-final rebuilt and executed the site; docs-verify-final passed without source changes.",
+  "reference_checks": {
+    "supplemental_eyesim_cases": 14,
+    "source": "tools/revisit-reference/source.json",
+    "measured": "tools/revisit-reference/measured.json",
+    "command": "python3.12 tools/revisit-reference/verify.py --source-dir /private/tmp/eyesim-revisit-pinned-source",
+    "result": "pass",
+    "independent_oracle": "python3.12 tools/r-parity/generate_revisits.py --check: pass",
+    "historical_baseline": "tools/r-parity/check_baseline.py --mote: pass"
+  },
+  "historical_evidence": "tools/revisit-reference/evidence/validation.json",
+  "historical_commit_aliases": [
+    {
+      "original_commit": "131d1d3015e2a981f1ac31e927f54e68643a2066",
+      "published_commit": "fa7bcc697083b0749c25c9ff55109730a14bd3d9",
+      "tree": "6030f308f89b16573203009f567a5d3e5dff13b0",
+      "reason": "Required DCO sign-off appended before initial publication; identical tree."
+    },
+    {
+      "original_commit": "10007e19b6512c29852068e99e27dd997504bdae",
+      "published_commit": "b30f8cf64f083c8301dd21bb6af9a3a3f03bf8df",
+      "tree": "96071940654ee77ad50b552ee09e2359320f7124",
+      "reason": "Required DCO sign-off appended before initial publication; identical tree."
+    }
+  ],
+  "pending": [
+    "full landing API audit with --record",
+    "published-artifact consumer",
+    "landing by tree identity"
+  ]
+}
