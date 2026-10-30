@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "scope": "Direct fixation-revisit API candidate; targeted validation, not landing qualification",
+  "source_commit": "131d1d3015e2a981f1ac31e927f54e68643a2066",
+  "source_tree": "6030f308f89b16573203009f567a5d3e5dff13b0",
+  "compiler_fingerprint": "3d9a98eee1e4a0081addeb44006a69822cac5ec4ce2507d97c41b36bab0ee681",
+  "checks": [
+    {
+      "phase": "strict-checks",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/strict-checks.log.gz",
+      "uncompressed_sha256": "55ed5b6e8aae0c0154a2f8be1b98e4127b7863904e9bed1a576cbd3ba35c855d"
+    },
+    {
+      "phase": "inventory-prepare",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/inventory-prepare.log.gz",
+      "uncompressed_sha256": "2d25b0882612d640a9cde5f938244fb022e2bb93a50559ee34a0783a5a9a353f"
+    },
+    {
+      "phase": "targeted-final",
+      "exit_code": 0,
+      "log": "tools/revisit-reference/evidence/targeted-final.log.gz",
+      "uncompressed_sha256": "366a553ba60dba8bcd7fa86e82e8370294f069ad5864ab8287b2a286e2e2acb5"
+    }
+  ],
+  "suites": [
+    {
+      "suite": "eyes4s.compare.FixationRevisitsSuite",
+      "platform": "jvm",
+      "tests": 35,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "7a703902e6b9e2633152fe9e9e35b1ea46710ed8df13c857ab73c80adb48a174"
+    },
+    {
+      "suite": "eyes4s.compare.FixationRevisitsSuite",
+      "platform": "js",
+      "tests": 35,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "022a52cb68525562828bdd2f9461cecbc976d3e430929b5154a4a978762bb72c"
+    },
+    {
+      "suite": "eyes4s.laws.FixationRevisitLawsSuite",
+      "platform": "jvm",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "d4e600cb3acd65435384702875c87e6ba7a1d9f56897914906c9527cbec782f0"
+    },
+    {
+      "suite": "eyes4s.laws.FixationRevisitLawsSuite",
+      "platform": "js",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "bc4015b8f59203c2029d0aaf3f33856310047c3ea14d8701ff042f99a62e561b"
+    },
+    {
+      "suite": "eyes4s.plan.DiagnosticCatalogSuite",
+      "platform": "jvm",
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "0d5314fd2b56868e68a7e7cf22e368d19e6fdf045b922c5279a91d6f5bf6a869"
+    },
+    {
+      "suite": "eyes4s.plan.DiagnosticCatalogSuite",
+      "platform": "js",
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "62246cc98aee7338c4658b0e0042dce729ca74762b15c68b3b48478f85c89d0f"
+    },
+    {
+      "suite": "eyes4s.io.DiagnosticCoverageJvmSuite",
+      "platform": "jvm",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "f4128e195a616380506edb2f6545135d67910de99b95250740b9164659d80d49"
+    },
+    {
+      "suite": "eyes4s.io.DiagnosticsDocJvmSuite",
+      "platform": "jvm",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "xml_sha256": "209969bac221d374da3cde9585ea1452c5fe4d0d95e20429ff6df571ceb55433"
+    }
+  ],
+  "test_total": 132,
+  "static_checks": [
+    "git diff --check",
+    "python3.12 tools/r-parity/generate_revisits.py --check",
+    "MOTE_STORE=primary python3.12 tools/r-parity/check_baseline.py --mote",
+    "python3.12 tools/check-docs.py --platform none --skip-consumer"
+  ],
+  "supplemental_R_reference_cases": 14,
+  "mutation_receipt": "tools/revisit-reference/evidence/mutation-receipt.json",
+  "pending": [
+    "full landing API audit with --record",
+    "testAll",
+    "published-artifact consumer",
+    "landing by tree identity"
+  ],
+  "subsequent_scope": [
+    "subject/item reference pooling in a study plan",
+    "saved recipes and result exports",
+    "Studio controls"
+  ]
+}
