@@ -8,6 +8,9 @@ zero radius, invalid integer lag bounds and non-positive work budgets.
 
 This is a direct analysis API. Subject/item reference pooling, saved study recipes,
 result-table exports and Studio controls are subsequent integration work.
+The [migration example](../site-docs/migration.md#fixation-revisits-with-an-explicit-reference)
+constructs a small scanpath and reference, runs the analysis and checks its result;
+`sbt docs/tlSite` compiles and executes it.
 
 ## What is counted
 
@@ -102,6 +105,15 @@ the recorded R/package versions. `--source-dir` accepts the exact hash-checked
 source files instead; `--write` explicitly records a successor after review.
 This is a source-method replay, not a full R package qualification. Weighted
 reference cases have independent native oracles because the R method is unweighted.
+
+The replay currently checks 14 compatible cases: row eligibility and revisit flags,
+match index and lag, nearest eligible distance, observed rate, per-row expected
+probability and expected revisit count. Discrete fields agree exactly; floating-point
+fields use absolute and relative tolerances of `1e-12`. The same independent oracle
+feeds portable Scala fixture tests. Those tests run offline in ordinary JVM/JS CI;
+the R replay is a separate explicit command and refuses source or runtime drift.
+The [parity report](../PARITY.md#fixation-revisits-supplemental-eyesim-checks) distinguishes
+this evidence from baseline coverage and native-only extensions.
 
 The new R method's clean-input definition is the compatibility target. Its silent
 row dropping, fractional-lag truncation, incomplete provenance and numerical
