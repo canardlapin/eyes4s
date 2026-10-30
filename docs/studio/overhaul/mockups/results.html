@@ -1,0 +1,103 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Compare · summary</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+</head><body>
+<script>
+(function () {
+  const P = FX.participants, S = ['0.5°', '1°', '2°', '4°'], SI = 2, G = ['Remembered', 'Forgotten'];
+  const ok = p => p.queries.filter(q => q.status === 'ok');
+  const gm = (p, g, i) => ES.mean(ok(p).filter(q => q.response === g).map(q => q.D[i]));
+  const gn = (p, g) => ok(p).filter(q => q.response === g).length;
+  const pm = (p, i) => ES.mean(ok(p).map(q => q.D[i]));
+  const delta = P.map(p => ({ id: p.id, d: gm(p, G[0], SI) - gm(p, G[1], SI) }));
+  const dMean = ES.mean(delta.map(x => x.d));
+  const dMin = delta.reduce((a, b) => (b.d < a.d ? b : a)), dMax = delta.reduce((a, b) => (b.d > a.d ? b : a));
+
+  // ── navigator: a word-sized Δ dot on one shared axis (0 to +0.4), zero hairline, mean tick ──
+  const DX = v => 4 + Math.max(0, Math.min(0.4, v)) / 0.4 * 112;
+  const dstrip = v => `<svg width="120" height="12" style="display:block"><path d="M4 6H116" stroke="var(--plot-grid)"/><path d="M4 1V11" stroke="var(--ink-3)"/><path d="M${DX(dMean)} 2V10" stroke="var(--ink-3)"/><circle cx="${DX(v)}" cy="6" r="2.6" fill="var(--ink)"/></svg>`;
+  let nav = '';
+  for (const p of P) {
+    const f = p.queries.filter(q => q.status === 'failed').length;
+    const thin = gn(p, G[0]) < 3 || gn(p, G[1]) < 3, dv = gm(p, G[0], SI) - gm(p, G[1], SI);
+    nav += `<div class="li row${p.id === 'P17' ? ' sel' : ''}" style="height:26px"><span class="medium" style="width:30px">${p.id}</span>${dstrip(dv)}<span class="grow"></span><span style="width:52px">${f ? '<span class="tag neutral">3 failed</span>' : thin ? '<span class="tag neutral">n&lt;3</span>' : ''}</span></div>`;
+  }
+  const navPane = `
+  <div class="pane" style="width:232px;flex:none">
+    <div class="ph row"><span class="title">Participants</span><span class="sub">Δ D at σ 2°</span></div>
+    <div class="row" style="height:22px;padding:0 12px 0 16px;gap:8px;border-left:2px solid transparent"><span style="width:30px"></span><svg width="120" height="14" style="display:block"><text x="4" y="11" font-size="10" text-anchor="middle" fill="var(--ink-3)">0</text><text x="120" y="11" font-size="10" text-anchor="end" fill="var(--ink-3)">+0.4</text></svg></div>
+    <div class="list grow">${nav}</div>
+  </div>`;
+
+  // ── headline + small multiples: one slopegraph per σ on a shared D axis ──
+  const SW0 = 140, SH = 230, top = 16, bot = 26, y = v => top + (0.62 - v) / 0.62 * (SH - top - bot);
+  const yt = [0, 0.2, 0.4, 0.6];
+  const panel = i => {
+    const o = i === 0 ? 28 : 0, SW = SW0 + o, xa = o + 46, xb = o + SW0 - 40;
+    let g = yt.map(t => `<path d="M${o + 8} ${y(t)}H${SW - 4}" stroke="${t === 0 ? 'var(--ink-3)' : 'var(--plot-grid)'}"/>`).join('');
+    if (i === 0) g += yt.map(t => `<text x="24" y="${y(t) + 3.5}" font-size="10" text-anchor="end" fill="var(--ink-3)">${t === 0 ? '0' : '+' + t.toFixed(1)}</text>`).join('');
+    for (const p of P) {
+      const a = gm(p, G[0], i), b = gm(p, G[1], i), on = p.id === 'P17';
+      g += `<path d="M${xa} ${y(a).toFixed(1)}L${xb} ${y(b).toFixed(1)}" stroke="${on ? 'var(--ink)' : 'var(--ink-3)'}" stroke-opacity="${on ? 0.85 : 0.3}" stroke-width="${on ? 1.4 : 1}" ${gn(p, G[1]) < 3 || gn(p, G[0]) < 3 ? 'stroke-dasharray="1.5 2"' : ''}/>`;
+    }
+    const ma = ES.mean(P.map(p => gm(p, G[0], i))), mb = ES.mean(P.map(p => gm(p, G[1], i)));
+    g += `<path d="M${xa} ${y(ma)}L${xb} ${y(mb)}" stroke="var(--ink)" stroke-width="2.5"/><circle cx="${xa}" cy="${y(ma)}" r="3.5" fill="var(--ink)"/><circle cx="${xb}" cy="${y(mb)}" r="3.5" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>`;
+    g += `<text x="${xa - 8}" y="${y(ma) + 4}" font-size="11" text-anchor="end" fill="var(--ink)" font-weight="500">${ES.fmt(ma)}</text><text x="${xb + 8}" y="${y(mb) + 4}" font-size="11" fill="var(--ink)" font-weight="500">${ES.fmt(mb)}</text>`;
+    g += `<text x="${xa}" y="${SH - 8}" font-size="10" text-anchor="middle" fill="var(--ink-3)">Rem</text><text x="${xb}" y="${SH - 8}" font-size="10" text-anchor="middle" fill="var(--ink-3)">Forg</text>`;
+    const sel = i === SI;
+    return `<div class="col" style="gap:4px"><div class="row" style="height:20px;gap:6px;padding-left:${o + 10}px"><span class="${sel ? 'strong' : 'medium'}">σ ${S[i]}</span>${sel ? '<span class="small muted">reported</span>' : ''}</div><svg width="${SW}" height="${SH}" style="display:block">${g}</svg></div>`;
+  };
+  // Δ by σ: the contrast at each scale, the one thing the four panels do not show directly
+  const PW2 = 170, x2 = i => 46 + i * (PW2 - 76) / 3, dy = v => top + (0.25 - v) / 0.25 * (SH - top - bot);
+  const dvals = [0, 1, 2, 3].map(i => ES.mean(P.map(p => gm(p, G[0], i) - gm(p, G[1], i))));
+  const pos = [0, 1, 2, 3].map(i => P.filter(p => gm(p, G[0], i) - gm(p, G[1], i) > 0).length);
+  let pr = `<path d="M30 ${dy(0)}H${PW2}" stroke="var(--ink-3)"/><text x="26" y="${dy(0) + 3.5}" font-size="10" text-anchor="end" fill="var(--ink-3)">0</text>`;
+  pr += pos.map((n, i) => `<text x="${x2(i)}" y="${dy(0) - 6}" font-size="9" text-anchor="middle" fill="var(--ink-3)">${n}/24</text>`).join('');
+  pr += `<path d="M${dvals.map((v, i) => x2(i) + ' ' + dy(v).toFixed(1)).join('L')}" fill="none" stroke="var(--ink)" stroke-width="1.8"/>`;
+  dvals.forEach((v, i) => pr += `<circle cx="${x2(i)}" cy="${dy(v)}" r="3" fill="var(--ink)"/><text x="${x2(i) + (i === 0 ? -7 : i === 3 ? 7 : 0)}" y="${i === 0 || i === 3 ? dy(v) + 3.5 : dy(v) - 8}" font-size="10" text-anchor="${i === 0 ? 'end' : i === 3 ? 'start' : 'middle'}" fill="var(--ink)">${ES.fmt(v)}</text>`);
+  pr += S.map((s, i) => `<text x="${x2(i)}" y="${SH - 8}" font-size="10" text-anchor="middle" fill="var(--ink-3)">${s}</text>`).join('');
+  const profile = `<div class="col" style="gap:4px;margin-left:14px;padding-left:14px;border-left:1px solid var(--hairline)"><div class="row" style="height:20px;padding-left:24px"><span class="medium">Δ by σ</span></div><svg width="${PW2 + 10}" height="${SH}" style="display:block">${pr}</svg><span class="small muted" style="padding-left:24px">σ on log₂ spacing · n/24 = Δ above 0</span></div>`;
+
+  const plotPane = `
+  <div class="pane" style="flex:none">
+    <div class="ph row"><span class="title">Remembered vs Forgotten</span><span class="sub">participant means of D, equal weight · paired n 24</span><span class="grow"></span>
+      <button class="btn sm" aria-haspopup="menu">By retrieval response · each participant equally<span class="chev" style="display:flex">${ES.icon.down}</span></button>${ES.addToFigure}<div class="seg"><button class="on">Plot</button><button>Table</button></div><button class="ibtn" aria-label="Open in its own window">${ES.icon.popout}</button></div>
+    <div class="row" style="padding:2px 16px 4px;gap:18px;align-items:flex-end">
+      <div class="col"><div class="row" style="align-items:baseline;gap:8px"><span style="font-size:30px;line-height:36px;font-weight:500">${ES.fmt(dMean)}</span><span class="muted">Δ D, Remembered − Forgotten at σ 2°</span></div>
+      <div class="ink2 small">Higher for Remembered in 24 of 24 participants · range ${ES.fmt(dMin.d)} (${dMin.id}) to ${ES.fmt(dMax.d)} (${dMax.id}) · descriptive, no tests</div></div>
+      <span class="grow"></span>
+      <p class="small ink2" style="width:340px;padding-bottom:2px">D is spatial correspondence, not replay; it mixes reinstatement with salience shared across images and residual centre bias. <span class="link">More</span></p>
+    </div>
+    <div class="row" style="padding:6px 12px 10px;gap:4px;align-items:flex-start">${[0, 1, 2, 3].map(panel).join('')}${profile}</div>
+    <div class="row small muted" style="height:28px;padding:0 16px;gap:16px;border-top:1px solid var(--hairline)"><span class="row" style="gap:6px"><svg width="18" height="6"><path d="M1 3h16" stroke="var(--ink)" stroke-width="2.5"/></svg>mean of 24</span><span class="row" style="gap:6px"><svg width="18" height="6"><path d="M1 3h16" stroke="var(--ink-3)" stroke-opacity=".5"/></svg>one participant</span><span class="row" style="gap:6px"><svg width="18" height="6"><path d="M1 3h16" stroke="var(--ink)" stroke-width="1.4" stroke-opacity=".85"/></svg>P17, selected</span><span class="row" style="gap:6px"><svg width="18" height="6"><path d="M1 3h16" stroke="var(--ink-3)" stroke-dasharray="1.5 2"/></svg>n&lt;3 in a group</span><span>σ in degrees, declared 35 px/° (not calibrated)</span></div>
+  </div>`;
+
+  // ── table twin: one row per participant, Δ at every σ side by side ──
+  let rows = '';
+  for (const p of P.slice(10, 20)) {
+    const qs = ok(p), f = p.queries.filter(q => q.status === 'failed').length;
+    rows += `<tr class="${p.id === 'P17' ? 'sel' : ''}"><td class="medium">${p.id}${gn(p, G[1]) < 3 ? ' <span class="tag neutral">n&lt;3</span>' : ''}</td><td class="r num">${qs.length}</td><td class="r num">${ES.fmt(gm(p, G[0], SI))}</td><td class="r num muted">${gn(p, G[0])}</td><td class="r num">${ES.fmt(gm(p, G[1], SI))}</td><td class="r num ${gn(p, G[1]) < 3 ? 'strong' : 'muted'}">${gn(p, G[1])}</td>${[0, 1, 2, 3].map(i => { const v = gm(p, G[0], i) - gm(p, G[1], i); return `<td class="r num ${i === SI ? 'strong' : ''}">${ES.fmt(v, Math.abs(v) < 0.005 ? 3 : 2)}</td>`; }).join('')}</tr>`;
+  }
+  const tablePane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Participants</span><span class="sub">rows 11–20 of 24 · group D at σ 2°, Δ at every σ</span><span class="grow"></span>${ES.addToFigure}</div>
+    <div style="padding:0 8px">
+    <div class="scrollwrap"><span class="thumb" style="top:42%;height:42%"></span><table class="t"><tr><th>Participant</th><th class="r">Queries</th><th class="r">Remembered D</th><th class="r">n Rem</th><th class="r">Forgotten D</th><th class="r">n Forg</th><th class="r">Δ 0.5°</th><th class="r">Δ 1°</th><th class="r">Δ 2°</th><th class="r">Δ 4°</th></tr>${rows}</table></div></div>
+    <div class="row small ink2" style="height:30px;padding:0 14px;gap:18px;border-top:1px solid var(--hairline);margin-top:auto"><span><span class="num medium">454</span> of 480 queries contribute (14 not admitted, 9 no match, 3 failed)</span><span>P05: ret_04 (Forgotten), ret_11, ret_16 (Remembered) failed</span><span>P17, P21: 2 Forgotten queries</span></div>
+  </div>`;
+
+  // ── reporting (on-demand inspector) ──
+  const field = (k, v) => `<div class="col" style="gap:6px"><span class="small muted">${k}</span>${v}</div>`;
+  const rep = `<div class="pane" style="width:28px;flex:none;align-items:center;padding-top:8px"><button class="ibtn" aria-label="Open the Reporting inspector">${ES.icon.side}</button></div>`;
+
+  ES.mount({
+    persp: 'Results',
+    trail: ['Summary · by retrieval response'],
+    state: `<span class="row" style="gap:4px"><button class="state" aria-haspopup="menu"><span class="part"><span class="dot idle"></span>Showing run 7</span><span class="sep"></span><span class="part muted">Data r3</span><span class="sep"></span><span class="part">Run 8 · comparing <span class="num">21,400 / 44,845</span><span class="bar"><i style="width:48%"></i></span></span><span class="chev" style="display:flex">${ES.icon.down}</span></button><button class="ibtn" style="width:28px;height:28px;border:1px solid var(--hairline-strong);border-radius:8px" aria-label="Cancel run 8 (⌘.)">${ES.icon.x}</button></span>`,
+    work: navPane + `<div class="stack grow">${plotPane}${tablePane}</div>` + rep,
+    statusHint: 'Enter opens P17\'s queries',
+  });
+})();
+</script>
+</body></html>

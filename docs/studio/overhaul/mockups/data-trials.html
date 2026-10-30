@@ -1,0 +1,113 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Data · Trials</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+</head><body>
+<script>
+(function () {
+  const KEY = 'P17 enc_03', SEL = 6;
+  const fix = ES.fixations(KEY);
+  const deg = f => [(f.x - 512) / 35, (384 - f.y) / 35];
+  const dfmt = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '°';
+
+  // ── navigator: trials tree ──
+  const enc = ['street-112', 'kitchen-017', 'beach-042', 'tower-150', 'desert-305', 'field-613', 'canyon-126', 'dog-077', 'forest-008', 'bridge-019', 'harbor-231', 'church-417', 'cafe-702'];
+  let nav = '';
+  for (const id of ['P13', 'P14', 'P15', 'P16']) nav += `<div class="li row"><span class="chev" style="display:flex">${ES.icon.chev}</span><span class="medium">${id}</span><span class="val small muted num">40 trials</span></div>`;
+  nav += `<div class="li row"><span class="chev" style="display:flex;transform:rotate(90deg)">${ES.icon.chev}</span><span class="medium">P17</span><span class="val small muted num">40 trials · 1 not admitted</span></div>`;
+  nav += `<div class="grouphead row" style="padding-left:30px;height:24px">Encoding · image</div>`;
+  enc.forEach((it, i) => {
+    const t = 'enc_' + String(i + 1).padStart(2, '0'), n = (FX.fix['P17 ' + t] || []).length;
+    nav += `<div class="li sub row${t === 'enc_03' ? ' sel focusring' : ''}" style="height:26px"><span class="${t === 'enc_03' ? 'medium' : 'ink2'}" style="width:44px">${t}</span><span class="${t === 'enc_03' ? '' : 'muted'}">${it}</span><span class="val small muted num">${n}</span></div>`;
+  });
+  const navPane = `
+  <div class="pane" style="width:248px;flex:none">
+    <div class="ph row"><div class="seg"><button>Setup</button><button class="on">Trials</button></div><span class="grow"></span><button class="ibtn" aria-haspopup="menu" aria-label="Group trials by participant or item">${ES.icon.more}</button></div>
+    <div style="padding:0 10px 8px"><div class="field row">${ES.icon.search}<span>Filter participant, trial, item</span></div></div>
+    <div class="row small muted" style="height:20px;padding:0 14px;"><span class="grow"></span>fixations</div>
+    <div class="list grow scrollwrap">${nav}<span class="thumb" style="top:38%;height:22%"></span></div>
+    <div class="row small muted" style="height:32px;padding:0 14px;border-top:1px solid var(--hairline);gap:6px">P17 encoding: 13 of 20 shown · read-only</div>
+  </div>`;
+
+  // ── stage ──
+  const W = 836, H = 372;
+  const st = ES.stage({ key: KEY, role: 'neutral', display: 'image', image: 'img/beach-042.png', w: W, h: H, layers: { map: true, order: true, points: true }, sigma: 2, selected: SEL });
+  const stagePane = `
+  <div class="pane" style="flex:none">
+    <div class="ph row"><span class="title">P17 · enc_03</span><span class="sub">σ 2°, 35 px/° declared</span><span class="tag neutral">Map is a preview, not a result</span><span class="grow"></span>
+      ${ES.tog('Points', true)}${ES.tog('Order', true)}${ES.tog('Map', true)}
+      <div class="seg"><button class="on">Plot</button><button>Table</button></div><button class="ibtn" aria-label="Open in its own window">${ES.icon.popout}</button></div>
+    <div class="stage" style="height:${H}px;margin:0 14px">${st.svg}</div>
+    <div class="legend row" style="height:32px;padding:0 14px;gap:12px">
+      <span class="it row"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="rgba(28,30,33,.45)" stroke="var(--ink-3)"/></svg>fixation, area shows duration</span><span class="it row"><svg width="14" height="14"><circle cx="7" cy="7" r="3" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="7" cy="7" r="6" fill="none" stroke="var(--ink)" stroke-width="1.5"/></svg>selected</span>
+      <span class="it row"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--ink-3)" stroke-dasharray="2 2"/></svg>outside window</span>
+      <span class="it row"><svg width="16" height="8"><path d="M1 4h14" stroke="var(--ink-3)"/></svg>order, not saccades</span>
+      ${ES.mapLegend('', false)}
+    </div>
+  </div>`;
+
+  // ── timeline: one bar per fixation over trial time ──
+  const TW = 836, t1 = Math.max(...fix.map(f => f.onset + f.dur)) + 200, tx = t => 14 + t / t1 * (TW - 28);
+  let tl = '';
+  for (let s = 0; s <= t1; s += 500) tl += `<path d="M${tx(s)} 6V40" stroke="var(--plot-grid)"/>` + (s % 1000 === 0 ? `<text x="${tx(s)}" y="54" font-size="10" text-anchor="middle" fill="var(--ink-3)">${s / 1000} s</text>` : '');
+  tl += `<rect x="${tx(1200)}" y="6" width="${tx(2800) - tx(1200)}" height="34" fill="var(--surface-3)"/>`;
+  for (const f of fix) {
+    const on = f.ord === SEL;
+    tl += `<rect x="${tx(f.onset).toFixed(1)}" y="${on ? 12 : 16}" width="${(tx(f.onset + f.dur) - tx(f.onset) - 1).toFixed(1)}" height="${on ? 22 : 14}" fill="${f.inWin ? (on ? 'var(--ink-2)' : 'var(--hairline-strong)') : 'none'}" stroke="${f.inWin ? 'none' : 'var(--ink-3)'}" stroke-dasharray="2 2" rx="1"/>`;
+  }
+  tl += `<path d="M${tx(2160)} 2V44" stroke="var(--accent)" stroke-width="1.5"/>`;
+  const timelinePane = `
+  <div class="pane" style="flex:none">
+    <div class="ph row"><span class="title">Timeline</span><span class="sub">13 fixations · brush 1.20–2.80 s highlights fixations; the analysis is unchanged</span><span class="grow"></span>
+      <button class="ibtn" aria-label="Step back">${ES.icon.stepb}</button><button class="ibtn" aria-label="Play">${ES.icon.play}</button><button class="ibtn" aria-label="Step forward">${ES.icon.step}</button>
+      <div class="seg"><button>0.5×</button><button class="on">1×</button><button>2×</button></div></div>
+    <div style="padding:0 14px 8px" tabindex="0" role="slider" aria-label="Trial time; arrow keys step fixations"><svg width="${TW}" height="58" style="display:block">${tl}</svg></div>
+  </div>`;
+
+  // ── source records ──
+  let rows = '';
+  for (const f of fix.slice(3, 9)) {
+    const [dx, dy] = deg(f), on = f.ord === SEL;
+    rows += `<tr class="${on ? 'sel' : ''}"><td class="r num">${(7208 + f.ord).toLocaleString('en-US')}</td><td class="r num">${f.ord}</td><td class="r num">${f.onset.toLocaleString('en-US')}</td><td class="r num">${f.dur}</td><td class="r num">${f.sx.toFixed(1)}, ${f.sy.toFixed(1)}</td><td class="r num">${Math.round(f.x)}, ${Math.round(f.y)}</td><td class="r num">${dfmt(dx)}, ${dfmt(dy)}</td><td class="r num">${f.n}</td><td>${f.inWin ? 'inside' : '<span class="tag neutral">outside</span>'}</td></tr>`;
+  }
+  const recPane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Source records</span><span class="sub">fixations.csv · 13 of 11,520</span><span class="grow"></span><button class="btn sm">Show raw record</button></div>
+    <div style="padding:0 8px" tabindex="0" role="grid" aria-label="Source records"><table class="t"><tr><th class="r">Record</th><th class="r">Fixation</th><th class="r">Onset ms</th><th class="r">Dur ms</th><th class="r">Screen px</th><th class="r">Image px</th><th class="r">Degrees</th><th class="r">Samples</th><th>Window</th></tr>${rows}</table></div>
+  </div>`;
+
+  // ── inspector ──
+  const f6 = fix.find(f => f.ord === SEL), [gx, gy] = deg(f6);
+  const insp = `
+  <div class="pane" style="width:300px;flex:none">
+    <div class="ph row"><span class="title">Fixation 6 of 13</span><span class="grow"></span><span class="small muted">read-only</span>${ES.closeInspector}</div>
+    <div class="section" style="padding-top:4px">
+      <div class="kv">
+        <span class="k">Onset</span><span class="v num">2,160 ms</span>
+        <span class="k">Duration</span><span class="v num">${f6.dur} ms</span>
+        <span class="k">Image px</span><span class="v num">${Math.round(f6.x)}, ${Math.round(f6.y)}</span>
+        <span class="k">Degrees</span><span class="v num">${dfmt(gx)}, ${dfmt(gy)}</span>
+        <span class="k">Window</span><span class="v">inside</span>
+      </div>
+      <div class="small muted" style="margin-top:10px">Degrees from the image centre, x right, y up, at a declared 35 px/° (not calibrated).</div>
+    </div>
+    <div class="section">
+      <div class="sh row">Source</div>
+      <div class="kv">
+        <span class="k">File</span><span class="v">fixations.csv</span>
+        <span class="k">Record</span><span class="v num">7,214 of 11,520</span>
+        <span class="k">Admission</span><span class="v">admitted · dataset r3</span>
+      </div>
+    </div>
+  </div>`;
+
+  ES.mount({
+    persp: 'Data',
+    state: `<button class="state" aria-haspopup="menu"><span class="part"><span class="dot"></span>Run 7 · current</span><span class="sep"></span><span class="part muted">Data r3</span><span class="sep"></span><span class="part">${ES.draftmark}Analysis rev 5 · not run</span><span class="chev" style="display:flex">${ES.icon.down}</span></button>`,
+    trail: ['Dataset r3', 'Trials', 'P17', 'enc_03', 'Fixation 6'],
+    work: navPane + `<div class="stack grow">${stagePane}${timelinePane}${recPane}</div>` + insp,
+    statusHint: 'Arrows move between fixations · Enter selects',
+  });
+})();
+</script>
+</body></html>

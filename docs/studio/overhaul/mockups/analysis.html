@@ -1,0 +1,94 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Analysis</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+</head><body>
+<script>
+(function () {
+  const sum = FX.summary;
+  // ── navigator: one analysis, its revisions and runs ──
+  const ver = (t, sub, state, sel) => `<div class="li row${sel ? ' sel' : ''}" style="height:44px;align-items:center"><div class="col" style="gap:1px"><span class="${sel ? 'medium' : ''}">${t}</span><span class="small muted">${sub}</span></div><span class="val">${state}</span></div>`;
+  const navPane = `
+  <div class="pane" style="width:248px;flex:none">
+    <div class="ph row"><span class="title">Analyses</span><span class="grow"></span><button class="ibtn" aria-label="New analysis">${ES.icon.plus}</button></div>
+    <div class="list col" style="flex:none"><div class="row medium" style="height:30px;padding:0 14px;font-size:12px;color:var(--ink-2)">Encoding → retrieval reinstatement</div>
+    ${ver('Draft rev 5', 'adds σ 8° · data r3', `<span class="tag neutral">${ES.draftmark}not run</span>`, true)}
+    ${ver('Rev 4 · run 7', 'data r3', '<span class="row small" style="gap:5px"><span style="width:7px;height:7px;border-radius:4px;background:var(--accent)"></span>current</span>')}
+    ${ver('Rev 4 · run 6', 'data r3', '<span class="small muted">cancelled</span>')}
+    ${ver('Rev 3 · run 5', 'data r2', '<span class="tag stale">stale</span>')}</div>
+  </div>`;
+
+  // ── recipe ──
+  const chip = (t, extra = '') => `<button class="tag neutral" style="height:24px;padding:0 9px;font-size:12px;${extra}">${t}</button>`;
+  const row = (k, v) => `<span class="k" style="padding-top:3px">${k}</span><div class="v">${v}</div>`;
+  const recipePane = `
+  <div class="pane" style="flex:none">
+    <div class="ph row"><span class="title">Recipe</span><span class="sub">draft rev 5 · 1 change from rev 4</span><span class="grow"></span><div class="seg"><button class="on">Recipe</button><button>Diff</button><button>Notes</button></div></div>
+    <div style="padding:2px 18px 16px">
+      <p style="font-size:15px;line-height:23px;max-width:760px;margin-bottom:14px">Compare each participant's <span style="font-weight:600">Retrieval</span> fixations with their <span style="font-weight:600">Encoding</span> fixations of <span class="row" style="display:inline-flex;gap:4px">${ES.glyph.match()}<span style="font-weight:600">the same item</span></span>, against <span class="row" style="display:inline-flex;gap:4px">${ES.glyph.control()}<span style="font-weight:600">their other items</span></span>, by cosine similarity of duration-weighted fixation maps at σ 0.5°, 1°, 2°, 4° and 8°.</p>
+      <div class="kv" style="grid-template-columns:120px 1fr;row-gap:10px;font-size:13px;line-height:19px">
+        ${row('Preset', '<div class="seg" style="width:max-content"><button class="on">Encoding → Retrieval</button><button>Perception → Imagery</button><button>Study → Recognition</button></div>')}
+        ${row('Query', 'Retrieval trials <span class="muted">· blank screen + cross</span>')}
+        ${row('Reference', 'Encoding trial of the same item, same participant')}
+        ${row('Controls', 'Every other admitted Encoding trial of that participant')}
+        ${row('Map', 'Duration-weighted fixation density on the image frame (1024 × 768), 64 × 48 grid, cell 0.46° <span class="muted">· initial fixation kept</span>')}
+        ${row('Scales σ', `<div class="col" style="gap:6px"><div class="row" style="gap:6px">${chip('0.5°')}${chip('1°')}${chip('2°')}${chip('4°')}${chip('8°<span style="margin-left:6px;font-weight:600;color:var(--accent)">new</span>', 'background:var(--accent-soft);color:var(--ink)')}<button class="btn quiet sm">${ES.icon.plus}Add scale</button></div>
+          <div class="row" style="gap:14px;align-items:flex-start"><svg width="160" height="120" style="display:block;flex:none"><rect width="160" height="120" fill="var(--stage)" stroke="var(--stage-line)"/><circle cx="80" cy="60" r="2.73" fill="none" stroke="var(--ink-2)" stroke-width="1"/><circle cx="80" cy="60" r="5.47" fill="none" stroke="var(--ink-2)" stroke-width="1"/><circle cx="80" cy="60" r="10.94" fill="none" stroke="var(--ink-2)" stroke-width="1"/><circle cx="80" cy="60" r="21.88" fill="none" stroke="var(--ink-2)" stroke-width="1"/><circle cx="80" cy="60" r="43.75" fill="none" stroke="var(--accent)" stroke-width="1.4"/><text x="80" y="46.6" font-size="9" text-anchor="middle" fill="var(--ink-2)">2°</text><text x="80" y="35.6" font-size="9" text-anchor="middle" fill="var(--ink-2)">4°</text><text x="80" y="13.8" font-size="9" text-anchor="middle" fill="var(--accent)">8° new</text><rect x="8" y="109.50" width="2.50" height="2.50" fill="var(--ink)"/><text x="14.5" y="112.0" font-size="9" fill="var(--ink-2)">1 grid cell (0.46°)</text></svg><div class="col small" style="gap:6px"><span class="ink2">Radius σ on the 1024 × 768 frame at a declared 35 px/° (not calibrated); inner rings 0.5° and 1°.</span><span class="row" style="gap:5px;color:var(--warn)">${ES.icon.warn}0.5° is 1.1 cells wide: grid-limited</span><span class="row" style="gap:5px;color:var(--warn)">${ES.icon.warn}8° radius is 0.36 of the frame height: near-uniform maps</span></div></div></div>`)}
+        ${row('Similarity', 'Cosine <span class="muted">· all eligible controls</span>')}
+      </div>
+    </div>
+  </div>`;
+
+  // ── resolved design: funnel bar + table ──
+  const qc = sum.query_contrasts, FW = 862, fx = n => n / qc.requested * FW;
+  const segs = [[qc.contributing, 'var(--ink-2)', 'contributing'], [qc.failed, 'var(--fail)', 'failed'], [qc.no_match, 'var(--control)', 'no match'], [qc.query_not_admitted, 'var(--hairline-strong)', 'query not admitted']];
+  const barOf = (parts, total) => { let x = 0, o = ''; for (const [n, c] of parts) { const w = n / total * FW; o += `<rect x="${x.toFixed(1)}" y="0" width="${(w - 2).toFixed(1)}" height="10" fill="${c}"/>`; x += w; } return o; };
+  const legend = segs.map(([n, c, t]) => `<span class="row" style="gap:6px"><svg width="10" height="10"><rect width="10" height="10" fill="${c}"/></svg><span class="num medium">${n}</span><span class="muted">${t}</span></span>`).join('');
+  const ex = []; FX.participants.forEach(p => p.queries.forEach(q => { if (q.status !== 'ok') ex.push([p.id, q]); }));
+  const rows = ex.slice(0, 5).map(([pid, q]) => `<tr><td>${pid}</td><td>${q.trial}</td><td>${q.item}</td><td>${q.status === 'no match' ? `${q.match} <span class="muted">not admitted</span>` : q.match}</td><td class="r num">${q.controls === undefined ? '<span class="muted">—</span>' : q.controls}</td><td>${q.status}</td></tr>`).join('');
+  const designPane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Resolved design</span><span class="sub">480 retrieval queries · counted exactly</span><span class="grow"></span><div class="seg"><button class="on">Exceptions 26</button><button>All 480</button></div></div>
+    <div style="padding:0 14px"><svg width="${FW}" height="10" style="display:block">${barOf(segs, qc.requested)}</svg>
+      <div class="row small" style="gap:18px;height:26px">${legend}</div>
+      <div class="row small muted" style="height:18px">The 26 that do not contribute, at their own scale</div>
+      <svg width="${FW}" height="10" style="display:block">${barOf(segs.slice(1), 26)}</svg>
+      <div class="row small" style="height:24px">${segs.slice(1).map(([n, c, t]) => `<span class="row" style="width:${n / 26 * FW}px;gap:4px"><span class="num medium">${n}</span><span class="muted">${t}</span></span>`).join('')}</div></div>
+    <div style="padding:0 14px"><table class="t"><tr><th>Participant</th><th>Query</th><th>Item</th><th>Matched</th><th class="r">Controls</th><th>Status</th></tr>${rows}</table>
+      <div class="row small muted" style="height:24px">rows 1–5 of 26 exceptions</div></div>
+  </div>`;
+
+  // ── preflight and run ──
+  const insp = `
+  <div class="pane" style="width:300px;flex:none">
+    <div class="ph row"><span class="title">Preflight</span><span class="grow"></span><span class="small" style="color:var(--accent);font-weight:500">Ready</span>${ES.closeInspector}</div>
+    <div class="section" style="padding-top:4px">
+      <div class="row small muted" style="gap:6px;margin-bottom:10px">0 blockers · 1 warning</div>
+      <div class="col" style="gap:6px;padding:10px 12px;border-radius:6px;background:var(--warn-soft)">
+        <span class="row medium" style="gap:6px;color:var(--warn)">${ES.icon.warn}Focal trials without a match</span>
+        <span class="small ink2">9 trials in P03, P07, P08, P10, P11, P14, P15, P18, P21</span>
+        <button class="btn sm" style="width:max-content;margin-top:2px">Open the 9 trials</button>
+      </div>
+      <div class="small muted" style="margin-top:12px">Not checked: stimulus content, calibration quality, sample-level validity.</div>
+    </div>
+    <div class="section">
+      <div class="sh row">Run</div>
+      <div class="col" style="gap:6px;margin-bottom:12px"><span class="small muted">Analysis name</span><input class="field" value="Encoding → retrieval reinstatement" aria-label="Analysis name" style="color:var(--ink);font:inherit;width:100%"></div>
+      <div class="kv">
+        <span class="k">Pairs</span><span class="v num">8,969 × 5 scales = 44,845</span>
+        <span class="k">Change vs rev 4</span><span class="v">adds σ 8°</span>
+        <span class="k">Data</span><span class="v">dataset r3</span>
+      </div>
+      <button class="btn primary" style="width:100%;justify-content:center;margin-top:16px;height:32px">Save and run rev 5</button>
+    </div>
+  </div>`;
+
+  ES.mount({
+    persp: 'Analysis',
+    trail: ['Analyses', 'Encoding → retrieval reinstatement', 'Draft rev 5'],
+    work: navPane + `<div class="stack grow">${recipePane}${designPane}</div>` + insp,
+    statusHint: 'Edits change the draft only; runs are never relabelled',
+  });
+})();
+</script>
+</body></html>

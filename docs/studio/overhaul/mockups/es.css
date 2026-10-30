@@ -1,0 +1,237 @@
+/* Eyes Studio redesign kit. JavaFX portability rules for this file:
+   - layout is flex rows/columns (HBox/VBox), fixed pane widths (SplitPane dividers) and
+     two-column key/value grids (GridPane); nothing else.
+   - every property here has a JavaFX CSS twin: background colour, border colour/width,
+     radius, padding, font family/size/weight, text fill. No shadows on chrome, no blend modes,
+     no backdrop filters, no font-feature-settings (Plex figures are tabular by default).
+   - plots and stages are SVG/canvas standing in for Intaglio scenes. */
+
+@font-face { font-family: Plex; src: url(fonts/IBMPlexSans-Regular.ttf); font-weight: 400; }
+@font-face { font-family: Plex; src: url(fonts/IBMPlexSans-Medium.ttf); font-weight: 500; }
+@font-face { font-family: Plex; src: url(fonts/IBMPlexSans-SemiBold.ttf); font-weight: 600; }
+@font-face { font-family: PlexMono; src: url(fonts/IBMPlexMono-Regular.ttf); font-weight: 400; }
+@font-face { font-family: 'Source Serif'; src: url(fonts/SourceSerif4-Regular.ttf); font-weight: 400; }
+@font-face { font-family: 'Source Serif'; src: url(fonts/SourceSerif4-Semibold.ttf); font-weight: 600; }
+@font-face { font-family: PlexMono; src: url(fonts/IBMPlexMono-Medium.ttf); font-weight: 500; }
+
+:root {
+  --ground: #EEECE7;
+  --surface: #FBFAF8;
+  --surface-2: #F4F2EE;
+  --surface-3: #E9E6E0;
+  --hairline: #DEDAD2;
+  --hairline-strong: #CBC6BC;
+  --ink: #1C1E21;
+  --ink-2: #474B52;
+  --ink-3: #61666D;
+  --accent: #0E6E68;
+  --accent-soft: #DCEFEC;
+  --on-accent: #FFFFFF;
+  --sel-fill: #ECE9E2;
+  --query: #4B3A8C;
+  --query-soft: #E8E4F4;
+  --match: #2F6DB5;
+  --match-soft: #E1EAF6;
+  --control: #D98A1C;
+  --control-text: #9A4A07;
+  --control-soft: #F7E9D4;
+  --fail: #A3261B;
+  --warn: #8A5A00;
+  --warn-soft: #FBF1D9;
+  --stage: #E7E4DD;
+  --stage-ink: #61666D;
+  --stage-line: #CBC6BC;
+  --path: rgba(28,30,33,.62);
+  --halo: #FFFFFF;
+  --focus: #0E6E68;
+  --plot-grid: #E6E3DC;
+  color-scheme: light;
+}
+.dark {
+  --ground: #111214;
+  --surface: #1A1B1E;
+  --surface-2: #212226;
+  --surface-3: #2A2C30;
+  --hairline: #303237;
+  --hairline-strong: #3D4046;
+  --ink: #ECEAE5;
+  --ink-2: #BDBAB3;
+  --ink-3: #9A978F;
+  --accent: #43B5AA;
+  --accent-soft: #183A37;
+  --on-accent: #0B1413;
+  --sel-fill: #2E3035;
+  --query: #C9BCFF;
+  --query-soft: #2B2544;
+  --match: #6FA3E8;
+  --match-soft: #1D2A3D;
+  --control: #E8A23C;
+  --control-text: #EBB066;
+  --control-soft: #3A2A14;
+  --fail: #F08A7E;
+  --warn: #E7C274;
+  --warn-soft: #33290F;
+  --stage: #0E0F10;
+  --stage-ink: #9A978F;
+  --stage-line: #303237;
+  --path: rgba(255,255,255,.7);
+  --image-opacity: 1;
+  --halo: #0E0F10;
+  --focus: #43B5AA;
+  --plot-grid: #2A2C30;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1440px; height: 900px; overflow: hidden; }
+body { background: var(--ground); color: var(--ink); font: 400 13px/18px Plex, sans-serif; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: default; }
+svg text { font-family: Plex, sans-serif; }
+
+.app { width: 1440px; height: 900px; display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: row; align-items: center; }
+.col { display: flex; flex-direction: column; }
+.grow { flex: 1 1 0; min-width: 0; min-height: 0; }
+.mono { font-family: PlexMono, monospace; font-size: 12px; }
+.num { white-space: nowrap; }
+.muted { color: var(--ink-3); }
+.ink2 { color: var(--ink-2); }
+.small { font-size: 11px; line-height: 16px; }
+.strong { font-weight: 600; }
+.medium { font-weight: 500; }
+
+/* ── Toolbar (48) ───────────────────────────────────────────── */
+.toolbar { height: 48px; flex: none; background: var(--surface); border-bottom: 1px solid var(--hairline);
+  padding: 0 12px 0 16px; gap: 12px; }
+.brand { gap: 8px; flex: none; }
+.brand .mark { width: 20px; height: 20px; color: var(--ink); }
+.project { gap: 6px; height: 28px; padding: 0 8px; border-radius: 6px; font-weight: 500; }
+.project:hover { background: var(--surface-2); }
+.persp { gap: 2px; height: 32px; padding: 2px; border-radius: 8px; background: var(--surface-3); }
+.persp button { height: 28px; padding: 0 14px; border-radius: 6px; color: var(--ink-2); font-weight: 500; border: 1px solid transparent; }
+.persp button.on { background: var(--surface); color: var(--ink); border: 1px solid var(--hairline-strong); }
+.status-cluster { gap: 8px; flex: none; margin-left: auto; }
+/* the perspective switch is centred on the window, not between the side clusters (JavaFX: StackPane over the HBox) */
+.toolbar { position: relative; }
+.persp-wrap { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.persp-wrap .persp { pointer-events: auto; }
+.chip { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; gap: 6px; border-radius: 13px; border: 1px solid var(--hairline-strong);
+  color: var(--ink-2); font-size: 12px; white-space: nowrap; }
+.chip .dot { display: inline-block; width: 7px; height: 7px; border-radius: 4px; background: var(--accent); }
+.chip.job { border-color: var(--hairline-strong); }
+.bar { width: 64px; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+.bar > i { display: block; height: 4px; background: var(--accent); }
+.ibtn { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--ink-3); }
+.ibtn:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ── Trail row (32) ─────────────────────────────────────────── */
+.trail { height: 34px; flex: none; background: var(--surface); border-bottom: 1px solid var(--hairline);
+  padding: 0 12px 0 8px; gap: 4px; font-size: 12px; }
+.trail .crumb { color: var(--ink-3); padding: 2px 4px; border-radius: 4px; white-space: nowrap; font-size: 12px; }
+.trail .crumb.cur { color: var(--ink); font-weight: 600; }
+.trail .sep { color: var(--hairline-strong); }
+.notice { gap: 8px; color: var(--ink-2); white-space: nowrap; }
+.notice .link, .link { color: var(--accent); font-weight: 500; }
+
+/* ── Work area: panes separated by 1px hairlines ───────────── */
+.work { flex: 1 1 0; min-height: 0; display: flex; gap: 1px; background: var(--hairline); }
+.pane { background: var(--surface); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.stack { display: flex; flex-direction: column; gap: 1px; background: var(--hairline); min-width: 0; min-height: 0; }
+.ph { height: 36px; flex: none; padding: 0 8px 0 14px; gap: 8px; }
+.ph .title { font-weight: 600; font-size: 13px; white-space: nowrap; }
+.ph .sub { color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+.pb { padding: 4px 14px 14px; overflow: hidden; }
+
+/* segmented control */
+.seg { display: flex; height: 24px; padding: 2px; gap: 2px; border-radius: 6px; background: var(--surface-3); }
+.seg button { height: 20px; padding: 0 8px; border-radius: 4px; font-size: 12px; color: var(--ink-2); white-space: nowrap; border: 1px solid transparent; }
+.seg button.on { background: var(--surface); color: var(--ink); font-weight: 500; border: 1px solid var(--hairline-strong); }
+
+.btn { height: 28px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--hairline-strong);
+  background: var(--surface); font-weight: 500; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.quiet { border-color: transparent; color: var(--accent); padding: 0 6px; }
+.btn.sm { height: 24px; padding: 0 8px; font-size: 12px; }
+
+.field { height: 28px; border: 1px solid var(--hairline-strong); border-radius: 6px; background: var(--surface);
+  padding: 0 8px; gap: 6px; color: var(--ink-3); }
+
+/* navigator lists */
+.list { overflow: hidden; }
+.li { height: 28px; padding: 0 12px 0 14px; gap: 8px; white-space: nowrap; }
+.li.sub { padding-left: 28px; }
+.li { border-left: 2px solid transparent; }
+.li.sel { background: var(--sel-fill); border-left-color: var(--accent); }
+.li .val { margin-left: auto; }
+.grouphead { height: 28px; padding: 0 14px; color: var(--ink-3); font-size: 12px; font-weight: 600; }
+
+/* key/value (GridPane, 2 columns) */
+.kv { display: grid; grid-template-columns: 104px 1fr; column-gap: 12px; row-gap: 6px; font-size: 12px; line-height: 17px; }
+.kv > .k { color: var(--ink-3); white-space: nowrap; }
+.kv > .v { color: var(--ink); }
+.section { padding: 14px; border-top: 1px solid var(--hairline); }
+.section:first-child { border-top: 0; }
+.sh { font-weight: 600; font-size: 13px; margin-bottom: 10px; gap: 8px; }
+.sh .aside { margin-left: auto; font-weight: 400; font-size: 12px; color: var(--ink-3); }
+.disclose { height: 40px; padding: 0 14px; gap: 8px; border-top: 1px solid var(--hairline); white-space: nowrap; }
+.disclose .aside { margin-left: auto; color: var(--ink-3); font-size: 12px; }
+.chev { color: var(--ink-3); }
+
+/* tables (TableView) */
+table.t { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.t th { height: 28px; text-align: left; font-weight: 500; color: var(--ink-3); border-bottom: 1px solid var(--hairline); padding: 0 10px; white-space: nowrap; }
+table.t td { height: 26px; padding: 0 10px; border-bottom: 1px solid var(--surface-3); white-space: nowrap; }
+table.t td.r, table.t th.r { text-align: right; }
+table.t tr.sel td { background: var(--sel-fill); }
+
+/* role glyph chips */
+.role { gap: 6px; font-weight: 500; white-space: nowrap; }
+.tag { height: 20px; padding: 0 7px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.neutral { background: var(--surface-3); color: var(--ink-2); }
+.tag.stale { background: var(--warn-soft); color: var(--warn); }
+
+/* status bar (24) */
+.statusbar { height: 26px; flex: none; background: var(--surface); border-top: 1px solid var(--hairline); padding: 0 14px; gap: 16px;
+  font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.statusbar .sel { color: var(--ink-2); }
+
+/* stage */
+.stage { background: var(--stage); position: relative; }
+.stage-head { height: 28px; padding: 0 12px; gap: 6px; font-size: 12px; background: var(--surface); white-space: nowrap; }
+.legend { gap: 18px; font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.legend .it { gap: 6px; }
+
+/* state button: one control for freshness, draft and job; opens the state menu */
+.state { height: 30px; padding: 0 6px 0 10px; gap: 8px; border-radius: 8px; border: 1px solid var(--hairline-strong);
+  background: var(--surface); font-size: 12px; color: var(--ink-2); white-space: nowrap; display: inline-flex; align-items: center; }
+.state .part { display: inline-flex; align-items: center; gap: 6px; align-self: stretch; padding: 0 4px; }
+.state .sep { width: 1px; height: 14px; background: var(--hairline-strong); }
+.state .dot { display: inline-block; width: 7px; height: 7px; border-radius: 4px; background: var(--accent); }
+.state .dot.idle { background: var(--ink-3); }
+.state .draftmark { display: inline-block; width: 9px; height: 9px; }
+
+/* focus: one ring for every control, drawn by the focused node (JavaFX: :focus-visible border at insets 0) */
+.focusring, :focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 4px; }
+
+/* layer toggles: independent, each shows its own check */
+.tog { height: 24px; padding: 0 8px 0 6px; gap: 4px; border-radius: 6px; font-size: 12px; color: var(--ink-2); display: inline-flex; align-items: center; white-space: nowrap; }
+.tog .box { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--hairline-strong); display: inline-flex; align-items: center; justify-content: center; }
+.tog.on .box { background: var(--ink-2); border-color: var(--ink-2); color: var(--surface); }
+.tog.on { color: var(--ink); }
+
+/* list scroll indicator (ScrollBar thumb, always shown when rows are hidden) */
+.scrollwrap { position: relative; }
+.thumb { position: absolute; right: 2px; width: 4px; border-radius: 2px; background: var(--hairline-strong); }
+.more { height: 26px; padding: 0 14px 0 30px; color: var(--ink-3); font-size: 12px; }
+
+.li.sel.focusring { border-left-color: transparent; }
+.tile:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+/* popups (JavaFX Popup root with a DropShadow effect) */
+.popup { box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+
+/* controls in a header never shrink; the subtitle gives way first */
+.ph > button, .ph > .seg, .ph > .tog, .ph > .btn { flex-shrink: 0; }
+.ph .sub { overflow: hidden; }
+button.btn[disabled] { border-color: var(--hairline); background: var(--surface-2); color: var(--ink-3); }

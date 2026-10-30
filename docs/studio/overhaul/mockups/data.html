@@ -1,0 +1,117 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Data</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+</head><body>
+<script>
+(function () {
+  const s = FX.summary;
+  // ── navigator: setup steps ──
+  const ok = `<span style="display:flex;color:var(--accent)">${ES.icon.check}</span>`;
+  const step = (n, t, sub, state, sel) => `<div class="li row${sel ? ' sel' : ''}" style="height:48px"><span class="num muted" style="width:14px">${n}</span><div class="col grow" style="gap:1px"><span class="${sel ? 'medium' : ''}">${t}</span><span class="small muted">${sub}</span></div>${state}</div>`;
+  const navPane = `
+  <div class="pane" style="width:248px;flex:none">
+    <div class="ph row"><div class="seg"><button class="on">Setup</button><button>Trials</button></div><span class="grow"></span><span class="small muted">dataset r3</span></div>
+    <div class="list col" style="flex:none">
+    ${step(1, 'Sources', '3 inputs · 2 images missing', `<span class="tag warn">2</span>`)}
+    ${step(2, 'Columns', 'fixations.csv · 10 columns', ok)}
+    ${step(3, 'Trial identity', '960 unique keys, 0 duplicates', ok)}
+    ${step(4, 'Geometry', 'screen, image frame, px/°', ok)}
+    ${step(5, 'Admission', 'review, then admit r3', '', true)}
+    </div>
+    <div class="grow"></div>
+    <div class="section" style="border-top:1px solid var(--hairline)">
+      <div class="small muted" style="margin-bottom:8px">What each trial displayed</div>
+      <div class="kv" style="grid-template-columns:1fr auto">
+        <span class="k row" style="gap:6px">${ES.icon.image}Image · Encoding</span><span class="v num" style="text-align:right">476</span>
+        <span class="k row" style="gap:6px"><span style="display:flex;color:var(--warn)">${ES.icon.image}</span>Image missing · Encoding</span><span class="v num" style="text-align:right">4</span>
+        <span class="k row" style="gap:6px">${ES.icon.plus}Blank + cross · Retrieval</span><span class="v num" style="text-align:right">480</span>
+        <span class="k" style="padding-left:22px">Inventory</span><span class="v num strong" style="text-align:right">960</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── admission ──
+  const FW = 862, fx = n => n / s.inventory_trials * FW;
+  const segs = [[s.admitted, 'var(--ink-2)', 'admitted'], [s.quarantined, 'var(--fail)', 'quarantined'], [s.absent, 'var(--hairline-strong)', 'absent']];
+  let x = 0, bar = '';
+  for (const [n, c] of segs) { bar += `<rect x="${x.toFixed(1)}" y="0" width="${Math.max(2, fx(n) - 1).toFixed(1)}" height="12" fill="${c}"/>`; x += fx(n); }
+  const qb = s.quarantine_by_cause;
+  const cause = (k, why) => `<tr><td style="padding-left:28px">${k}</td><td class="ink2">${why}</td><td class="r num">${qb[k]}</td></tr>`;
+  const admitPane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Admission</span><span class="sub">960 trials in trials.csv · counted by eyes4s</span><span class="grow"></span><div class="seg"><button class="on">Counts</button><button>Outside frame</button><button>Data issues</button></div></div>
+    <div style="padding:6px 14px 0">
+      <svg width="${FW}" height="12" style="display:block">${bar}</svg>
+      <div class="row small" style="gap:18px;height:28px">${segs.map(([n, c, t]) => `<span class="row" style="gap:6px"><svg width="10" height="10"><rect width="10" height="10" fill="${c}"/></svg><span class="num medium">${n}</span><span class="muted">${t}</span></span>`).join('')}</div>
+      <div class="row small muted" style="height:20px;gap:8px">The 23 not admitted, at their own scale</div>
+      <svg width="${FW}" height="12" style="display:block">${(() => { const parts = [[qb['duplicate-ordinals'], 'var(--fail)'], [qb['no-fixations'], 'var(--fail)'], [qb['overlap'], 'var(--fail)'], [qb['rejected-records'], 'var(--fail)'], [s.absent, 'var(--hairline-strong)']]; let x = 0, o = ''; for (const [n, c] of parts) { const w = n / 23 * FW; o += `<rect x="${x.toFixed(1)}" width="${(w - 2).toFixed(1)}" height="12" fill="${c}" fill-opacity="${c.includes('fail') ? 0.75 : 1}"/>`; x += w; } return o; })()}</svg>
+      <div class="row small" style="height:26px">${[['duplicate-ordinals', qb['duplicate-ordinals']], ['no-fixations', qb['no-fixations']], ['overlap', qb['overlap']], ['rejected', qb['rejected-records']], ['absent', s.absent]].map(([t, n]) => `<span class="row" style="width:${n / 23 * FW}px;gap:4px;overflow:hidden"><span class="num medium">${n}</span><span class="muted">${t}</span></span>`).join('')}</div>
+    </div>
+    <div style="padding:0 14px">
+      <table class="t" style="table-layout:fixed"><colgroup><col style="width:260px"><col><col style="width:70px"></colgroup>
+        <tr><th>Status</th><th>Meaning</th><th class="r">Trials</th></tr>
+        <tr><td class="medium">Admitted</td><td class="ink2">every record valid</td><td class="r num medium">937</td></tr>
+        <tr><td class="medium">Quarantined</td><td class="ink2">the whole trial is held back when any record is invalid</td><td class="r num medium">17</td></tr>
+        ${cause('duplicate-ordinals', 'duplicate fixation ordinals')}
+        ${cause('no-fixations', 'a scanpath needs at least one fixation')}
+        ${cause('overlap', 'a fixation begins before the previous fixation ends')}
+        ${cause('rejected-records', 'one or more source rows were rejected')}
+        <tr><td class="medium">Absent</td><td class="ink2">listed in trials.csv, no fixation records</td><td class="r num medium">6</td></tr>
+      </table>
+    </div>
+    <div class="row" style="padding:16px 14px 0;gap:28px;align-items:flex-start">
+      <div class="col" role="radiogroup" aria-label="Admission policy for dataset r3" style="gap:10px;width:430px">
+        <span class="medium">Admit dataset r3</span>
+        <label class="row" style="gap:10px;align-items:flex-start"><input type="radio" name="admit" style="margin:2px 0 0;accent-color:var(--accent)"><span class="col"><span>Require complete</span><span class="small muted">Refuse r3 while 17 trials are quarantined</span></span></label>
+        <label class="row" style="gap:10px;align-items:flex-start"><input type="radio" name="admit" checked style="margin:2px 0 0;accent-color:var(--accent)"><span class="col"><span class="medium">Review exclusions</span><span class="small muted">Admit 937 trials; record the 17 quarantined and 6 absent with their causes</span></span></label>
+        <div class="row" style="gap:10px;margin-top:4px"><button class="btn primary">Admit as r3</button><span class="small muted">Run 5 (data r2) becomes stale</span></div>
+      </div>
+      <div class="col" style="gap:8px;padding-left:24px;border-left:1px solid var(--hairline)">
+        <span class="medium">Changes from r2</span>
+        <span class="small ink2">Onset declared in ms · the Block column is now the occurrence</span>
+        <span class="small ink2">4 trials change status: 3 overlap → admitted, 1 admitted → no-fixations</span>
+        <span class="medium" style="margin-top:8px">Records outside the image frame</span>
+        <span class="small ink2"><span class="num">543</span> of 11,311 records in admitted trials, 4.85% of fixation duration; excluded from maps, reported per trial. 0 outside the screen.</span>
+      </div>
+    </div>
+  </div>`;
+
+  // ── geometry + sources issue ──
+  const GW = 268, k = GW / 1920, GH = 1080 * k;
+  const fixs = ES.fixations('P17 enc_03');
+  let g = `<rect width="${GW}" height="${GH}" fill="var(--stage)"/><rect x="${448 * k}" y="${156 * k}" width="${1024 * k}" height="${768 * k}" fill="#B9B4A8"/>`;
+  g += `<path d="M${(448 + 512) * k} ${156 * k}v${768 * k}M${448 * k} ${(156 + 384) * k}h${1024 * k}" stroke="rgba(255,255,255,.5)" stroke-dasharray="2 2"/>`;
+  for (const f of fixs) g += `<circle cx="${f.sx * k}" cy="${f.sy * k}" r="2.6" fill="${f.inWin ? 'rgba(28,30,33,.6)' : 'none'}" stroke="#fff" stroke-width="1"/>`;
+  const geoPane = `
+  <div class="pane" style="width:300px;flex:none">
+    <div class="ph row"><span class="title">Geometry</span><span class="sub">r3</span><span class="grow"></span><button class="btn quiet sm">Edit</button>${ES.closeInspector}</div>
+    <div class="section" style="padding-top:2px">
+      <div class="kv">
+        <span class="k">Screen</span><span class="v num">1920 × 1080 px</span>
+        <span class="k">Image frame</span><span class="v num">1024 × 768 at 448, 156</span>
+        <span class="k">Gaze origin</span><span class="v">top-left, y down</span>
+        <span class="k">Pixels per °</span><span class="v num">35 <span class="tag warn" style="margin-left:4px">declared, not calibrated</span></span>
+        <span class="k">Degrees</span><span class="v">from centre, x right, y up</span>
+      </div>
+      <svg width="${GW}" height="${GH}" style="display:block;margin-top:14px">${g}</svg>
+      <div class="small muted" style="margin-top:6px">P17 enc_03 on the screen: frame, centre axes, 13&nbsp;fixations</div>
+    </div>
+    <div class="section">
+      <div class="sh row"><span style="display:flex;color:var(--warn)">${ES.icon.warn}</span>2 image files missing</div>
+      <div class="col small" style="gap:4px"><span class="mono">forest-044.png</span><span class="mono">kitchen-081.png</span>
+      <span class="ink2" style="margin-top:4px">4 Encoding trials (P01, P24) are drawn as missing, never as blank. Gaze and scores are unaffected.</span></div>
+      <div class="row" style="gap:8px;margin-top:10px"><button class="btn sm">Repair…</button><button class="btn quiet sm">Show 4 trials</button></div>
+    </div>
+  </div>`;
+
+  ES.mount({
+    persp: 'Data',
+    trail: ['Dataset r3 (draft)', 'Admission'],
+    state: `<button class="state" aria-haspopup="menu"><span class="part"><span class="dot"></span>Run 5 · current</span><span class="sep"></span><span class="part">${ES.draftmark}Data r3 · not admitted</span><span class="sep"></span><span class="part muted">Analysis rev 3</span><span class="chev" style="display:flex">${ES.icon.down}</span></button>`,
+    work: navPane + admitPane + geoPane,
+    statusHint: 'Mapping and geometry changes apply when r3 is admitted',
+  });
+})();
+</script>
+</body></html>
