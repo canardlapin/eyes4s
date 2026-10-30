@@ -1,0 +1,98 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Report</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+<style>
+  .paper { background: #FFFFFF; color: #1C1E21; }
+  .paper text { fill: #1C1E21; }
+  .fig-t { font-size: 10px; line-height: 13px; color: #1C1E21; }
+  .fig-c { font-size: 9px; line-height: 12px; color: #464B52; }
+  .plabel { font-weight: 600; font-size: 11px; }
+</style>
+</head><body>
+<script>
+(function () {
+  const P = FX.participants, SI = 2, G = ['Remembered', 'Forgotten'];
+  const ok = p => p.queries.filter(q => q.status === 'ok');
+  const gm = (p, g, i) => ES.mean(ok(p).filter(q => q.response === g).map(q => q.D[i]));
+
+  // ── navigator: the report's parts ──
+  const navPane = `
+  <div class="pane" style="width:248px;flex:none">
+    <div class="ph row"><span class="title">Report</span><span class="grow"></span><button class="ibtn" aria-label="New figure">${ES.icon.plus}</button></div>
+    <div class="list col" style="flex:none">
+    <div class="grouphead row" style="height:26px">Figures</div>
+    <div class="li row sel" style="height:44px"><div class="col" style="gap:1px"><span class="medium">Figure 1</span><span class="small muted">run 7 · by retrieval response</span></div><span class="val small row" style="gap:5px"><span style="width:7px;height:7px;border-radius:4px;background:var(--accent)"></span>current</span></div>
+    <div class="li row" style="height:44px"><div class="col" style="gap:1px"><span>Figure 2</span><span class="small muted">run 5 · data r2</span></div><span class="val"><span class="tag stale">stale</span></span></div>
+    <div class="grouphead row" style="height:26px;margin-top:8px">Text</div>
+    <div class="li row" style="height:44px"><div class="col" style="gap:1px"><span>Methods</span><span class="small muted">generated from run 7</span></div></div>
+    <div class="grouphead row" style="height:26px;margin-top:8px">Export</div>
+    <div class="li row" style="height:44px"><div class="col" style="gap:1px"><span>Bundle</span><span class="small muted">figure, 3 tables, methods, snapshot</span></div></div>
+    </div>
+  </div>`;
+
+  // ── the page ──
+  const PW = 640, col = (PW - 48 - 16) / 2;
+  const lim = ES.sharedLimit(['P17 ret_07', 'P17 enc_03'], 2);
+  // A and B share one crop: the frame plus every fixation of both trials
+  const both = [...ES.fixations('P17 enc_03'), ...ES.fixations('P17 ret_07')];
+  const crop = [Math.min(448, ...both.map(f => f.sx)) - 24, Math.min(156, ...both.map(f => f.sy)) - 24, Math.max(1472, ...both.map(f => f.sx)) + 24, Math.max(924, ...both.map(f => f.sy)) + 24];
+  const sA = ES.stage({ key: 'P17 enc_03', role: 'match', display: 'image', image: 'img/beach-042.png', w: col, h: 190, layers: { points: true, order: true }, sigma: 2, ground: '#FFFFFF', crop });
+  const sB = ES.stage({ key: 'P17 ret_07', role: 'query', display: 'blank', w: col, h: 190, layers: { points: true, order: true }, sigma: 2, ground: '#FFFFFF', crop });
+  // C: the matched map and the 19 controls behind B, one colour limit for all 21 maps
+  const ctl = FX.controls['2'].slice().sort((a, b) => b[2] - a[2]);
+  const keysC = ['P17 ret_07', 'P17 enc_03', ...ctl.map(c => 'P17 ' + c[1])];
+  const limC = ES.sharedLimit(keysC, 2);
+  const tw = 48, th = 36;
+  const tileC = (k, role, d, im, lab, strong) => `<div class="col" style="width:${tw}px;gap:1px">${ES.stage({ key: k, role, display: d, image: im, w: tw, h: th, layers: { map: true }, sigma: 2, lim: limC, frameOnly: true, noIso: true, frameFill: '#808080' }).svg}<span class="fig-c" style="font-size:9px;line-height:11px;${strong ? 'font-weight:600;color:#1C1E21' : ''}">${lab}</span></div>`;
+  let tiles = tileC('P17 ret_07', 'query', 'blank', null, 'query', true) + tileC('P17 enc_03', 'match', 'blank', null, '◆ 0.94', true);
+  ctl.forEach((c, i) => {
+    if (i > 0 && ctl[i - 1][2] >= 0.32 && c[2] < 0.32) tiles += `<div class="col" style="width:${tw}px;align-items:center;gap:1px"><svg width="3" height="${th}"><path d="M1.5 0V${th}" stroke="#D98A1C" stroke-width="2"/></svg><span class="fig-c" style="font-size:9px;line-height:11px;color:#9A4A07">B 0.32</span></div>`;
+    tiles += tileC('P17 ' + c[1], 'control', 'blank', null, c[2].toFixed(2), false);
+  });
+  // panel D: participant slopegraph at σ 2°
+  const DW = col, DH = 170, y = v => 20 + (0.62 - v) / 0.62 * (DH - 42), xa = 70, xb = DW - 70;
+  let d = [0, .2, .4, .6].map(t => `<path d="M34 ${y(t)}H${DW - 10}" stroke="${t ? '#E6E3DC' : '#5E636A'}" stroke-width="0.8"/><text x="28" y="${y(t) + 3}" font-size="9" text-anchor="end">${t ? '+' + t.toFixed(1) : '0'}</text>`).join('');
+  for (const p of P) d += `<path d="M${xa} ${y(gm(p, G[0], SI)).toFixed(1)}L${xb} ${y(gm(p, G[1], SI)).toFixed(1)}" stroke="#5E636A" stroke-opacity=".35" stroke-width=".8"/>`;
+  const ma = ES.mean(P.map(p => gm(p, G[0], SI))), mb = ES.mean(P.map(p => gm(p, G[1], SI)));
+  d += `<path d="M${xa} ${y(ma)}L${xb} ${y(mb)}" stroke="#1C1E21" stroke-width="2"/><circle cx="${xa}" cy="${y(ma)}" r="3" fill="#1C1E21"/><circle cx="${xb}" cy="${y(mb)}" r="3" fill="#fff" stroke="#1C1E21" stroke-width="1.5"/>`;
+  d += `<text x="${xa - 7}" y="${y(ma) + 3}" font-size="9" text-anchor="end" font-weight="600">${ES.fmt(ma)}</text><text x="${xb + 7}" y="${y(mb) + 3}" font-size="9" font-weight="600">${ES.fmt(mb)}</text>`;
+  d += `<text x="${xa}" y="${DH - 6}" font-size="9" text-anchor="middle">Remembered</text><text x="${xb}" y="${DH - 6}" font-size="9" text-anchor="middle">Forgotten</text>`;
+  d += `<text x="34" y="10" font-size="9">D, participant mean</text>`;
+  const panel = (L, title, body, cap, sel) => `<div class="col" style="width:${col}px;gap:4px;${sel ? 'outline:2px solid var(--accent);outline-offset:4px;' : ''}"><div class="row" style="gap:6px"><span class="plabel">${L}</span><span class="fig-t">${title}</span></div>${body}<span class="fig-c">${cap}</span></div>`;
+  const page = `
+    <div class="paper col" style="width:${PW}px;padding:24px;gap:22px">
+      <div class="row" style="gap:16px;align-items:flex-start">
+        ${panel('A', 'Encoding gaze · P17 enc_03 · beach-042', sA.svg, '13 fixations in order; marker area shows duration; lines stop at the analysis window.')}
+        ${panel('B', 'Retrieval gaze · P17 ret_07', sB.svg, 'Blank screen + cross; the image was not shown. 12 fixations.')}
+      </div>
+      <div class="col" style="gap:4px"><div class="row" style="gap:6px"><span class="plabel">C</span><span class="fig-t">Fixation density at σ 2°: the query, its matched encoding trial, and the 19 controls by cosine to the query</span></div>
+        <div class="row" style="gap:2px;flex-wrap:wrap;row-gap:6px;width:${PW - 48}px">${tiles}</div>
+        <span class="fig-c">Duration-weighted density, one colour limit for all 21 maps. B = 0.32 is the mean cosine of the 19 controls, so D = 0.94 − 0.32 = +0.62.</span></div>
+      <div class="row" style="gap:16px;align-items:flex-start">
+        ${panel('D', 'Participant D by response, σ 2°', `<svg width="${DW}" height="${DH}" style="display:block">${d}</svg>`, 'Lines: 24 participants; bold: mean. Equal weight per participant.', true)}
+        <p style="width:${col}px;font-family:'Source Serif', Georgia, serif;font-size:10px;line-height:14px;color:#1C1E21"><span style="font-weight:600">Figure 1.</span> Retrieval gaze resembles encoding gaze of the same image more than encoding gaze of the participant's other images. (A, B) One Remembered query and its matched encoding trial. (C) Fixation density at σ 2° (declared 35 px/°, not calibrated). (D) D = M − B per participant: the cosine to the matched encoding trial minus the mean cosine to the participant's other admitted encoding trials. Remembered − Forgotten Δ = +0.18, higher in 24 of 24 participants; descriptive, no tests. D measures spatial correspondence, not sequential replay; it mixes item-specific reinstatement with salience shared across images and residual centre bias.</p>
+      </div>
+    </div>`;
+  const canvasPane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Figure 1</span><span class="sub">183 mm · two columns · run 7</span><span class="grow"></span>
+      <button class="btn sm">Page<span class="chev" style="display:flex">${ES.icon.down}</span></button>
+      ${ES.tog('Greyscale proof', false)}
+      <div class="seg"><button>−</button><button class="on">100%</button><button>+</button></div>
+      <button class="btn sm">${ES.icon.plus}Panel</button><button class="btn primary sm">Export Figure 1…</button><button class="ibtn" aria-label="Open in its own window">${ES.icon.popout}</button></div>
+    <div class="grow" style="background:var(--surface-3);display:flex;justify-content:center;padding:20px 0;overflow:hidden">${page}</div>
+  </div>`;
+
+  // ── panel inspector ──
+  const insp = `<div class="pane" style="width:28px;flex:none;align-items:center;padding-top:8px"><button class="ibtn" aria-label="Open the Panel inspector">${ES.icon.side}</button></div>`;
+
+  ES.mount({
+    persp: 'Report',
+    trail: ['Report', 'Figure 1', 'Panel D'],
+    work: navPane + canvasPane + insp,
+    statusHint: 'Arrows move between panels · Enter opens the binding',
+  });
+})();
+</script>
+</body></html>

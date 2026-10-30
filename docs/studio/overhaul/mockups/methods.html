@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Report · Methods</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+<style>
+  .paper { background: #FFFFFF; color: #1C1E21; }
+  .methods { font-family: 'Source Serif', Georgia, serif; font-size: 14px; line-height: 21px; color: #1C1E21; }
+  .methods p { margin: 0 0 12px; }
+  .fact { border-bottom: 1px solid transparent; }
+  .methods:focus-within .fact, .methods.show-facts .fact { border-bottom-color: #CBC6BC; }
+  .fact.sel { background: #ECE9E2; border-bottom: 1.5px solid #0E6E68; }
+</style>
+</head><body>
+<script>
+// Report › Methods. Sentences follow studio/app/figures/MethodsText.scala; values are the run 7 / dataset r3
+// fixture (FIXTURE.md, SCORES.json counts). Quarantine follows the engine: 17 trials, "no fixations" is one cause.
+(function () {
+  const f = (t, sel) => `<span class="fact${sel ? ' sel' : ''}">${t}</span>`;
+  const navPane = `
+  <div class="pane" style="width:248px;flex:none">
+    <div class="ph row"><span class="title">Report</span><span class="grow"></span><button class="ibtn" aria-label="New figure">${ES.icon.plus}</button></div>
+    <div class="list col" style="gap:0" tabindex="0" role="listbox">
+      <div class="grouphead row" style="height:26px">Figures</div>
+      <div class="li row" style="height:44px"><div class="col" style="gap:1px"><span>Figure 1</span><span class="small muted">run 7 · by retrieval response</span></div><span class="val small row" style="gap:5px"><span style="width:7px;height:7px;border-radius:4px;background:var(--accent)"></span>current</span></div>
+      <div class="li row" style="height:44px"><div class="col" style="gap:1px"><span>Figure 2</span><span class="small muted">run 5 · data r2</span></div><span class="val"><span class="tag stale">stale</span></span></div>
+      <div class="grouphead row" style="height:26px;margin-top:8px">Text</div>
+      <div class="li row sel focusring" style="height:44px"><div class="col" style="gap:1px"><span class="medium">Methods</span><span class="small muted">generated from run 7</span></div><span class="val small row" style="gap:5px"><span style="width:7px;height:7px;border-radius:4px;background:var(--accent)"></span>current</span></div>
+      <div class="grouphead row" style="height:26px;margin-top:8px">Export</div>
+      <div class="li row" style="height:44px"><div class="col" style="gap:1px"><span>Bundle</span><span class="small muted">figure, 3 tables, methods, snapshot</span></div></div>
+    </div>
+  </div>`;
+
+  const text = `
+    <p>Fixations (${f('fixations.csv')}, ${f('11,520')} records; dataset ${f('r3')}) were admitted per trial against the ${f('trials.csv')} inventory of ${f('960')} trials: ${f('937')} admitted, ${f('17')} quarantined (${f('overlap 6')}, ${f('no-fixations 5')}, ${f('duplicate-ordinals 4')}, ${f('rejected-records 2')}) and ${f('6')} absent (no fixation records). Positions were analysed in the ${f('1024 × 768')} image frame placed in a ${f('1920 × 1080')} screen; ${f('543')} of the ${f('11,311')} fixation records of admitted trials (${f('4.85%')} of their fixation duration), in ${f('409')} trials, fell outside the frame and were excluded from the maps; they are reported per trial. No fixation record lay outside the screen (off-screen policy: ${f('exclude the record')}). Degrees are measured from the image centre (x right, y up) using a declared, uncalibrated ${f('35 px/°', true)} with linear conversion. The initial-fixation policy was ${f('Keep all')}: every fixation, including the first, was kept.</p>
+    <p>Each trial was represented as a ${f('duration-weighted')} fixation density map on a ${f('64 × 48')} grid (cell ${f('0.46°')}), smoothed with Gaussian kernels at σ = ${f('0.5°, 1°, 2° and 4°')}, declared before the run. Of ${f('480')} ${f('retrieval')} queries, ${f('457')} were eligible; for each eligible query, ${f('cosine similarity')} was computed to ${f('the one matched encoding trial')} (M) and to ${f('every admitted encoding trial of another item from the same participant')} (${f('19')} per query; ${f('18')} for ${f('171')} queries); their mean is B, and D = M − B. A contrast ${f('required all of its pairs')}: ${f('454')} contributed, ${f('3')} failed (${f('reduction-failures')}), ${f('9')} had no matched trial and ${f('14')} queries were not admitted.</p>
+    <p>D was ${f('averaged within participant, then across participants with equal weight')}, separately by ${f('retrieval response')} (n = ${f('24')} each; paired n = ${f('24')}). Per participant, groups held ${f('2–17')} queries; no minimum per group was applied in this reporting spec (${f('P17 and P21 each have 2 Forgotten queries')}). Reporting counts above are evaluated at σ ${f('2°')}.</p>
+    <p>D measures spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.</p>
+    <p class="muted" style="font-size:13px">Analysis ${f('rev 4')}, ${f('run 7')}; eyes4s ${f('0.1')}.</p>`;
+
+  const canvasPane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Methods</span><span class="sub">generated from run 7 and "By retrieval response" · read-only, up to date</span><span class="grow"></span>
+      ${ES.tog('Show facts', false)}
+      <button class="btn sm" disabled title="Enabled when the figure's run or reporting spec changes" style="color:var(--ink-3)">Regenerate</button><button class="btn sm">Copy</button><button class="btn primary sm">Export methods.md…</button></div>
+    <div class="grow" style="background:var(--surface-3);display:flex;justify-content:center;padding:20px 0;overflow:hidden">
+      <div class="paper methods" tabindex="0" role="document" aria-label="Methods text; arrow keys move between facts" style="width:600px;padding:32px 48px">${text}</div>
+    </div>
+    <div class="row small ink2" style="height:30px;padding:0 14px;gap:8px;border-top:1px solid var(--hairline)"><span class="medium">35 px/°</span><span>from Data › Geometry, dataset r3 · declared, not calibrated</span><span class="grow"></span><span class="link">Open the source</span></div>
+  </div>`;
+
+  ES.mount({
+    persp: 'Report',
+    trail: ['Report', 'Methods'],
+    work: navPane + canvasPane + `<div class="pane" style="width:28px;flex:none;align-items:center;padding-top:8px"><button class="ibtn" aria-label="Open the inspector">${ES.icon.side}</button></div>`,
+    statusHint: 'Arrow keys move between facts · Enter opens a fact\'s source',
+  });
+})();
+</script>
+</body></html>

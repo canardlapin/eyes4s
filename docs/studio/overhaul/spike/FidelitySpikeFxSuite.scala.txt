@@ -1,0 +1,127 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.desktop.harness
+
+import eyes4s.studio.app.tokens.FontFace
+import eyes4s.studio.desktop.typography.StudioFonts
+import javafx.scene.image.{ImageView, WritableImage}
+import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
+import javafx.scene.shape.{Line, Polyline, Rectangle, StrokeLineCap, StrokeLineJoin}
+import javafx.scene.text.{Font, FontSmoothingType, Text}
+
+/** Throwaway spike (overhaul epic, fidelity slice): the same text, density raster,
+  * cased polyline, rounded button and hairline as `spike.html`, drawn by JavaFX,
+  * so the two renders can be diffed region by region. Geometry is shared by value.
+  */
+class FidelitySpikeFxSuite extends StudioFxSuite:
+
+  override protected def stageSize: StageSize = StageSize(800, 460)
+
+  private val Sample = "Remembered − Forgotten +0.62 · σ 2° · 35 px/° · P17 ret_07"
+  private val Sizes   = Vector(11.0, 12.0, 13.0, 15.0)
+  private val Faces   = Vector(FontFace.SansRegular, FontFace.SansMedium, FontFace.SansSemiBold)
+  private val Ramp    = Vector((0xb0, 0x60, 0x9c), (0x8e, 0x3e, 0x7e), (0x6e, 0x23, 0x66), (0x4a, 0x0c, 0x47))
+
+  private def ramp(t0: Double): (Int, Int, Int) =
+    val t   = math.max(0.0, math.min(1.0, t0))
+    val at  = t * 3
+    val k   = math.min(2, at.toInt)
+    val f   = at - k
+    val (a, b) = (Ramp(k), Ramp(k + 1))
+    def ch(x: Int, y: Int) = math.round(x + (y - x) * f).toInt
+    (ch(a._1, b._1), ch(a._2, b._2), ch(a._3, b._3))
+
+  /** Three Gaussian bumps on a 64x48 grid, the same function as spike.html. */
+  private def grid: Vector[Vector[Double]] =
+    val bumps = Vector((14.0, 12.0, 6.0, 1.0), (44.0, 16.0, 8.0, 0.8), (30.0, 34.0, 5.0, 0.6))
+    Vector.tabulate(48, 64) { (j, i) =>
+      bumps.map((x, y, s, w) => w * math.exp(-((i - x) * (i - x) + (j - y) * (j - y)) / (2 * s * s))).sum
+    }
+
+  test("which face does Font.font(family, weight, size) resolve to") {
+    Faces.foreach(f => StudioFonts.load(f).fold(e => fail(e.message), _ => ()))
+    StudioFxSuite.startToolkit()
+    val lines = runOnFx {
+      import javafx.scene.text.FontWeight
+      Vector(FontWeight.NORMAL, FontWeight.MEDIUM, FontWeight.SEMI_BOLD, FontWeight.BOLD).map { w =>
+        val f = Font.font("IBM Plex Sans", w, 13)
+        s"SPIKE weight $w -> ${f.getName} (family ${f.getFamily}, style ${f.getStyle})"
+      } ++ Vector("IBM Plex Sans Medm", "IBM Plex Sans SmBld").map { fam =>
+        val f = Font.font(fam, 13); s"SPIKE family '$fam' -> ${f.getName}"
+      }
+    }
+    lines.foreach(println)
+  }
+
+  fxStage.test("spike") { fx =>
+    Faces.foreach(f => StudioFonts.load(f).fold(e => fail(e.message), _ => ()))
+    val root = runOnFx {
+      val pane = Pane()
+      pane.setStyle("-fx-background-color: #FBFAF8;")
+      var row = 0
+      for face <- Faces; size <- Sizes do
+        val t = Text(24, 30 + row * 24, Sample)
+        t.setFont(Font.font(face.javaFxFamily, size))
+        t.setFill(Color.web("#1C1E21"))
+        t.setFontSmoothingType(FontSmoothingType.GRAY)
+        pane.getChildren.add(t)
+        row += 1
+      val big = Text(24, 340, "+0.62")
+      big.setFont(Font.font(FontFace.SansMedium.javaFxFamily, 34))
+      big.setFill(Color.web("#1C1E21"))
+      pane.getChildren.add(big)
+
+      val g   = grid
+      val max = g.flatten.max
+      val img = WritableImage(64, 48)
+      val pw  = img.getPixelWriter
+      for j <- 0 until 48; i <- 0 until 64 do
+        val t         = g(j)(i) / max
+        val (r, gg, b) = ramp(t)
+        val a         = math.min(1.0, t / 0.25) * 0.75
+        pw.setColor(i, j, Color.rgb(r, gg, b, a))
+      val ground = Rectangle(420, 20, 360, 270)
+      ground.setFill(Color.web("#808080"))
+      pane.getChildren.add(ground)
+      val view = ImageView(img)
+      view.setX(420); view.setY(20); view.setFitWidth(360); view.setFitHeight(270); view.setSmooth(true)
+      pane.getChildren.add(view)
+
+      val pts = Vector(440.0, 260.0, 500.0, 120.0, 560.0, 200.0, 640.0, 80.0, 700.0, 150.0, 760.0, 240.0)
+      def poly(color: Color, w: Double) =
+        val p = Polyline(pts*)
+        p.setStroke(color); p.setStrokeWidth(w); p.setFill(null)
+        p.setStrokeLineCap(StrokeLineCap.ROUND); p.setStrokeLineJoin(StrokeLineJoin.ROUND)
+        p
+      pane.getChildren.addAll(poly(Color.rgb(255, 255, 255, 0.35), 2.75), poly(Color.rgb(28, 30, 33, 0.9), 1.5))
+
+      val button = Rectangle(24.5, 360.5, 120, 28)
+      button.setArcWidth(12); button.setArcHeight(12)
+      button.setFill(Color.web("#FBFAF8")); button.setStroke(Color.web("#CBC6BC")); button.setStrokeWidth(1)
+      val label = Text(36, 379, "Add to figure")
+      label.setFont(Font.font(FontFace.SansMedium.javaFxFamily, 12))
+      label.setFill(Color.web("#1C1E21"))
+      val hair = Line(24, 420.5, 380, 420.5)
+      hair.setStroke(Color.web("#DEDAD2")); hair.setStrokeWidth(1)
+      pane.getChildren.addAll(button, label, hair)
+      pane
+    }
+    fx.show(root)
+    fx.awaitLayout()
+    fx.snapshot(StudioTheme.Light)
+  }

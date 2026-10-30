@@ -1,0 +1,152 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Results · pair</title>
+<link rel="stylesheet" href="es.css">
+<script src="data.js"></script><script src="es.js"></script>
+</head><body>
+<script>
+(function () {
+  const dark = /dark/.test(location.pathname);
+  const S = ['0.5', '1', '2', '4'], SI = 2;
+  const P = FX.participants;
+  const okq = p => p.queries.filter(q => q.status === 'ok');
+  const pmean = p => ES.mean(okq(p).map(q => q.D[SI]));
+  const grand = ES.mean(P.map(pmean));
+  const p17 = ES.part('P17'), q = p17.queries.find(x => x.trial === 'ret_07');
+
+  // ── navigator: rows carry a word-sized dot on one shared D axis (0 to +0.7), grand mean hairline ──
+  const DX = v => 3 + Math.max(0, Math.min(0.7, v)) / 0.7 * 38;
+  const spark = v => `<svg width="44" height="12" style="display:block"><path d="M3 6H41" stroke="var(--plot-grid)"/><path d="M${DX(grand)} 1V11" stroke="var(--ink-3)"/><circle cx="${DX(v)}" cy="6" r="2.6" fill="var(--ink)"/></svg>`;
+  const rows = [];
+  for (const p of P) {
+    const f = p.queries.filter(x => x.status === 'failed').length;
+    rows.push(`<div class="li row" style="height:26px${p.id === 'P17' ? ';background:var(--surface-2)' : ''}"><span class="chev" style="transform:rotate(${p.id === 'P17' ? 90 : 0}deg);display:flex">${ES.icon.chev}</span><span class="medium" style="width:30px">${p.id}</span>${spark(pmean(p))}${f ? `<span class="tag neutral">${f} failed</span>` : ''}<span class="val num">${ES.fmt(pmean(p))}</span></div>`);
+    if (p.id === 'P17') for (const x of p.queries) {
+      const sel = x.trial === 'ret_07', ok = x.status === 'ok';
+      rows.push(`<div class="li sub row${sel ? ' sel focusring' : ''}" style="height:26px"><span class="${sel ? 'medium' : 'ink2'}" style="width:44px">${x.trial}</span><span class="${sel ? '' : 'muted'}" style="width:86px">${x.item}</span>${ok ? spark(x.D[SI]) : ''}<span class="val num">${ok ? ES.fmt(x.D[SI]) : '<span class="muted">not admitted</span>'}</span></div>`);
+    }
+  }
+  const first = rows.findIndex(r => r.includes('>P15<')), shown = 26;
+  const vis = rows.slice(first, first + shown);
+  const thumbTop = first / rows.length * 100, thumbH = shown / rows.length * 100;
+  const navPane = `
+  <div class="pane" style="width:264px;flex:none">
+    <div class="ph row"><span class="title">Queries</span><span class="sub">D at σ 2°</span><span class="grow"></span><button class="ibtn" aria-label="Sort and group">${ES.icon.more}</button></div>
+    <div style="padding:0 10px 6px"><div class="field row">${ES.icon.search}<span>Filter participant or item</span></div></div>
+    <div class="list grow scrollwrap">${vis.join('')}<span class="thumb" style="top:${thumbTop}%;height:${thumbH}%"></span></div>
+    <div class="row small muted" style="height:32px;padding:0 14px;border-top:1px solid var(--hairline);gap:6px">rows ${first + 1}–${first + shown} of ${rows.length}<span class="grow"></span><svg width="8" height="12"><path d="M4 1V11" stroke="var(--ink-3)"/></svg>grand mean ${ES.fmt(grand)}</div>
+  </div>`;
+
+  // ── the pair, and the 19 controls behind B: one colour limit for all 21 maps ──
+  const ctl = FX.controls['2'].slice().sort((a, b) => b[2] - a[2]);
+  const keys = ['P17 ret_07', 'P17 enc_03', ...ctl.map(c => 'P17 ' + c[1])];
+  const lim = ES.sharedLimit(keys, 2);
+  const W = 392, H = 184;
+  const L = { map: true, order: true, points: true };
+  const sq = ES.stage({ key: 'P17 ret_07', role: 'query', display: 'blank', w: W, h: H, layers: L, sigma: 2, lim });
+  const sm = ES.stage({ key: 'P17 enc_03', role: 'match', display: 'image', image: 'img/beach-042.png', w: W, h: H, layers: L, sigma: 2, lim });
+  const head = (g, role, trial, what) => `<div class="stage-head row" style="padding:0">${g}<span class="medium">${role}</span><span>${trial}</span><span class="muted">${what}</span></div>`;
+  const TW = 48, TH = 36;
+  const tile = (key, label, val, glyph, strong) => `<div class="col" role="option" style="width:${TW}px;gap:2px" aria-label="${label}, cosine ${val}; Enter opens this pair">${ES.stage({ key, role: 'control', display: 'blank', w: TW, h: TH, layers: { map: true }, sigma: 2, lim, frameOnly: true, noIso: true, frameFill: '#808080' }).svg.replace('style="display:block"', 'style="display:block;"')}<span class="row num" style="font-size:10px;line-height:12px;gap:3px;color:${strong ? 'var(--ink)' : 'var(--ink-2)'};font-weight:${strong ? 600 : 400}">${glyph}${val}</span></div>`;
+  let strip = tile('P17 enc_03', 'matched enc_03 beach-042', '0.94', ES.glyph.match(8), true);
+  ctl.forEach((c, i) => {
+    if (i > 0 && ctl[i - 1][2] >= q.B[SI] && c[2] < q.B[SI]) strip += `<div class="col" style="width:${TW}px;align-items:center;gap:2px"><svg width="4" height="${TH}"><path d="M2 0V${TH}" stroke="var(--control)" stroke-width="2.5"/></svg><span class="num" style="font-size:10px;line-height:12px;color:var(--control-text)">B</span></div>`;
+    strip += tile('P17 ' + c[1], c[0] + ' · ' + c[1], c[2].toFixed(2), '', false);
+  });
+  const pairPane = `
+  <div class="pane" style="flex:none">
+    <div class="ph row"><span class="title">Pair</span><span class="sub">σ 2°, declared 35 px/°, not calibrated</span><span class="grow"></span>
+      ${ES.tog('Points', true)}${ES.tog('Order', true)}${ES.tog('Map', true)}<span style="width:1px;height:16px;background:var(--hairline)"></span>${ES.tog('Underlay', false)}
+      ${ES.addToFigure}<div class="seg"><button class="on">Plot</button><button>Table</button></div><button class="ibtn" aria-label="Open in its own window">${ES.icon.popout}</button></div>
+    <div class="row" style="gap:16px;padding:0 14px;align-items:flex-start">
+      <div class="col" style="width:${W}px">${head(ES.glyph.query(10), 'Query', 'P17 · ret_07', 'retrieval · blank screen + cross')}<div class="stage" style="height:${H}px">${sq.svg}</div></div>
+      <div class="col" style="width:${W}px">${head(ES.glyph.match(10), 'Matched reference', 'P17 · enc_03', 'encoding · beach-042.png')}<div class="stage" style="height:${H}px">${sm.svg}</div></div>
+    </div>
+    <div class="legend row" style="height:30px;padding:0 14px;gap:14px">
+      <span class="it row">${ES.glyph.query()}${ES.glyph.match()}area shows duration</span>
+      <span class="it row"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="none" stroke="var(--ink-3)" stroke-dasharray="2 2"/></svg>outside window</span>
+      <span class="it row"><svg width="16" height="8"><path d="M1 4h14" stroke="var(--ink-3)"/></svg>order, not saccades</span>
+      ${ES.mapLegend('')}
+    </div>
+    <div class="col" style="padding:2px 14px 10px;gap:4px;border-top:1px solid var(--hairline)">
+      <div class="row small" style="gap:8px;height:22px"><span class="medium" style="font-size:12px">Matched and 19 controls</span><span class="muted">density at σ 2° on one colour limit, sorted by cosine to the query; B is their mean; Enter opens a pair</span></div>
+      <div class="row" role="listbox" tabindex="0" aria-label="Matched and 19 controls; Enter opens a pair" style="gap:3px;flex-wrap:wrap;row-gap:4px;width:${11 * 51 + 1}px">${strip}</div>
+    </div>
+  </div>`;
+
+  // ── across scales: rows grow until every control is visible ──
+  const PW = 560, X0 = 10, X1 = PW - 10, xs = v => X0 + v * (X1 - X0), R = 2.2, SP = 4.5, CAP = 27;
+  const place = vals => {
+    const placed = [];
+    vals.slice().sort((a, b) => a - b).forEach(v => {
+      const x = xs(v); let k = 0, y = 0;
+      for (; ; k++) {
+        y = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * SP;
+        if (Math.abs(y) > CAP) { y = (k % 2 ? 1 : -1) * CAP; window.__overlaps = (window.__overlaps || 0) + 1; break; }
+        if (!placed.some(p => Math.hypot(p.x - x, p.y - y) < 2 * R + 0.4)) break;
+      }
+      placed.push({ x, y });
+    });
+    return placed;
+  };
+  let trs = '';
+  const placements = S.map(s => place(FX.controls[s].map(c => c[2])));
+  const RH = Math.max(40, Math.ceil(2 * (Math.max(...placements.flat().map(p => Math.abs(p.y))) + R + 3)));
+  S.forEach((s, i) => {
+    const cs = FX.controls[s].map(c => c[2]);
+    const B = ES.mean(cs), M = q.M[i], D = q.D[i], sel = i === SI, bx = xs(B), mx = xs(M);
+    const pl = placements[i], cy = RH / 2;
+    const svg = `<svg width="${PW}" height="${RH}" style="display:block">
+      ${[0, .25, .5, .75, 1].map(t => `<path d="M${xs(t)} 0V${RH}" stroke="var(--plot-grid)"/>`).join('')}
+      <path d="M${bx} ${cy}H${mx}" stroke="var(--ink)" stroke-width="1.5"/>
+      <path d="M${bx} ${cy - 10}V${cy + 10}" stroke="var(--control)" stroke-width="2.5"/>
+      ${pl.map(p => `<circle class="dp" cx="${p.x.toFixed(1)}" cy="${(cy + p.y).toFixed(1)}" r="${R}" fill="var(--surface)" stroke="var(--control)" stroke-width="1.2"/>`).join('')}
+      <path d="M${mx} ${cy - 6.5}L${mx + 6.5} ${cy}L${mx} ${cy + 6.5}L${mx - 6.5} ${cy}Z" fill="var(--match)" stroke="var(--surface)" stroke-width="1.2"/>
+    </svg>`;
+    trs += `<tr class="${sel ? 'sel' : ''}" style="height:${RH}px"><td class="${sel ? 'strong' : ''}">${s}°</td><td style="padding:0 4px">${svg}</td><td class="r num">${ES.f2(M)}</td><td class="r num">${ES.f2(B)}</td><td class="r num ${sel ? 'strong' : ''}">${ES.fmt(D)}</td></tr>`;
+  });
+  const axis = `<tr style="height:20px"><td style="border:0"></td><td style="padding:0 4px;border:0"><svg width="${PW}" height="14" style="display:block">${[0, .25, .5, .75, 1].map(t => `<text x="${xs(t)}" y="10" font-size="10" text-anchor="middle" fill="var(--ink-3)">${t}</text>`).join('')}</svg></td><td colspan="3" class="small muted" style="border:0">cosine similarity</td></tr>`;
+  const COL = '<colgroup><col style="width:52px"><col><col style="width:56px"><col style="width:56px"><col style="width:84px"></colgroup>';
+  const contrastPane = `
+  <div class="pane grow">
+    <div class="ph row"><span class="title">Across scales</span><span class="sub">ret_07 · every control pair, B, M</span><span class="grow"></span>
+      ${ES.addToFigure}<div class="seg"><button class="on">Plot</button><button>Table</button></div><button class="ibtn" aria-label="Open in its own window">${ES.icon.popout}</button></div>
+    <div style="padding:0 8px">
+      <table class="t" style="table-layout:fixed">${COL}
+        <tr><th>σ</th><th style="padding-left:14px"><span class="row" style="gap:6px">${ES.glyph.control()}control pairs</span></th><th class="r"><span class="row" style="gap:5px;justify-content:flex-end">${ES.glyph.match()}M</span></th><th class="r"><span class="row" style="gap:5px;justify-content:flex-end"><svg width="4" height="12"><path d="M2 0v12" stroke="var(--control)" stroke-width="2.5"/></svg>B</span></th><th class="r">D = M − B</th></tr>
+        ${trs}${axis}
+      </table>
+    </div>
+  </div>`;
+
+  // ── inspector: the one D readout ──
+  const insp = `
+  <div class="pane" style="width:300px;flex:none">
+    <div class="ph row"><span class="title">ret_07 · σ 2°</span><span class="grow"></span>${ES.closeInspector}</div>
+    <div class="section" style="padding-top:0">
+      <div class="row" style="align-items:baseline;gap:10px;margin:0 0 8px"><span style="font-size:34px;line-height:40px;font-weight:500">${ES.fmt(q.D[SI])}</span><span class="muted">D = M − B</span></div>
+      <div class="kv">
+        <span class="k row" style="gap:6px">${ES.glyph.match()}M</span><span class="v num">${ES.f2(q.M[SI])} <span class="muted">matched enc_03</span></span>
+        <span class="k row" style="gap:6px"><svg width="10" height="10"><path d="M5 0v10" stroke="var(--control)" stroke-width="2.5"/></svg>B</span><span class="v num">${ES.f2(q.B[SI])} <span class="muted">mean of 19 controls</span></span>
+      </div>
+      <p class="small ink2" style="margin-top:12px">D measures spatial correspondence, not replay. It mixes item-specific reinstatement with salience shared across images and residual centre bias; B removes only what this participant's other images share. <span class="link">More</span></p>
+    </div>
+    <div class="section">
+      <div class="kv">
+        <span class="k">Why enc_03</span><span class="v ink2">the only admitted encoding trial of beach-042</span>
+        <span class="k">Outside window</span><span class="v">query 4%, reference 3% of duration</span>
+      </div>
+    </div>
+    <button class="disclose row" style="width:100%"><span class="medium">Analysis</span><span class="aside">rev 4 · cosine · 4 scales</span><span class="chev">${ES.icon.chev}</span></button>
+    <button class="disclose row" style="width:100%"><span class="medium">Reporting</span><span class="aside">by retrieval response</span><span class="chev">${ES.icon.chev}</span></button>
+    <button class="disclose row" style="width:100%;border-bottom:1px solid var(--hairline)"><span class="medium">Fixation records</span><span class="aside">fixations.csv</span><span class="chev">${ES.icon.chev}</span></button>
+  </div>`;
+
+  ES.mount({
+    persp: 'Results', dark,
+    trail: ['Summary', 'Remembered', 'P17', 'ret_07 × enc_03'],
+    work: navPane + `<div class="stack grow">${pairPane}${contrastPane}</div>` + insp,
+    statusHint: '↑↓ moves between queries · F6 next pane · Enter on a fixation opens its trial',
+  });
+})();
+</script>
+</body></html>
