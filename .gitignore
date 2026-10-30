@@ -21,3 +21,6 @@ __pycache__/
 
 # Local agent state and worktrees.
 .claude/
+
+# Regenerable research datasets, conversion products and local qualification receipts.
+.datasets/
