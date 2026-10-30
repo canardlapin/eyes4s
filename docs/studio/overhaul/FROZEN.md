@@ -1,4 +1,4 @@
-# Frozen porting golden: v4h (2026-10-29)
+# Frozen porting golden: v4h (2026-10-29), amended v4i (2026-10-30)
 
 Build: out/v4h (src at freeze; gate logs/v4h-gate.log EXIT 0). Golden renders + region maps: parity/golden-v4h (Chromium, 1440x900 @1x).
 Parity tool: parity/parity.js (thresholds and negative controls in parity/README.md). Verification of the v4e critics' freeze items: audit/verify-v4g.md (19/21; the 2 failures fixed in v4h and guarded by the gate's order-line check, logs/v4g-negative-control-orderlines.log).
@@ -15,20 +15,20 @@ cd885a51c0cdf34e618da48e6e2bfe9c310a283a3fb4e62e109d17cdaf271651  figures.html
 7996386b251e19c7403309a91307832bbe12769d6967a547dfbe55ce5e89eeba  results.html
 8e3ec0ba2cac393dc9bdd4269c01b85ee01fea3ff2bdd432d49acca84b88b6b1  state-menu.html
 14046448d138ea8ce943f8e8f04948d0e3db448488a0cfc957634706c940853b  es.css
-13979420ee1375fb578e48cca4b43a48ed0e846f98766e32168664ce7f7cb505  es.js
+dd287b1eac8c0c60748d3b59bbf4ef6b5725e8d6a2c24139fbcf19f7517ffa34  es.js
 b49cef8c6a2b47c1c4c6577d1646c49aa82df4842302cd2e10dd61b0844ad85a  data.js
 
 ced601a88812448dd6014a257050484916211c83511dcc3d2f3e9e3d66d42ad6  analysis.png
 dc4cb4d663ea756982339414656068f0e556bc3d999f71e7732326b1168f0a6d  analysis.regions.json
-0c4dfb43049ebef6bc05839667a77b62b09bd3a52ec1ac8b621aea186f1040c2  compare-query-dark.png
+1e5a02dd161c96ab87d038f2c8c0f4214bd40687e19784596e8cfb2639e2708c  compare-query-dark.png
 667ebe5baf417d78b2739b2f92141c039371c32127c54a8cfc732816eb9fbef3  compare-query-dark.regions.json
-151b16cf5d1ead5402a0df8d11a7d88382e51df9443e6bebbf6e92eed82dd82e  compare-query.png
+320b6c9f2e1d8edbf629fd8f47de4932104e2919980dd3a0f3ed2647bdf5ffb9  compare-query.png
 667ebe5baf417d78b2739b2f92141c039371c32127c54a8cfc732816eb9fbef3  compare-query.regions.json
-1435e51c6daa7b291dd05eace0e7a04522dfed4d4a496a07112a892657e75f4e  data-trials.png
+dd2295e160dff86f235833d60abe7327a3058559e4001f23afdcc279f4d7e838  data-trials.png
 736948530608163f4b79d5862f0f84fcfb617260f9b16a2681eae1cda2cd2fc3  data-trials.regions.json
 d051bd32ef934cfc3eb031f75cf7b7dbc5189e381d9e434e438618f56bb935e8  data.png
 90d93160b5a05afa77a7042367eef719802c21627886b1a138a891320334ce5c  data.regions.json
-b9b561003cbc1f1be0771c847a989e2e173d73074b305b693fb29a9ea0d50981  explore.png
+a7678fb8423958e87de15b77a1f097c6f747caf35a6eaf6e63c1992ba1f900d4  explore.png
 e525bb459d37106c95df95742d987f5c77af73365a5c98ae5fdbbef5df3ee7d5  explore.regions.json
 e551aa43e1a2e10e6a0cf0829af391a8d949a332c73b963a0f0952eb0680656c  figures.png
 ae4d2a0ee2df9f7bfb2e08a250cb457f244e6d3735f370bef2eda6328fb616d3  figures.regions.json
@@ -39,3 +39,12 @@ c44d5cb7874349a9d39d6cc286ddb945a54e0c715591080f430e72af4873f2dd  results.region
 bc378d6e76764a3a10fb052b913cf3cdf3aaeedc5183d9f3e80493a2b2b9f1d7  state-menu.png
 03ce4e91ed128d8778fd690aef4c66b2a2652f075b8603e2740e4d2f2ca314f2  state-menu.regions.json
 ```
+
+Amendment v4i, 2026-10-30 (Port 1, accessibility laws; owner: "be flexible, push forward with the redesign and adapt laws as necessary"):
+- Isoline casing on maps (es.js) is white at 60%, not 35%; the legend sample matches it (was 90%). Over --ramp-1 the
+  35% casing and the ink both fell below 3:1 (2.15, 2.34); at 60% the casing reaches 3.49. Re-rendered: compare-query,
+  compare-query-dark, data-trials, explore (pixels inside the map frames only; region maps unchanged).
+- Laws adapted to the golden rather than the golden to the laws: adjacent density levels are kept apart by 10 L*
+  (the v4 ramp steps 12.76, 11.02, 11.68) instead of a 1.5 contrast ratio, which compressed the even dark end to 1.46;
+  query and matched stay 12 L* apart in both themes (light 15.0, dark 13.3) instead of 20, since the marks also
+  differ in shape and the pills name the role. Density casing tables re-derived from the new ramp.

@@ -99,7 +99,7 @@ object TypeCss:
     TokenCss.licenseHeader + generatedNote +
       "\n/* Eyes Studio type scale: five sizes, JavaFX. Body text is set on the root. */\n" +
       root + "\n" + sizes.mkString("\n") +
-      "\n/* Families: numerals and identifiers in Plex Mono, methods prose in Source Serif 4. */\n" +
+      "\n/* Families: numerals in Plex Sans (tabular figures), raw records and digests in Plex Mono, methods prose in Source Serif 4. */\n" +
       families.mkString("\n") +
       "\n/* Weight helpers: a heavier face at a size of the scale. Last, so they win. */\n" +
       helpers.mkString("\n")

@@ -18,22 +18,24 @@
 
 /* Eyes Studio tokens as web custom properties, for a future web shell. */
 .es {
-  --ground: #ECE9E2;
-  --surface: #FBFAF7;
-  --surface-2: #F3F1EC;
-  --surface-3: #E9E6DF;
-  --sel-fill: #E4E0D6;
-  --hairline: #DAD6CC;
+  --ground: #EEECE7;
+  --surface: #FBFAF8;
+  --surface-2: #F4F2EE;
+  --surface-3: #E9E6E0;
+  --sel-fill: #ECE9E2;
+  --hairline: #DEDAD2;
+  --hairline-strong: #CBC6BC;
+  --plot-grid: #E6E3DC;
   --ink: #1C1E21;
-  --ink-2: #464B52;
-  --ink-3: #5E636A;
+  --ink-2: #474B52;
+  --ink-3: #61666D;
   --accent: #0E6E68;
   --accent-soft: #DCEFEC;
   --on-accent: #FFFFFF;
-  --query: #3A2E6E;
-  --query-soft: #E6E2F2;
+  --query: #4B3A8C;
+  --query-soft: #E8E4F4;
   --match: #2F6DB5;
-  --match-soft: #E0EAF6;
+  --match-soft: #E1EAF6;
   --match-text: #255A98;
   --control: #B86E0E;
   --control-fill: #D98A1C;
@@ -41,7 +43,7 @@
   --control-soft: #F7E7D0;
   --fail: #A3261B;
   --fail-soft: #F6DEDA;
-  --warn-text: #7A4F00;
+  --warn-text: #8A5A00;
   --warn-soft: #FBF1D9;
   --neutral-mark: rgba(28,30,33,.35);
   --sel-ring-inner: #FFFFFF;
@@ -51,16 +53,16 @@
   --stage: #1A1A1A;
   --on-stage: #D9D6CF;
   --halo: #FFFFFF;
-  --ramp-0: #F9D9EA;
-  --ramp-1: #E58FB9;
-  --ramp-2: #B83F86;
-  --ramp-3: #6B0F4F;
+  --ramp-0: #B0609C;
+  --ramp-1: #8E3E7E;
+  --ramp-2: #6E2366;
+  --ramp-3: #4A0C47;
   --div-neg: #2E5A9C;
   --div-mid: #F3F1EC;
   --div-pos: #B4442F;
   --screen: #9A9A96;
   --isoline-ink: rgba(28,30,33,.9);
-  --isoline-case: rgba(255,255,255,.9);
+  --isoline-case: rgba(255,255,255,.6);
   --paper: #FFFFFF;
   --paper-ink: #1C1E21;
   --paper-ink-2: #464B52;
@@ -74,21 +76,23 @@
 }
 
 .es.dark {
-  --ground: #121315;
-  --surface: #1B1C1F;
-  --surface-2: #222327;
-  --surface-3: #2A2C31;
+  --ground: #111214;
+  --surface: #1A1B1E;
+  --surface-2: #212226;
+  --surface-3: #2A2C30;
   --sel-fill: #2E3035;
-  --hairline: #34363C;
+  --hairline: #303237;
+  --hairline-strong: #3D4046;
+  --plot-grid: #2A2C30;
   --ink: #ECEAE5;
   --ink-2: #BDBAB3;
-  --ink-3: #9C9990;
+  --ink-3: #9A978F;
   --accent: #43B5AA;
   --accent-soft: #183A37;
   --on-accent: #0B1413;
-  --query: #D6CBFF;
+  --query: #C9BCFF;
   --query-soft: #2B2544;
-  --match: #5C95E0;
+  --match: #6FA3E8;
   --match-soft: #1D2A3D;
   --match-text: #7FB0EE;
   --control: #E8A23C;

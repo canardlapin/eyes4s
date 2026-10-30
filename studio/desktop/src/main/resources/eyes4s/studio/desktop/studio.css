@@ -18,22 +18,24 @@
 
 /* Eyes Studio tokens, light theme: JavaFX looked-up colours. */
 .root {
-  -es-ground: #ECE9E2;
-  -es-surface: #FBFAF7;
-  -es-surface-2: #F3F1EC;
-  -es-surface-3: #E9E6DF;
-  -es-sel-fill: #E4E0D6;
-  -es-hairline: #DAD6CC;
+  -es-ground: #EEECE7;
+  -es-surface: #FBFAF8;
+  -es-surface-2: #F4F2EE;
+  -es-surface-3: #E9E6E0;
+  -es-sel-fill: #ECE9E2;
+  -es-hairline: #DEDAD2;
+  -es-hairline-strong: #CBC6BC;
+  -es-plot-grid: #E6E3DC;
   -es-ink: #1C1E21;
-  -es-ink-2: #464B52;
-  -es-ink-3: #5E636A;
+  -es-ink-2: #474B52;
+  -es-ink-3: #61666D;
   -es-accent: #0E6E68;
   -es-accent-soft: #DCEFEC;
   -es-on-accent: #FFFFFF;
-  -es-query: #3A2E6E;
-  -es-query-soft: #E6E2F2;
+  -es-query: #4B3A8C;
+  -es-query-soft: #E8E4F4;
   -es-match: #2F6DB5;
-  -es-match-soft: #E0EAF6;
+  -es-match-soft: #E1EAF6;
   -es-match-text: #255A98;
   -es-control: #B86E0E;
   -es-control-fill: #D98A1C;
@@ -41,7 +43,7 @@
   -es-control-soft: #F7E7D0;
   -es-fail: #A3261B;
   -es-fail-soft: #F6DEDA;
-  -es-warn-text: #7A4F00;
+  -es-warn-text: #8A5A00;
   -es-warn-soft: #FBF1D9;
   -es-neutral-mark: rgba(28,30,33,0.35);
   -es-sel-ring-inner: #FFFFFF;
@@ -50,16 +52,16 @@
   -es-stage: #1A1A1A;
   -es-on-stage: #D9D6CF;
   -es-halo: #FFFFFF;
-  -es-ramp-0: #F9D9EA;
-  -es-ramp-1: #E58FB9;
-  -es-ramp-2: #B83F86;
-  -es-ramp-3: #6B0F4F;
+  -es-ramp-0: #B0609C;
+  -es-ramp-1: #8E3E7E;
+  -es-ramp-2: #6E2366;
+  -es-ramp-3: #4A0C47;
   -es-div-neg: #2E5A9C;
   -es-div-mid: #F3F1EC;
   -es-div-pos: #B4442F;
   -es-screen: #9A9A96;
   -es-isoline-ink: rgba(28,30,33,0.9);
-  -es-isoline-case: rgba(255,255,255,0.9);
+  -es-isoline-case: rgba(255,255,255,0.6);
   -es-paper: #FFFFFF;
   -es-paper-ink: #1C1E21;
   -es-paper-ink-2: #464B52;

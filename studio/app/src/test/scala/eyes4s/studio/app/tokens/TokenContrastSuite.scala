@@ -270,10 +270,13 @@ class TokenContrastSuite extends munit.FunSuite:
   // The placement density (DESIGN_SPEC section 15.1, "Contrast"; option B)
   // ---------------------------------------------------------------------------
 
-  /** The least contrast between two adjacent density levels, opaque: they
-    * stay distinct steps of one ramp (measured 1.80, 2.19 and 2.27).
+  /** The least CIE L* step between two adjacent density levels, opaque: they
+    * stay distinct steps of one ramp. Measured in L*, not as a contrast
+    * ratio: the v4 ramp is evenly spaced in lightness (12.76, 11.02, 11.68),
+    * and a ratio compresses its dark end (1.59, 1.50, 1.46) although the
+    * steps look equal (owner decision 2026-10-30: the golden's ramp stands).
     */
-  private val DensityLevelSeparation = 1.5
+  private val DensityLevelSeparation = 10.0
 
   private val densityLevels = (1 to DensityPicture.Levels).toList
 
@@ -327,10 +330,13 @@ class TokenContrastSuite extends munit.FunSuite:
         s"${stage.cssName} stage, level $level on ${ground.where}"
       )
     }
-    // What today's tokens give, lowest level first. Halo on every stage
-    // ground; on the screen, the inner casing on Dark and Mid (white --halo
-    // is 2.82:1 there) and the halo on Light.
+    // What today's tokens give, lowest level first. The v4 ramp is darker
+    // than the screen and the mid stage: the halo cases the dark levels on
+    // the Dark stage and the light ones on Mid; on the screen, the light
+    // levels take the inner casing on Dark and Mid (white --halo is 2.82:1
+    // there) and the halo on Light. Nothing is cased on the Light stage.
     import DensityBand.{Halo, InnerCasing}
+    val none2 = Vector.fill[Option[DensityBand]](2)(None)
     val table = densityCases
       .groupMap((stage, ground, _) => (stage, ground))((stage, ground, level) =>
         DensityCasing.band(level, stage, ground)
@@ -341,28 +347,32 @@ class TokenContrastSuite extends munit.FunSuite:
     assertEquals(
       table,
       Map(
-        (StageVariant.Dark, DensityGround.Stage)  -> Vector(None, None, None, Some(Halo)),
-        (StageVariant.Dark, DensityGround.Screen) -> Vector.fill(3)(Some(InnerCasing)).:+(None),
-        (StageVariant.Mid, DensityGround.Stage)   -> (None +: Vector.fill(3)(Some(Halo))),
-        (StageVariant.Mid, DensityGround.Screen)  -> Vector.fill(3)(Some(InnerCasing)).:+(None),
-        (StageVariant.Light, DensityGround.Stage) -> Vector(Some(Halo), Some(Halo), None, None),
-        (StageVariant.Light, DensityGround.Screen) -> Vector.fill(3)(Some(Halo)).:+(None)
+        (StageVariant.Dark, DensityGround.Stage)  -> (None +: Vector.fill(3)(Some(Halo))),
+        (StageVariant.Dark, DensityGround.Screen) -> (Vector.fill(2)(
+          Some(InnerCasing)
+        ) ++ none2),
+        (StageVariant.Mid, DensityGround.Stage)  -> Vector.fill(3)(Some(Halo)).:+(None),
+        (StageVariant.Mid, DensityGround.Screen) -> (Vector.fill(2)(
+          Some(InnerCasing)
+        ) ++ none2),
+        (StageVariant.Light, DensityGround.Stage)  -> Vector.fill(4)(None),
+        (StageVariant.Light, DensityGround.Screen) -> (Vector.fill(2)(Some(Halo)) ++ none2)
       )
     )
     // Without its band, a level falls below 3:1: a Dark-stage singleton over
-    // the blank screen (2.17), >=64 on the Dark stage (1.50), a Light-stage
-    // singleton on the stage (1.16).
+    // the blank screen (1.49), >=64 on the Dark stage (1.19), a Mid-stage
+    // singleton on the stage (1.08).
     val bare = densityFailures(cased = false)
     assert(
       bare.exists(_.startsWith("dark stage: level 1 (--ramp-0) on the blank screen")),
       bare
     )
     assert(bare.exists(_.startsWith("dark stage: level 4 (--ramp-3) on the stage")), bare)
-    assert(bare.exists(_.startsWith("light stage: level 1 (--ramp-0) on the stage")), bare)
+    assert(bare.exists(_.startsWith("mid stage: level 1 (--ramp-0) on the stage")), bare)
     val pinned = List(
-      (StageVariant.Dark, DensityGround.Screen, 1, 2.17),
-      (StageVariant.Dark, DensityGround.Stage, 4, 1.50),
-      (StageVariant.Light, DensityGround.Stage, 1, 1.16)
+      (StageVariant.Dark, DensityGround.Screen, 1, 1.49),
+      (StageVariant.Dark, DensityGround.Stage, 4, 1.19),
+      (StageVariant.Mid, DensityGround.Stage, 1, 1.08)
     )
     pinned.foreach { (stage, ground, level, expected) =>
       assertEqualsDouble(
@@ -374,14 +384,14 @@ class TokenContrastSuite extends munit.FunSuite:
   }
 
   test("a density level whose fill reads on its ground is not cased there") {
-    // Dark 1-3 on the stage (13.38), Mid 1-3 on the stage (3.49), Light 16-63
-    // and >=64 on the stage (4.58, 10.38), Light >=64 on the screen (4.12).
+    // Dark 1-3 on the stage (4.14), Mid >=64 on the stage (3.22), Light 1-3
+    // and >=64 on the stage (3.75, 13.07), 16-63 on the screen (3.55).
     List(
-      (StageVariant.Dark, DensityGround.Stage, 1, 13.38),
-      (StageVariant.Mid, DensityGround.Stage, 1, 3.49),
-      (StageVariant.Light, DensityGround.Stage, 3, 4.58),
-      (StageVariant.Light, DensityGround.Stage, 4, 10.38),
-      (StageVariant.Light, DensityGround.Screen, 4, 4.12)
+      (StageVariant.Dark, DensityGround.Stage, 1, 4.14),
+      (StageVariant.Mid, DensityGround.Stage, 4, 3.22),
+      (StageVariant.Light, DensityGround.Stage, 1, 3.75),
+      (StageVariant.Light, DensityGround.Stage, 4, 13.07),
+      (StageVariant.Light, DensityGround.Screen, 3, 3.55)
     ).foreach { (stage, ground, level, expected) =>
       assertEquals(DensityCasing.band(level, stage, ground), None, s"${stage.cssName} $level")
       assertEqualsDouble(
@@ -395,7 +405,7 @@ class TokenContrastSuite extends munit.FunSuite:
   test("a density band's contrast against its ground is pinned") {
     // Halo on the stages: 17.40 (Dark), 4.54 (Mid), 14.92 (Light); on the
     // screen, the inner casing 5.07 (Dark, Mid) beats white --halo 2.82, and
-    // ink --halo 5.92 (Light) beats the white inner casing 2.59.
+    // ink --halo 5.92 (Light) beats the white inner casing 1.95.
     List(
       (StageVariant.Dark, DensityGround.Stage, DensityBand.Halo, 17.40),
       (StageVariant.Mid, DensityGround.Stage, DensityBand.Halo, 4.54),
@@ -404,7 +414,7 @@ class TokenContrastSuite extends munit.FunSuite:
       (StageVariant.Dark, DensityGround.Screen, DensityBand.Halo, 2.82),
       (StageVariant.Mid, DensityGround.Screen, DensityBand.InnerCasing, 5.07),
       (StageVariant.Light, DensityGround.Screen, DensityBand.Halo, 5.92),
-      (StageVariant.Light, DensityGround.Screen, DensityBand.InnerCasing, 2.59)
+      (StageVariant.Light, DensityGround.Screen, DensityBand.InnerCasing, 1.95)
     ).foreach { (stage, ground, band, expected) =>
       assertEqualsDouble(
         DensityCasing.bandContrast(band, stage, ground),
@@ -423,12 +433,12 @@ class TokenContrastSuite extends munit.FunSuite:
     assertEquals(luminance, luminance.sorted.reverse)
     assertEquals(luminance.distinct.size, luminance.size)
     val steps = densityLevels.zip(densityLevels.drop(1)).map { (a, b) =>
-      ratio(densityFill(a), densityFill(b))
+      lstar(densityFill(a)) - lstar(densityFill(b))
     }
-    steps.zipWithIndex.foreach { (r, i) =>
-      assert(r >= DensityLevelSeparation, f"levels ${i + 1} and ${i + 2}: $r%.2f")
+    steps.zipWithIndex.foreach { (d, i) =>
+      assert(d >= DensityLevelSeparation, f"levels ${i + 1} and ${i + 2}: $d%.2f L*")
     }
-    List(1.80, 2.19, 2.27).zip(steps).foreach { (expected, measured) =>
+    List(12.76, 11.02, 11.68).zip(steps).foreach { (expected, measured) =>
       assertEqualsDouble(measured, expected, QuotedPlaces)
     }
   }
@@ -439,17 +449,23 @@ class TokenContrastSuite extends munit.FunSuite:
     assertEqualsDouble(lstar(mid), 50.0, 1.0)
   }
 
-  test("the dark theme separates query and matched by at least 20 L*") {
-    val spreads = Theme.values.toList.map { theme =>
+  /** The least CIE L* between query and matched in either theme. The marks
+    * differ in shape (circle, diamond) and the pills carry their names, so
+    * lightness is a second channel, not the only one: 12 L* keeps the pair
+    * apart in greyscale (owner decision 2026-10-30: the golden's v4 roles,
+    * 15.0 light and 13.3 dark, stand; the former law asked 20).
+    */
+  private val RoleLightnessSpread = 12.0
+
+  test("query and matched stay at least 12 L* apart in both themes") {
+    Theme.values.foreach { theme =>
       val q = lstar(Tokens.themed(theme, ThemedToken.Query))
       val m = lstar(Tokens.themed(theme, ThemedToken.Match))
-      theme -> math.abs(q - m)
-    }.toMap
-    assert(spreads(Theme.Dark) >= 20.0, s"dark query/matched spread ${spreads(Theme.Dark)} L*")
-    assert(
-      spreads(Theme.Light) >= 20.0,
-      s"light query/matched spread ${spreads(Theme.Light)} L*"
-    )
+      assert(
+        math.abs(q - m) >= RoleLightnessSpread,
+        s"${theme.toString.toLowerCase} query/matched spread ${math.abs(q - m)} L*"
+      )
+    }
   }
 
   // ---------------------------------------------------------------------------

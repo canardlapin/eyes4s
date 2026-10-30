@@ -173,7 +173,7 @@ object MapColours:
     * below it the cell's alpha rises linearly from zero, as
     * `min(1, t / MassAlphaFloor)` for `t` the fraction along the limits.
     */
-  val MassAlphaFloor: Double = 0.10
+  val MassAlphaFloor: Double = 0.25
 
   // The ramps' stops, read once from the tokens.
   private val massStops: Vector[Colour]       = Tokens.massRamp.stops.toVector
@@ -219,7 +219,7 @@ object MapColours:
       b.blue
     )
 
-/** The global opacity every map raster is drawn with (default 0.6,
+/** The global opacity every map raster is drawn with (default 0.85,
   * DESIGN_SPEC section 6), between 0 and 1. Changing it redraws; it never
   * changes a stored value or a cached raster.
   */
@@ -236,7 +236,7 @@ object MapOpacity:
   private def apply(value: Double): MapOpacity =
     new MapOpacity(value) {}
 
-  val Default: MapOpacity = MapOpacity(0.6)
+  val Default: MapOpacity = MapOpacity(0.85)
 
   /** The low 24 bits of a packed pixel: its colour channels, without alpha. */
   private[maps] val ChannelBits: Int = (1 << 24) - 1

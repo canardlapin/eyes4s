@@ -135,8 +135,10 @@ object TypeScale:
   /** The size of body text, set on the scene root. */
   val body: TypeSize = TypeSize.T12
 
-  /** The family of every numeral in tables, readouts and identifiers. */
-  val numerals: TypeFamily = TypeFamily.Mono
+  /** The family of every numeral in tables, readouts and identifiers: Plex Sans, whose figures are
+    * tabular. Mono is kept for raw source records and digests (overhaul golden v4h).
+    */
+  val numerals: TypeFamily = TypeFamily.Sans
 
   /** The face that sets `family` at `size`. */
   def face(family: TypeFamily, size: TypeSize): FontFace =

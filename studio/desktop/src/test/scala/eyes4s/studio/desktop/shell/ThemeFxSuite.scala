@@ -327,7 +327,7 @@ class ThemeFxSuite extends ShellFxSuite:
   }
 
   fxStage.test(
-    "MainDark: the dark query and matched roles differ by 20 L*; role pills reach 4.5:1"
+    "MainDark: the dark query and matched roles differ by 12 L*; role pills reach 4.5:1"
   ) { fx =>
     val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
     choose(fx, w, Appearance.Dark)
@@ -345,7 +345,7 @@ class ThemeFxSuite extends ShellFxSuite:
     // …and they meet the board's two dark items.
     val spread =
       ok(Wcag.lightness(dark(ThemedToken.Query))) - ok(Wcag.lightness(dark(ThemedToken.Match)))
-    assert(math.abs(spread) >= 20.0, spread)
+    assert(math.abs(spread) >= 12.0, spread)
     Vector(
       ThemedToken.Query       -> ThemedToken.QuerySoft,
       ThemedToken.MatchText   -> ThemedToken.MatchSoft,

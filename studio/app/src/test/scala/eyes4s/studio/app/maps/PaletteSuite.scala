@@ -49,10 +49,10 @@ class PaletteSuite extends munit.FunSuite:
     assertEquals(at(7.0), at(1.0))
   }
 
-  test("a mass cell's alpha rises linearly from zero to opaque at 10% of its limits") {
-    // DESIGN_SPEC section 15: alpha = min(1, t / 0.10), t the fraction along
+  test("a mass cell's alpha rises linearly from zero to opaque at 25% of its limits") {
+    // DESIGN_SPEC section 15: alpha = min(1, t / 0.25), t the fraction along
     // the limits; the colour is the ramp's, whatever the alpha.
-    val Floor = 0.10
+    val Floor = 0.25
     Vector((massStyle, 0.0, 1.0), (mass(2.0, 4.0), 2.0, 4.0)).foreach { (style, lo, hi) =>
       def at(t: Double) = MapColours.argb(style, Some(lo + t * (hi - lo)))
       assertEquals(alpha(at(0.0)), 0, style)
@@ -62,7 +62,7 @@ class PaletteSuite extends munit.FunSuite:
       // Linear below the floor: steps of 5 in alpha, away from rounding ties.
       (0 to 51).foreach(k => assertEquals(alpha(at(Floor * k / 51.0)), 5 * k, s"$style, k $k"))
       // Opaque from the floor up.
-      (10 to 100).foreach(k => assertEquals(alpha(at(k / 100.0)), 0xff, s"$style at $k%"))
+      (25 to 100).foreach(k => assertEquals(alpha(at(k / 100.0)), 0xff, s"$style at $k%"))
       // The floor fades the colour in; it does not change it.
       assertEquals(rgb(at(0.05)), rgb(MapColours.argb(massStyle, Some(0.05))), style)
     }
@@ -149,13 +149,13 @@ class PaletteSuite extends munit.FunSuite:
     assertEquals(ColourLimits.spanning(MapPalette.Mass, Vector(flat)), massStyle)
   }
 
-  test("the global opacity defaults to 0.6, lies in [0, 1] and scales a pixel's alpha only") {
-    assertEquals(MapOpacity.Default.value, 0.6)
+  test("the global opacity defaults to 0.85, lies in [0, 1] and scales a pixel's alpha only") {
+    assertEquals(MapOpacity.Default.value, 0.85)
     assertEquals(MapOpacity.of(1.01), None)
     assertEquals(MapOpacity.of(-0.1), None)
     assertEquals(MapOpacity.of(Double.NaN), None)
     val pixel = token(PaletteToken.Ramp2)
-    assertEquals(MapOpacity.Default.over(pixel), (153 << 24) | (pixel & 0x00ffffff))
+    assertEquals(MapOpacity.Default.over(pixel), (217 << 24) | (pixel & 0x00ffffff))
     assertEquals(MapOpacity.of(0.0).get.over(pixel) >>> 24, 0)
     assertEquals(MapOpacity.of(1.0).get.over(pixel), pixel)
     assertEquals(MapOpacity.Default.over(MapColours.NoCoverage), MapColours.NoCoverage)

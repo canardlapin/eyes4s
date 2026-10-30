@@ -175,7 +175,7 @@
       const sx = fw / GW, sy = fh / GH;
       for (const [share, wt] of (o.noIso ? [] : o.frameOnly ? [[0.5, 1]] : [[0.9, 1], [0.5, 1.5]])) {
         const d = contour(G, levelFor(G, share), sx, sy);
-        s += `<g transform="translate(${fx} ${fy})"><path d="${d}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="${wt + 1.25}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="rgba(28,30,33,.9)" stroke-width="${wt}" stroke-linecap="round"/></g>`;
+        s += `<g transform="translate(${fx} ${fy})"><path d="${d}" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="${wt + 1.25}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="rgba(28,30,33,.9)" stroke-width="${wt}" stroke-linecap="round"/></g>`;
       }
     }
     // analysis window outline (image frame)
@@ -245,7 +245,7 @@
       sw += `<rect x="${i * 8}" y="0" width="8" height="8" fill="rgb(${r},${g},${b})" fill-opacity="${a.toFixed(3)}"/>`;
     }
     return `<span class="it row">0<svg width="64" height="8" style="background:#808080">${sw}</svg>max density${shared ? ' · shared' : ''} · photo in grey</span>` +
-      `<span class="it row"><svg width="18" height="8"><path d="M1 4h16" stroke="rgba(255,255,255,.9)" stroke-width="3.5"/><path d="M1 4h16" stroke="#1C1E21" stroke-width="1.5"/></svg>50 · 90% of mass</span>` + (extra || '');
+      `<span class="it row"><svg width="18" height="8"><path d="M1 4h16" stroke="rgba(255,255,255,.6)" stroke-width="3.5"/><path d="M1 4h16" stroke="#1C1E21" stroke-width="1.5"/></svg>50 · 90% of mass</span>` + (extra || '');
   };
 
   ES.fmt = (v, d = 2) => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(d);

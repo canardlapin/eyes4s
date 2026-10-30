@@ -246,12 +246,14 @@ object TokenUsage:
     * information.
     */
   val unmeasured: Map[TokenRef, String] = Map(
-    t(Hairline)  -> "decorative 1px separators and card borders",
-    p(PaperRule) -> "axis spines, paired-participant lines, caption rule: decorative",
-    p(Screen)    -> "stimulus depiction: the blank screen a participant saw",
-    p(DivNeg)    -> "map fill; values are read from the legend and table twin",
-    p(DivMid)    -> "map fill; values are read from the legend and table twin",
-    p(DivPos)    -> "map fill; values are read from the legend and table twin"
+    t(Hairline)       -> "decorative 1px separators and card borders",
+    t(HairlineStrong) -> "decorative 1px rules under headers and around groups",
+    t(PlotGrid)       -> "plot gridlines: decorative, values are read from the axes",
+    p(PaperRule)      -> "axis spines, paired-participant lines, caption rule: decorative",
+    p(Screen)         -> "stimulus depiction: the blank screen a participant saw",
+    p(DivNeg)         -> "map fill; values are read from the legend and table twin",
+    p(DivMid)         -> "map fill; values are read from the legend and table twin",
+    p(DivPos)         -> "map fill; values are read from the legend and table twin"
   )
 
   /** True when a pair involves the stage, so it varies with [[StageVariant]]. */

@@ -555,7 +555,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · 64 × 36 screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(None, None, None, Some(DensityBand.Halo))
+        Vector(None, Some(DensityBand.Halo), Some(DensityBand.Halo), Some(DensityBand.Halo))
       )
     )
     // The labels follow the drawn picture's own steps: s = 256, with
@@ -572,7 +572,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · 64 × 36 screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(None, None, None, Some(DensityBand.Halo))
+        Vector(None, Some(DensityBand.Halo), Some(DensityBand.Halo), Some(DensityBand.Halo))
       )
     )
   }
@@ -584,8 +584,8 @@ class GeometryPanelSuite extends munit.FunSuite:
       val model = AppModel.update(small, Intent.Dispatch(Command.SetStage(stage)))._1
       assertEquals(model.document.presentation.stage, stage)
       GeometryPanelVM.of(panel, model, Some(pics)).densityKey
-    // A swatch sits on the stage: >=64 on Dark (1.50:1); 4-15 to >=64 on Mid;
-    // 1-3 and 4-15 on Light. Always the halo.
+    // A swatch sits on the stage: 4-15 to >=64 on Dark (>=64 at 1.19:1); 1-3
+    // to 16-63 on Mid; none on Light, where every level reads. Always the halo.
     val halo = Some(DensityBand.Halo)
     assertEquals(
       Vector(StageAppearance.Dark, StageAppearance.Mid, StageAppearance.Light).map { s =>
@@ -593,9 +593,9 @@ class GeometryPanelSuite extends munit.FunSuite:
         (key.stage, key.bands)
       },
       Vector(
-        StageVariant.Dark  -> Vector(None, None, None, halo),
-        StageVariant.Mid   -> Vector(None, halo, halo, halo),
-        StageVariant.Light -> Vector(halo, halo, None, None)
+        StageVariant.Dark  -> Vector(None, halo, halo, halo),
+        StageVariant.Mid   -> Vector(halo, halo, halo, None),
+        StageVariant.Light -> Vector(None, None, None, None)
       )
     )
   }
@@ -612,7 +612,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · 64 × 36 screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(None, None, None, Some(DensityBand.Halo))
+        Vector(None, Some(DensityBand.Halo), Some(DensityBand.Halo), Some(DensityBand.Halo))
       )
     )
     // No placed records at all: dashes for the grid, still the default key.
@@ -622,7 +622,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · — × — screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(None, None, None, Some(DensityBand.Halo))
+        Vector(None, Some(DensityBand.Halo), Some(DensityBand.Halo), Some(DensityBand.Halo))
       )
     )
   }

@@ -49,7 +49,7 @@ class TypeScaleSuite extends munit.FunSuite:
       )
     )
     assertEquals(TypeScale.body, TypeSize.T12)
-    assertEquals(TypeScale.numerals, TypeFamily.Mono)
+    assertEquals(TypeScale.numerals, TypeFamily.Sans)
   }
 
   test("seven static faces: Plex Sans 400/500/600, Plex Mono 400/500, Source Serif 4 400/600") {

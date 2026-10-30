@@ -47,7 +47,7 @@
   -fx-font-size: 28px;
 }
 
-/* Families: numerals and identifiers in Plex Mono, methods prose in Source Serif 4. */
+/* Families: numerals in Plex Sans (tabular figures), raw records and digests in Plex Mono, methods prose in Source Serif 4. */
 .mono {
   -fx-font-family: "IBM Plex Mono";
 }
