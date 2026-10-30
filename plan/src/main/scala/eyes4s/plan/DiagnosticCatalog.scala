@@ -29,6 +29,17 @@ package eyes4s.plan
 object DiagnosticCatalog:
   import DiagnosticFamily.error
 
+  val revisit: DiagnosticFamily = error("revisit")(
+    "NonPositiveRadius",
+    "InvalidLagRange",
+    "InvalidMaximumWork",
+    "Frames",
+    "NonFiniteReferencePoint",
+    "NonFiniteReferenceMass",
+    "NonFiniteDistance",
+    "WorkLimit"
+  )
+
   // ---------------------------------------------------------------- plan and run
   val plan: DiagnosticFamily = error("plan")(
     "InvalidDefinition",
@@ -1127,7 +1138,8 @@ object DiagnosticCatalog:
     methodsFact,
     navigation,
     projectPrerequisite,
-    ScanpathMethodDiagnostics.comparison
+    ScanpathMethodDiagnostics.comparison,
+    revisit
   )
 
   /** Every live family, grouped as documented. */

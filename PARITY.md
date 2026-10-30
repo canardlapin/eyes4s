@@ -1,12 +1,15 @@
 # Reference agreement and intentional differences
 
-This is a bounded evidence report, not a declaration of complete eyesim coverage. The source is
+This is a bounded evidence report, not a declaration of complete eyesim coverage. The baseline source is
 the eyesim revision pinned in [baseline.json](tools/r-parity/baseline.json) (`eyesim.revision`),
 the only place the pin is written. [r-lock.json](tools/r-parity/r-lock.json) fixes the R version
 and every package a generator may load, and each reference fixture records the runtime it
 consumed; [the matched/control lock](tools/r-parity/fixtures/reference-lock.json) also records the
 input digest and conventions. [Regeneration instructions](tools/r-parity/README.md) reproduce the
 public R calls from an isolated installation of the pinned revision.
+
+Newer methods may have a separate source pin and replay, identified explicitly below. They do not
+change the historical baseline or its coverage status.
 
 The executable [capability inventory](tools/r-parity/baseline.json) classifies every case of the
 13 required rows under one of the statuses below. `python3 tools/r-parity/check_baseline.py` prints
@@ -19,6 +22,39 @@ repeat those counts. The sections below give the measured findings case by case.
 | Verified intentional divergence | The behaviors differ, the eyes4s behavior is independently justified, and portable tests retain the difference. |
 | Implementation gap | The case names a live task and a selected falsification input; no parity is claimed. |
 | Out of baseline | Removed from the baseline by an owner decision recorded with its reason and date. The record and its evidence are kept and validated, but reported separately: it is neither a gap nor progress towards closing the baseline. |
+
+## Fixation revisits: supplemental eyesim checks
+
+`FixationRevisits.analyze` implements strict-radius returns within integer lag bounds, with an
+explicit incoming-step condition and an optional weighted spatial reference. The historical eyesim
+pin predates this method. Its newer [source pin](tools/revisit-reference/source.json) records the
+commit and hashes of the R files; [measured.json](tools/revisit-reference/measured.json) records
+actual R outputs, package versions and input identity.
+
+The replay checks 14 compatible cases against an independent rational-predicate oracle. They cover
+strict match and inclusive arrival boundaries, lag expiry, overlapping reference coverage,
+most-recent versus nearest matching, incomplete/empty reference support, singleton paths and both
+Euclidean and Manhattan distance. Row flags, match indices and lags are exact; floating-point
+outputs use absolute and relative tolerances of `1e-12`. Scala consumes the same oracle fixtures
+in `FixationRevisitsSuite` on JVM and Scala.js. Weighted and zero-mass reference cases have separate
+native oracle checks because the R method accepts an unweighted reference.
+
+Run `python3 tools/revisit-reference/verify.py --eyesim /path/to/eyesim` with a checkout containing
+the pinned commit. This reads the pinned Git objects, verifies their hashes, runs the R method,
+compares to the oracle and refuses recorded-output or runtime drift. The replay sources the method
+and its constructor in an isolated R environment; it does not qualify the full installed eyesim
+package or exercise subject/item pooling. Normal Scala tests run offline against checked-in
+fixtures; they do not launch R. See the [guide](docs/FIXATION_REVISITS.md#cost-and-verification)
+for replay inputs and the [validation receipt](tools/revisit-reference/evidence/validation.json)
+for the original candidate's checks.
+
+Compatibility applies to the clean-input definition, not silent row dropping or fractional-lag
+coercion. Native admission retains invalid-row evidence; the scorer requires checked scanpaths and
+integer bounds. A missing conditional expectation prevents a complete expected summary without
+changing the observed denominator. The named incoming-step condition does not establish exit
+from and re-entry into a previously visited region. Published exhaustive laws independently check
+these semantics; the [mutation receipt](tools/revisit-reference/evidence/mutation-receipt.json)
+records rejection of an inclusive match boundary and failure to expire reference coverage.
 
 ## Fixation-level AOI visits: independent conformance
 

@@ -1566,6 +1566,19 @@ fails after rewriting, so review the change and run it again.
 | `scanpath-comparison.alignment` | `Alignment` | `underlying` |
 | `scanpath-comparison.fixations` | `Fixations` | `underlying` |
 
+### `revisit` — `RevisitError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `revisit.non-positive-radius` | `NonPositiveRadius` | `value` |
+| `revisit.invalid-lag-range` | `InvalidLagRange` | `minimum`, `maximum` |
+| `revisit.invalid-maximum-work` | `InvalidMaximumWork` | `value` |
+| `revisit.frames` | `Frames` | `error` |
+| `revisit.non-finite-reference-point` | `NonFiniteReferencePoint` | `index`, `x`, `y` |
+| `revisit.non-finite-reference-mass` | `NonFiniteReferenceMass` | `total` |
+| `revisit.non-finite-distance` | `NonFiniteDistance` | `fixationIndex`, `otherIndex`, `reference`, `value` |
+| `revisit.work-limit` | `WorkLimit` | `fixations`, `referencePoints`, `required`, `maximum` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |

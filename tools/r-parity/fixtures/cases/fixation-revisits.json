@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "cases": [
+    {"name":"ABCA conditional null","points":[[0,0],[100,0],[100,100],[0,0]],"reference":[[0,0,1],[100,0,1],[100,100,1],[800,800,1]]},
+    {"name":"dwell cluster","points":[[0,0],[1,0],[2,0]],"reference":[[0,0,1],[100,0,1]]},
+    {"name":"unrestricted adjacent returns","points":[[0,0],[1,0],[2,0]],"minimumLag":1,"departure":false},
+    {"name":"strict match boundary","points":[[0,0],[100,0],[10,0]],"reference":[[10,0,1],[0,0,1]]},
+    {"name":"inclusive arrival boundary","points":[[0,0],[10,0],[0,0]],"reference":[[0,0,1],[10,0,1]]},
+    {"name":"not an exit from original region","points":[[0,0],[-9,0],[9,0]]},
+    {"name":"nearest differs from latest match","points":[[0,0],[100,0],[8,0],[100,0],[1,0]]},
+    {"name":"expired history","points":[[0,0],[100,0],[200,0],[0,0]],"maximumLag":2,"reference":[[0,0,1],[100,0,1]]},
+    {"name":"overlapping coverage expires individually","points":[[0,0],[0,0],[100,0],[200,0],[100,0],[0,0]],"maximumLag":3,"departure":false,"reference":[[0,0,1],[100,0,1]]},
+    {"name":"weighted reference","points":[[0,0],[100,0],[0,0]],"reference":[[0,0,1],[200,0,3],[100,0,10]]},
+    {"name":"partial expectation support","points":[[0,0],[100,0],[200,0],[0,0]],"reference":[[100,0,1]]},
+    {"name":"empty reference","points":[[0,0],[100,0],[0,0]],"reference":[]},
+    {"name":"zero reference mass","points":[[0,0],[100,0],[0,0]],"reference":[[0,0,0]]},
+    {"name":"single fixation","points":[[1,1]],"reference":[[1,1,1]]},
+    {"name":"Manhattan diagonal","points":[[0,0],[100,0],[3,4]],"radius":6,"distance":"manhattan","reference":[[0,0,1],[3,4,1]]},
+    {"name":"Euclidean diagonal","points":[[0,0],[100,0],[3,4]],"radius":6,"reference":[[0,0,1],[3,4,1]]}
+  ]
+}

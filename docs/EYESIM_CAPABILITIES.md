@@ -115,6 +115,10 @@ held-out response from 7 to 700 must leave fitted coefficients unchanged.
 
 ## Beyond the baseline
 
+The newer fixation-revisit feature has a [direct native analysis](FIXATION_REVISITS.md)
+with independent weighted-reference laws and a separately pinned R source replay.
+It does not change the required historical baseline or claim a saved-study workflow.
+
 The pinned export set also contains GazeWeave replay and transport models, Gaussian mixtures,
 elastic consensus alignment, CRQA helpers and PCA/CORAL/CCA or other learned transformations. These
 belong to optional modeling or later scientific-breadth work. They still require typed geometry,

@@ -217,7 +217,8 @@ object Diagnose:
     derived(C.comparisonConfiguration)(_.message)
   given crqaParameter: Diagnose[CrqaParameterError, Nothing] =
     derived(C.crqaParameter)(_.message)
-  given crqa: Diagnose[CrqaError, Nothing] = derived(C.crqa)(_.message)
+  given crqa: Diagnose[CrqaError, Nothing]       = derived(C.crqa)(_.message)
+  given revisit: Diagnose[RevisitError, Nothing] = derived(C.revisit)(_.message)
   given fixationComparison: Diagnose[FixationComparisonError, Nothing] =
     derived(C.fixationComparison)(_.message)
   given overlapFailure: Diagnose[OverlapFailure, Nothing] =

@@ -3,6 +3,8 @@
 Migrate the scientific question, not the R calling convention. The reference is the eyesim
 revision pinned in the project's parity manifest, `tools/r-parity/baseline.json`; agreement claims
 below refer only to the pinned cases.
+The newer `fixation_revisits` method has a separate source pin and bounded replay;
+it does not change the historical baseline.
 
 | eyesim task | eyes4s route | Important difference or limit |
 |---|---|---|
@@ -15,6 +17,7 @@ below refer only to the pinned cases.
 | `similarity` | `MapSimilarityMethod`, `Distribution`, `Transport`, `Lift` | Result scale and mathematical interface are explicit: cosine is a kernel, `l1` is one minus the total-variation metric. The seven registered map methods have pinned conformance; `EyesimCompat.fromReference` maps eyesim's names. Approximate transport is not a claim of general exact EMD. |
 | `scanpath`, `multi_match`, `scanpath_similarity` | `Scanpath`, `MultiMatch`, `ScanpathComparison`, `Alignment` | Five named components. eyesim's three-fixation minimum is `BaselineScanpath`; its transport-backed sixth component has no native exact-EMD solver and no slot. |
 | `fixation_similarity`, `fixation_overlap` | `FixationComparison`, `FixationTransportConfig` | Shared query trajectory and strict overlap threshold; entropic position/time transport retains its convergence limits. |
+| `fixation_revisits`, `revisit_summary` | `FixationRevisits.analyze`, `RevisitResult.summary` | Direct API with strict radius, integer lag bounds and an explicit incoming-step rule. Weighted references are supported; unavailable expectations remain visible. No study-plan pooling, saved recipe or result-table adapter yet. |
 | `template_similarity`, `template_sample` | `StudyPlan.similarity` with a `ComparisonMethods` entry, and typed pair designs | `method = X` is the registry entry for X, with its own saved identity. Keys include participant. Duplicate/unmatched keys remain data; exclusion order, multiplicity and finite caps are pinned. Native keyed RNG differs from R. |
 | `repetitive_similarity` | `RepetitionPlan`, `RepetitionDesign`, `RepetitionAggregation` | Arbitrary occasions and checked persisted relations. Scale means precede comparison means; participant grouping differs from eyesim. |
 | `sample_density_time` | `PointSamplingPlan` for static templates on focal trajectories | Exact query times and final-bin policy; per-query control means precede bin means. `TemporalStudyPlan` remains the separate windowed-map estimand. |
@@ -22,6 +25,66 @@ below refer only to the pinned cases.
 | `affine_transform`, `contract_transform` | No fitted density-space adapter; outside the baseline, planned for a later adapter module with PCA, CORAL and CCA | Supplied coordinate `Warp`s are not substitutes for learned density transforms. |
 | Result tables | `ResultExports` (formerly `BaselineExports`), `ResultTable`, optional JVM `ArrowResultExport` | CSV plus schema/identity sidecars and Arrow preserve keys, failures and denominators. Export views are distinct from replay archives. |
 | Group summaries | `ReportSpec`, `Report.evaluate`, `ReportTables` | Participant means with equal weight, typed trial covariates, counted exclusions, no zero for a missing value; see [reports](summaries.md). |
+
+## Fixation revisits with an explicit reference
+
+This synthetic `A-B-C-A` path has one revisit among two eligible opportunities. The radius is
+in pixels, the minimum lag is two fixation positions, and the incoming step must be at least
+the radius. A match lies strictly inside the radius. This condition alone does not establish
+that gaze left and re-entered the original location's region.
+
+```scala mdoc:silent
+import cats.syntax.all.*
+import eyes4s.compare.*
+import eyes4s.core.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
+
+val clock = ClockId("revisit-example")
+val positions = Vector(Pt[Px](20, 20), Pt[Px](120, 20), Pt[Px](120, 120), Pt[Px](20, 20))
+val revisits = for
+  frame <- Frame.screen("revisit-example", 1000, 1000)
+  events <- positions.zipWithIndex.traverse { case (point, index) =>
+    for
+      interval <- Interval.of(clock, Instant.micros(index.toLong * 200000),
+        Instant.micros(index.toLong * 200000 + 100000))
+      event <- Event.Fixation.withoutDispersion(interval, point, 1)
+    yield event
+  }
+  path <- Scanpath.of(frame, clock, IArray.from(events))
+  radius <- Distance.px(10)
+  config <- RevisitConfig.of(radius, minimumLag = 2,
+    departure = RevisitDeparture.IncomingStepAtLeastRadius)
+  reference <- PointMeasure.of(frame,
+    IArray(Pt[Px](20, 20), Pt[Px](120, 20), Pt[Px](120, 120), Pt[Px](820, 820)),
+    IArray(1.0, 1.0, 1.0, 1.0))
+  result <- FixationRevisits.analyze(path, config, Some(reference))
+yield result
+
+assert(revisits.exists(r => r.rows.size == 4 && r.summary.opportunities == 2 &&
+  r.summary.revisits == 1 && r.summary.rate.contains(0.5)))
+assert(revisits.exists(_.summary.expectation match
+  case value: RevisitExpectedSummary.Available =>
+    value.expectedRevisits == 1.0 && value.excessRevisits == 0.0
+  case _ => false))
+```
+
+```scala mdoc
+revisits.map(_.rows.map(row => (row.index, row.opportunity, row.revisit)))
+```
+
+The reference here is a deliberately specified four-location measure, not a pool selected by the
+analysis. Its equal weights give conditional probabilities of one third and two thirds at the
+eligible fixations. Define participant/item exclusions and weights before constructing a real
+reference; duration weighting or equal mass per episode changes the question. The result keeps
+the path, configuration, reference and each denominator. `Incomplete` expectations retain the
+unavailable fixation indices, and a path with no opportunities has no observed rate.
+
+The [method guide](https://github.com/canardlapin/eyes4s/blob/main/docs/FIXATION_REVISITS.md)
+describes all policies and limits. The
+[supplemental parity report](https://github.com/canardlapin/eyes4s/blob/main/PARITY.md#fixation-revisits-supplemental-eyesim-checks)
+records 14 compatible R cases checked against the same independent oracle used by JVM/JS tests.
+Ordinary Scala tests consume offline fixtures; replaying the pinned R source is a separate command.
 
 ## Differences to review in a migrated analysis
 

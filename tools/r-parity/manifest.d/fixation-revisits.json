@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "ticket": "fixation-revisits",
+  "fixtures": {
+    "fixation-revisits-input": {
+      "path": "tools/r-parity/fixtures/cases/fixation-revisits.json",
+      "sha256": "381f4a886d93c2c2b1b8983eaf755365a7caec9d7258214bcea2ff05d8d73a19",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Independent strict-radius and weighted reference conformance"
+    },
+    "fixation-revisits-oracle": {
+      "path": "tools/r-parity/fixtures/fixation-revisits.json",
+      "sha256": "9df68fde1f9e9eba116d7f78834aefccde119f832d47a17c6a9c265acb33055c",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Independent strict-radius and weighted reference conformance"
+    },
+    "fixation-revisits-scala": {
+      "path": "compare/src/test/scala/eyes4s/compare/RevisitReference.scala",
+      "sha256": "f5574450b56b8d2e7ef20980bbb57d721d39d4843eda347f4c59b8c15ec33ede",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Independent strict-radius and weighted reference conformance"
+    }
+  },
+  "regeneration": {
+    "fixation-revisits-oracle": {
+      "command": "python3 tools/r-parity/generate_revisits.py --check",
+      "requires_eyesim": false,
+      "outputs": [
+        "fixation-revisits-oracle",
+        "fixation-revisits-scala"
+      ]
+    }
+  },
+  "cases": []
+}
