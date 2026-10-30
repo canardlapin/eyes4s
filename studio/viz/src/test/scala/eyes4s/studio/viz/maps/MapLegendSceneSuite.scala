@@ -114,7 +114,7 @@ class MapLegendSceneSuite extends munit.FunSuite:
       case other => fail(s"the strip's frame is not a polygon: $other")
   }
 
-  test("each swatch is its fraction's map colour, fading in under the 10% floor, at 0.6") {
+  test("each swatch is its fraction's map colour, fading in under the 25% floor, at 0.85") {
     val l     = legend()
     val style = ColourLimits.spanning(MapPalette.Mass, Vector.empty)
     val fills = (0 until MapLegendScene.Swatches).toVector.map { k =>
@@ -126,11 +126,12 @@ class MapLegendSceneSuite extends munit.FunSuite:
     for k <- 0 until MapLegendScene.Swatches do
       val d = MapOpacity.Default.over(MapColours.argb(style, Some(k / 7.0)))
       assertEquals(fills(k), channels(d), s"swatch $k")
-    // Zero mass is see-through (alpha 0 under the floor); every later
-    // fraction lies above 10% of the limits, so is opaque before 0.6.
+    // Zero mass is see-through (alpha 0 under the floor); 1/7 lies under the
+    // 25% floor, so fades in; every later fraction is opaque before 0.85.
     assertEquals(fills.head._4, 0)
-    assert(1.0 / 7.0 > MapColours.MassAlphaFloor)
-    assert(fills.tail.forall(_._4 == math.round(255 * 0.6).toInt), fills)
+    assert(1.0 / 7.0 < MapColours.MassAlphaFloor && 2.0 / 7.0 > MapColours.MassAlphaFloor)
+    assert(fills(1)._4 > 0 && fills(1)._4 < math.round(255 * 0.85).toInt, fills)
+    assert(fills.drop(2).forall(_._4 == math.round(255 * 0.85).toInt), fills)
     // The ramp runs light to dark: the last swatch is its darkest stop.
     val darkest = Tokens.massRamp.stops.last
     assertEquals(fills.last.take3, (darkest.red, darkest.green, darkest.blue))
@@ -205,7 +206,7 @@ class MapLegendSceneSuite extends munit.FunSuite:
         texts.map(_.label),
         Vector(
           "0",
-          "max · fixation duration mass per cell · fades below 10% of max",
+          "max · fixation duration mass per cell · fades below 25% of max",
           "50% · 90% of mass"
         )
       )
@@ -218,7 +219,7 @@ class MapLegendSceneSuite extends munit.FunSuite:
     assertEquals(
       MapLegendScene.rampText,
       TrialText(TrialTextId.MapLegendRamp) + TrialText(TrialTextId.Separator) +
-        TrialText(TrialTextId.MapLegendFades, "10%")
+        TrialText(TrialTextId.MapLegendFades, "25%")
     )
     // "0" ends just before the strip; the words start just after it.
     named(l, MapLegendScene.ZeroName) match
@@ -248,7 +249,7 @@ class MapLegendSceneSuite extends munit.FunSuite:
     val l = legend()
     assertEquals(
       l.description,
-      "Map legend: fixation duration mass per cell from 0 to max, fading out below 10 " +
+      "Map legend: fixation duration mass per cell from 0 to max, fading out below 25 " +
         "percent of max; isolines enclose 50 and 90 percent of mass"
     )
     assertEquals(
@@ -257,7 +258,7 @@ class MapLegendSceneSuite extends munit.FunSuite:
     )
     assertEquals(
       legend(limits = LimitsScope.Shared).description,
-      "Map legend: fixation duration mass per cell from 0 to max, fading out below 10 " +
+      "Map legend: fixation duration mass per cell from 0 to max, fading out below 25 " +
         "percent of max, shared colour limits across panels; isolines enclose 50 and 90 " +
         "percent of mass"
     )
@@ -281,7 +282,7 @@ class MapLegendSceneSuite extends munit.FunSuite:
 
   test("the legend exports, its words in the SVG") {
     val svg = right(SvgRenderer.render(legend().plot.scene)).value
-    assert(svg.contains("fades below 10% of max"), svg)
+    assert(svg.contains("fades below 25% of max"), svg)
     assert(svg.contains("50% · 90% of mass"), svg)
   }
 

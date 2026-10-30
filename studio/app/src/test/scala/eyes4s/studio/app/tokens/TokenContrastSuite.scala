@@ -405,7 +405,7 @@ class TokenContrastSuite extends munit.FunSuite:
   test("a density band's contrast against its ground is pinned") {
     // Halo on the stages: 17.40 (Dark), 4.54 (Mid), 14.92 (Light); on the
     // screen, the inner casing 5.07 (Dark, Mid) beats white --halo 2.82, and
-    // ink --halo 5.92 (Light) beats the white inner casing 1.95.
+    // ink --halo 5.92 (Light) beats the white inner casing 2.15.
     List(
       (StageVariant.Dark, DensityGround.Stage, DensityBand.Halo, 17.40),
       (StageVariant.Mid, DensityGround.Stage, DensityBand.Halo, 4.54),
@@ -414,7 +414,7 @@ class TokenContrastSuite extends munit.FunSuite:
       (StageVariant.Dark, DensityGround.Screen, DensityBand.Halo, 2.82),
       (StageVariant.Mid, DensityGround.Screen, DensityBand.InnerCasing, 5.07),
       (StageVariant.Light, DensityGround.Screen, DensityBand.Halo, 5.92),
-      (StageVariant.Light, DensityGround.Screen, DensityBand.InnerCasing, 1.95)
+      (StageVariant.Light, DensityGround.Screen, DensityBand.InnerCasing, 2.15)
     ).foreach { (stage, ground, band, expected) =>
       assertEqualsDouble(
         DensityCasing.bandContrast(band, stage, ground),

@@ -117,7 +117,7 @@ class TrialMapSceneSuite extends munit.FunSuite:
       x <- 0 until Columns
     do
       val p = image.pixelUnsafe(x, y)
-      // The cell's own value, counted from the top, coloured and drawn at 0.6.
+      // The cell's own value, counted from the top, coloured and drawn at 0.85.
       val d = MapOpacity.Default.over(MapColours.argb(style, g.atTop(x, y)))
       assertEquals(
         (p.red, p.green, p.blue, p.alpha),
@@ -126,16 +126,16 @@ class TrialMapSceneSuite extends munit.FunSuite:
       )
     // Every pixel is the grid's value's colour: the missing cell covers
     // nothing in the raster (the hatch is drawn over it), a cell at or above
-    // 10% of the limits is opaque before the global 0.6, and a fainter one
+    // 25% of the limits is opaque before the global 0.85, and a fainter one
     // fades in below it.
     assertEquals(image.pixelUnsafe(100 % Columns, 100 / Columns).alpha, 0)
-    assertEquals(image.pixelUnsafe(20, 12).alpha, math.round(255 * 0.6).toInt)
+    assertEquals(image.pixelUnsafe(20, 12).alpha, math.round(255 * 0.85).toInt)
     // The limits run from 0 to the bump's peak, 1: a value is its fraction.
     val faint = g.atTop(5, 5).get
-    assert(faint > 0.0 && faint < 0.10, s"cell (5, 5) is at $faint")
+    assert(faint > 0.0 && faint < 0.25, s"cell (5, 5) is at $faint")
     assertEquals(
       image.pixelUnsafe(5, 5).alpha,
-      math.round(math.round(255 * faint / 0.10).toInt * 0.6).toInt
+      math.round(math.round(255 * faint / 0.25).toInt * 0.85).toInt
     )
     // Drawing changed no stored value.
     assertEquals(g.contentHash, hash)
@@ -375,7 +375,7 @@ class TrialMapSceneSuite extends munit.FunSuite:
     val ink    = Tokens.palette(PaletteToken.IsolineInk)
     val casing = Tokens.palette(PaletteToken.IsolineCase)
     // Every mass colour from the ramp's lightest to its darkest, faded in
-    // under the 10% alpha floor and drawn at 0.6, and no map.
+    // under the 25% alpha floor and drawn at 0.85, and no map.
     val unit = right(ColourLimits.sequential(0.0, 1.0).flatMap(MapStyle.of(MapPalette.Mass, _)))
     val grounds = for
       (where, bg) <- backgrounds
@@ -551,5 +551,5 @@ class TrialMapSceneSuite extends munit.FunSuite:
   }
 
   private val MapLegendSceneDescription =
-    "Map legend: fixation duration mass per cell from 0 to max, fading out below 10 percent " +
+    "Map legend: fixation duration mass per cell from 0 to max, fading out below 25 percent " +
       "of max; isolines enclose 50 and 90 percent of mass"

@@ -335,10 +335,10 @@ class GeometrySceneSuite extends munit.FunSuite:
   }
 
   test("edges between two occupied cells are not cased, and a line is stroked once") {
-    // Cells (20, 10), (21, 10) and (20, 11), inside the frame: an L of three
-    // levels, each cased against the screen on Mid. The shared edges are
+    // Cells (20, 10), (21, 10) and (20, 11), inside the frame: an L of levels
+    // 1, 2 and 1, each cased against the screen on Mid. The shared edges are
     // level against level; each outer line is one run.
-    val picture = gridOf((10 * 64 + 20) -> 1, (10 * 64 + 21) -> 2, (11 * 64 + 20) -> 3)
+    val picture = gridOf((10 * 64 + 20) -> 1, (10 * 64 + 21) -> 2, (11 * 64 + 20) -> 1)
     val scene   = get(GeometryScene.density("d", StageVariant.Mid, frame, picture))
     assertEquals(densityStrokes(scene, GeometryScene.DensityHaloName), Vector.empty)
     val inner = densityStrokes(scene, GeometryScene.DensityCasingName).head
@@ -357,20 +357,29 @@ class GeometrySceneSuite extends munit.FunSuite:
   }
 
   test("on Light, a fill that reads on its ground has no casing; others wear the halo") {
-    // Outside the frame: >=64 (10.38) and 16-63 (4.58) read on the stage.
+    // Outside the frame every level reads on the Light stage: 1-3 (3.75)
+    // and >=64 (13.07) are not cased.
     val light = get(
-      GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 4, 104 -> 3))
+      GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 1, 104 -> 4))
     )
     assertEquals(densityStrokes(light, GeometryScene.DensityHaloName), Vector.empty)
     assertEquals(densityStrokes(light, GeometryScene.DensityCasingName), Vector.empty)
-    // A singleton on the Light stage is cased, in the stage's ink halo.
-    val single = get(GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 1)))
-    val halo   = densityStrokes(single, GeometryScene.DensityHaloName)
+    // A singleton over the blank screen is cased, in the stage's ink halo.
+    val inside = 10 * 64 + 20
+    val single =
+      get(GeometryScene.density("d", StageVariant.Light, frame, gridOf(inside -> 1)))
+    val halo = densityStrokes(single, GeometryScene.DensityHaloName)
     assertEquals(halo.map(_.segments.size), Vector(4))
     assertEquals(halo.head.gp.stroke, bandStroke(StageVariant.Light, DensityBand.Halo))
-    // A singleton next to an uncased >=64: only its own outer edges.
+    // A singleton next to an uncased 16-63 (3.55 on the screen): only its own
+    // outer edges.
     val mixed = get(
-      GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 1, 101 -> 4))
+      GeometryScene.density(
+        "d",
+        StageVariant.Light,
+        frame,
+        gridOf(inside -> 1, (inside + 1) -> 3)
+      )
     )
     assertEquals(
       densityStrokes(mixed, GeometryScene.DensityHaloName).map(_.segments.size),
@@ -418,8 +427,9 @@ class GeometrySceneSuite extends munit.FunSuite:
 
   test("level 1 keeps ramp-0 on every stage, opaque; its measured contrast is pinned") {
     // The owner kept the ramp (DESIGN_SPEC section 15.1, 2026-10-12) and drew
-    // it opaque, cased where it needs it (option B, 2026-10-15): a singleton
-    // on the Light stage is faint on its own, and its casing carries it
+    // it opaque, cased where it needs it (option B, 2026-10-15); the v4 ramp
+    // (2026-10-29) is darker than the stage ground, so a singleton on the Mid
+    // stage is faint on its own, and its casing carries it
     // (TokenContrastSuite). This pins what the code draws so that a change
     // to it is deliberate.
     val ramp0 = Tokens.palette(PaletteToken.Ramp0)
@@ -433,7 +443,7 @@ class GeometrySceneSuite extends munit.FunSuite:
         v -> Wcag.contrast(ramp0, stage(v)).fold(e => fail(e.message), identity)
       )
     val pinned =
-      Vector(StageVariant.Dark -> 13.38, StageVariant.Mid -> 3.49, StageVariant.Light -> 1.16)
+      Vector(StageVariant.Dark -> 4.14, StageVariant.Mid -> 1.08, StageVariant.Light -> 3.75)
     assertEquals(measured.map(_._1).toSet, pinned.map(_._1).toSet)
     pinned.foreach { (v, expected) =>
       assertEqualsDouble(measured.toMap.apply(v), expected, QuotedPlaces, clue(v))

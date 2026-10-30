@@ -15,20 +15,20 @@ cd885a51c0cdf34e618da48e6e2bfe9c310a283a3fb4e62e109d17cdaf271651  figures.html
 7996386b251e19c7403309a91307832bbe12769d6967a547dfbe55ce5e89eeba  results.html
 8e3ec0ba2cac393dc9bdd4269c01b85ee01fea3ff2bdd432d49acca84b88b6b1  state-menu.html
 14046448d138ea8ce943f8e8f04948d0e3db448488a0cfc957634706c940853b  es.css
-dd287b1eac8c0c60748d3b59bbf4ef6b5725e8d6a2c24139fbcf19f7517ffa34  es.js
+298e18a774b04333f4a25d426d8af331ed16a9c86ebedde1f14df8f78dde4907  es.js
 b49cef8c6a2b47c1c4c6577d1646c49aa82df4842302cd2e10dd61b0844ad85a  data.js
 
 ced601a88812448dd6014a257050484916211c83511dcc3d2f3e9e3d66d42ad6  analysis.png
 dc4cb4d663ea756982339414656068f0e556bc3d999f71e7732326b1168f0a6d  analysis.regions.json
-1e5a02dd161c96ab87d038f2c8c0f4214bd40687e19784596e8cfb2639e2708c  compare-query-dark.png
+c214649f535f141410292ced2fbece5c8d726a5f6a16ba7ff5e6d97f43f9c031  compare-query-dark.png
 667ebe5baf417d78b2739b2f92141c039371c32127c54a8cfc732816eb9fbef3  compare-query-dark.regions.json
-320b6c9f2e1d8edbf629fd8f47de4932104e2919980dd3a0f3ed2647bdf5ffb9  compare-query.png
+acc70cd87ce18deb7c719c2972022f2423de8f04f37cf0b12f87a33956b5b269  compare-query.png
 667ebe5baf417d78b2739b2f92141c039371c32127c54a8cfc732816eb9fbef3  compare-query.regions.json
-dd2295e160dff86f235833d60abe7327a3058559e4001f23afdcc279f4d7e838  data-trials.png
+86c14586db22660b7c628aa0aa6f3fbdb47ab2b3ad8c71b0427152ffcf791ffa  data-trials.png
 736948530608163f4b79d5862f0f84fcfb617260f9b16a2681eae1cda2cd2fc3  data-trials.regions.json
 d051bd32ef934cfc3eb031f75cf7b7dbc5189e381d9e434e438618f56bb935e8  data.png
 90d93160b5a05afa77a7042367eef719802c21627886b1a138a891320334ce5c  data.regions.json
-a7678fb8423958e87de15b77a1f097c6f747caf35a6eaf6e63c1992ba1f900d4  explore.png
+67b3d89243570e17f265443c92155fa3c3d86ee850066f5e640e5349fe68a441  explore.png
 e525bb459d37106c95df95742d987f5c77af73365a5c98ae5fdbbef5df3ee7d5  explore.regions.json
 e551aa43e1a2e10e6a0cf0829af391a8d949a332c73b963a0f0952eb0680656c  figures.png
 ae4d2a0ee2df9f7bfb2e08a250cb457f244e6d3735f370bef2eda6328fb616d3  figures.regions.json
@@ -41,8 +41,9 @@ bc378d6e76764a3a10fb052b913cf3cdf3aaeedc5183d9f3e80493a2b2b9f1d7  state-menu.png
 ```
 
 Amendment v4i, 2026-10-30 (Port 1, accessibility laws; owner: "be flexible, push forward with the redesign and adapt laws as necessary"):
-- Isoline casing on maps (es.js) is white at 60%, not 35%; the legend sample matches it (was 90%). Over --ramp-1 the
-  35% casing and the ink both fell below 3:1 (2.15, 2.34); at 60% the casing reaches 3.49. Re-rendered: compare-query,
+- Isoline casing on maps (es.js) is white at 70%, not 35%; the legend sample matches it (was 90%). Over --ramp-1 the
+  35% casing and the ink both fell below 3:1 (2.15, 2.34). 60% is enough over the ramp's stops (3.49), but over
+  photographs under the map (TrialMapSceneSuite's sky and sand) the worst ground is 2.80; 70% gives 3.02. Re-rendered: compare-query,
   compare-query-dark, data-trials, explore (pixels inside the map frames only; region maps unchanged).
 - Laws adapted to the golden rather than the golden to the laws: adjacent density levels are kept apart by 10 L*
   (the v4 ramp steps 12.76, 11.02, 11.68) instead of a 1.5 contrast ratio, which compressed the even dark end to 1.46;

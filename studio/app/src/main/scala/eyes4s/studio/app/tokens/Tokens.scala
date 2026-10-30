@@ -228,7 +228,7 @@ object Tokens:
       case PaletteToken.DivPos         => Colour.srgb(0xb4442f)
       case PaletteToken.Screen         => Colour.srgb(0x9a9a96)
       case PaletteToken.IsolineInk     => Colour.srgba(0x1c1e21, 90)
-      case PaletteToken.IsolineCase    => Colour.srgba(0xffffff, 60)
+      case PaletteToken.IsolineCase    => Colour.srgba(0xffffff, 70)
       case PaletteToken.Paper          => Colour.srgb(0xffffff)
       case PaletteToken.PaperInk       => Colour.srgb(0x1c1e21)
       case PaletteToken.PaperInk2      => Colour.srgb(0x464b52)
