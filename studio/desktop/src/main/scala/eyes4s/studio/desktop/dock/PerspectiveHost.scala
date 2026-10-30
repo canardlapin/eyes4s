@@ -100,8 +100,18 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
           .flatMap(group => paneIds.get(group.active))
           .foreach(p => report(DockGesture.Maximized(p)))
       case DockEvent.GroupRestored(_) => report(DockGesture.Restored)
+      case DockEvent.LayoutChanged(_) => panes.refresh()
       case _                          => ()
     }: Unit
+    // The studio draws each pane's header from the dock (overhaul v4).
+    panes.attach(new StudioPanes.Chrome:
+      def group(pane: scaladock.PaneId) =
+        dock.state.groupOf(pane).map(g => (g.tabs.map(_.id), g.active))
+      def select(pane: scaladock.PaneId): Unit = dock.focus(pane)
+      def popOut(pane: scaladock.PaneId): Unit =
+        dock.state.groupOf(pane).foreach(g => dock.popOut(g.id))
+      def collapse(pane: scaladock.PaneId): Unit =
+        dock.state.groupOf(pane).foreach(g => dock.minimize(g.id)))
 
   /** Observe scenes when retained panes enter a floating window. The scene
     * owns its handlers; a weak set avoids retaining windows that have closed.
@@ -134,6 +144,11 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
     perspectives.show(DockLayouts.name(layout))
     val focused = DockLayouts.paneId(model.focusedPane)
     if !dock.state.focused.contains(focused) && dock.state.findPane(focused).isDefined then
+      // A pane in a collapsed rail opens when the model focuses it.
+      dock.state
+        .groupOf(focused)
+        .filter(g => dock.state.minimized(g.id))
+        .foreach(g => dock.unminimize(g.id))
       dock.focus(focused)
       // The model moved focus (F6, ⌘1–5, a tab menu's Show table): keyboard
       // focus follows it into the pane, which is one focus stop (S1.11) —

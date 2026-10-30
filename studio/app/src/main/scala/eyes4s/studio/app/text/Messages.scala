@@ -101,7 +101,7 @@ enum MessageId derives CanEqual:
   case StateNotAdmitted, StateVerifying, StateNotInRun, StateJobsHead, StateJobsNone
   case StateFactAnalysis, StateFactData, OpenInData
   case CancelRunEllipsis, ConfirmCancelRun, ConfirmCancelRunDone, ConfirmCancelRunShown
-  case CancelRunConfirm, KeepRunning, StateMenuTitle
+  case CancelRunConfirm, KeepRunning, StateMenuTitle, CommandInspector
 
 /** A message catalogue: one template per id. */
 trait Catalogue:
@@ -146,6 +146,7 @@ object Catalogue:
       case CancelRunConfirm       => "Cancel run"
       case KeepRunning            => "Keep running"
       case StateMenuTitle         => "Study state"
+      case CommandInspector       => "Inspector"
       case Workspace              => "Workspace"
       case UntitledProject        => "Untitled project"
       case WindowTitle            => "{0}.eyes"

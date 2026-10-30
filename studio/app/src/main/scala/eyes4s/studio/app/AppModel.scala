@@ -24,7 +24,7 @@ import eyes4s.studio.app.appearance.{Appearance, AppearanceState}
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
-import eyes4s.studio.app.nav.{Location, Navigation, Place, Provenance}
+import eyes4s.studio.app.nav.{DataSection, Location, Navigation, Place, Provenance}
 import eyes4s.studio.app.text.{Format, MessageId, Messages, SourcesText}
 import eyes4s.studio.core.assets.{InputCheck, SourceBlock, SourceCheck}
 import eyes4s.studio.core.bundle.InputStatus
@@ -1174,12 +1174,14 @@ object AppModel:
     * any maximize.
     */
   private def cycleGroup(m: AppModel, step: Int): AppModel =
-    val l      = m.layout
-    val groups = l.groups
-    val n      = groups.size.max(1)
-    val at     = groups.indexWhere(_.panes.exists(_.id == m.focusedPane))
-    val next   = groups.lift(Math.floorMod(at + step, n)).map(l.selectedPane(_).id)
-    val moved  = next.fold(m)(focus(m, _))
+    val l = m.layout
+    // F6 passes a closed rail, as Tab does (overhaul decision 5).
+    val groups =
+      l.groups.filter(g => !g.collapsed || g.panes.exists(_.id == m.focusedPane))
+    val n     = groups.size.max(1)
+    val at    = groups.indexWhere(_.panes.exists(_.id == m.focusedPane))
+    val next  = groups.lift(Math.floorMod(at + step, n)).map(l.selectedPane(_).id)
+    val moved = next.fold(m)(focus(m, _))
     moved.copy(panes = moved.panes.copy(maximized = moved.panes.maximized - l.id))
 
   /** The document's saved layout of `perspective`, if any. */
@@ -1349,7 +1351,23 @@ object AppModel:
         applyHistory(next, JournalEntry.Apply(run), next.history.apply(run))
 
   private def navigate(m: AppModel, to: Location): (AppModel, Vector[AppEffect]) =
-    arrive(m, m.copy(navigation = m.navigation.go(m.location, to)), to)
+    val (next, effects) = arrive(m, m.copy(navigation = m.navigation.go(m.location, to)), to)
+    (shownSection(next), effects)
+
+  /** A Data section's crumb shows its pane: the sections share one group
+    * (overhaul v4), so the one the trail names comes forward.
+    */
+  private def shownSection(m: AppModel): AppModel =
+    m.location.trail.lastOption match
+      case Some(Place.DataView(section)) if m.perspective == Perspective.Data =>
+        val pane = section match
+          case DataSection.Sources       => StudioLayouts.sources
+          case DataSection.ColumnMapping => StudioLayouts.columnMapping
+          case DataSection.TrialMetadata => StudioLayouts.trialMetadata
+          case DataSection.Admission     => StudioLayouts.admission
+          case DataSection.Geometry      => StudioLayouts.dataGeometry
+        if m.layout.pane(pane).isDefined then focus(m, pane) else m
+      case _ => m
 
   /** Switch to `to`'s perspective (a view-only command); if that is refused,
     * the model stays as it was before the move.

@@ -80,6 +80,9 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       val name = read._1.path.value.split('/').last
       read._2(Right(bytes(GoldenTrials.golden.resolve(name))))
 
+  // The pane under test shares Data's centre group (overhaul v4).
+  override protected def shownAtBoot = Some(StudioLayouts.columnMapping)
+
   private def bytes(p: Path): IArray[Byte] = IArray.unsafeFromArray(Files.readAllBytes(p))
 
   /** A project holding t1, with the golden files stored as its inputs. */
@@ -233,6 +236,8 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         assertEquals(after.document.dataset(r4).flatMap(_.parent), Some(r2))
         // The Data selection moved to r4, and the pane shows r4 as it is.
         assertEquals(ColumnMappingPane.selected(after).map(_.id), Some(r4))
+        // The re-admit lands at r4's admission; show the pane again.
+        dispatch(fx, w, eyes4s.studio.app.Intent.FocusPane(StudioLayouts.columnMapping))
         loaded(fx, w, r4)
         assertEquals(runOnFx(drawn(w.columnMapping.wizard.view.commit)), "Apply to r4")
         assertEquals(role(w, "occurrence"), Some(ColumnChoice.Role(ColumnRole.Occurrence)))
@@ -445,7 +450,8 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         }
         assertEquals(walked, derived)
         fx.robot.press(KeyCode.TAB)
-        assertEquals(stop(), FocusStop(A11yRole.Region, "Admission"))
+        // Admission shares the pane's group (overhaul v4): Tab leaves for Geometry.
+        assertEquals(stop(), FocusStop(A11yRole.Region, "Geometry"))
       }
   }
 

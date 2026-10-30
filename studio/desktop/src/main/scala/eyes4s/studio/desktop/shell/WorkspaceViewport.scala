@@ -84,8 +84,9 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
             // Row navigation also reveals the row through an inner scroll
             // area when the complete composite fits the outer viewport.
             CompositeFocus.cursorTarget(node).foreach(reveal)
-            if b.getHeight <= getViewportBounds.getHeight &&
-              b.getWidth <= getViewportBounds.getWidth || CompositeFocus
+            // A composite as tall as the viewport or less (a wide table)
+            // still shows its top edge.
+            if b.getHeight <= getViewportBounds.getHeight || CompositeFocus
                 .cursorTarget(node)
                 .isEmpty
             then reveal(node)
@@ -125,17 +126,20 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
                 else if end > offset + visible then end - visible
                 else offset
               minimum + math.max(0.0, math.min(excess, next)) / excess * (maximum - minimum)
-          pane.setHvalue(
-            position(
-              pane.getHvalue,
-              pane.getHmin,
-              pane.getHmax,
-              area.getLayoutBounds.getWidth,
-              viewport.getWidth,
-              bounds.getMinX,
-              bounds.getMaxX
+          // A node wider than the clip keeps the horizontal scroll: only its
+          // top edge is revealed.
+          if bounds.getWidth <= viewport.getWidth then
+            pane.setHvalue(
+              position(
+                pane.getHvalue,
+                pane.getHmin,
+                pane.getHmax,
+                area.getLayoutBounds.getWidth,
+                viewport.getWidth,
+                bounds.getMinX,
+                bounds.getMaxX
+              )
             )
-          )
           pane.setVvalue(
             position(
               pane.getVvalue,

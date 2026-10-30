@@ -69,21 +69,36 @@ class DockLayoutsSuite extends munit.FunSuite:
   }
 
   test(
-    "28 px tab headers; navigators minimize; singleton panes cannot close; pop-outs enabled"
+    "the studio draws every pane header: the dock's are hidden; rails open minimized"
   ) {
+    // The 28 px setting is now only a collapsed rail's width (the golden's).
     assertEquals(DockLayouts.settings.headerPx, 28.0)
     spec.all.foreach { l =>
       val s = DockLayouts.state(l)
-      l.groups.zip(s.groups).foreach { (studio, dock) =>
-        val expected =
-          if studio.navigator then DockLayouts.navigatorHeader else DockLayouts.defaultHeader
-        assertEquals(dock.header, Header.Shown(expected), l.id)
-      }
+      s.groups.foreach(g => assertEquals(g.header, Header.Hidden, l.id))
+      val rails =
+        l.groups.zip(s.groups).collect { case (studio, dock) if studio.collapsed => dock.id }
+      assertEquals(s.minimized, rails.toSet, l.id)
+      assert(s.panes.forall(!_.closable), l.id)
     }
-    assert(!DockLayouts.defaultHeader.close)
-    assert(DockLayouts.defaultHeader.popOut)
-    assert(DockLayouts.navigatorHeader.popOut)
-    assert(DockLayouts.navigatorHeader.minimize)
+    // Results' summary and Report open with their inspector closed.
+    assertEquals(DockLayouts.state(StudioLayouts.compareSummary).minimized.size, 1)
+    assertEquals(DockLayouts.state(StudioLayouts.figures).minimized.size, 1)
+  }
+
+  test("the side columns are fixed in pixels, the centre takes the rest") {
+    spec.all.foreach { l =>
+      DockLayouts.state(l).root match
+        case Some(Node.Split(_, _, cells)) =>
+          assertEquals(
+            cells.map(_.size match
+              case Size.Px(_) => "px"
+              case _          => "fr"),
+            Vector("px", "fr", "px"),
+            l.id
+          )
+        case other => fail(s"${l.id}: $other")
+    }
   }
 
   private def withoutIssues(state: LayoutState): LayoutState =

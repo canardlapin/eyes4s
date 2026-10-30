@@ -48,28 +48,46 @@ object StudioLayouts:
   private def navigator(first: PaneDecl, rest: PaneDecl*): LayoutNode =
     LayoutNode.Group(NonEmptyVector(first, rest.toVector), 0, navigator = true)
 
+  /** A group that opens minimized, a rail at its edge. */
+  private def rail(first: PaneDecl, rest: PaneDecl*): LayoutNode =
+    LayoutNode.Group(
+      NonEmptyVector(first, rest.toVector),
+      0,
+      navigator = false,
+      collapsed = true
+    )
+
+  /** Shares of the space along `axis`. */
   private def split(axis: Axis, first: (LayoutNode, Double), rest: (LayoutNode, Double)*) =
-    LayoutNode.Split(axis, NonEmptyVector(first, rest.toVector))
+    LayoutNode.Split(
+      axis,
+      NonEmptyVector(first, rest.toVector).map((n, w) => (n, CellSize.Share(w)))
+    )
 
-  /** Navigator | centre | right, the shell's three columns. */
-  private def columns(nav: LayoutNode, centre: LayoutNode, right: LayoutNode): LayoutNode =
-    split(Axis.Horizontal, nav -> 0.18, centre -> 0.6, right -> 0.22)
+  /** Panes stacked top to bottom, by the golden's heights (any unit). */
+  private def stack(first: (LayoutNode, Double), rest: (LayoutNode, Double)*) =
+    split(Axis.Vertical, first, rest*)
 
-  /** The three columns at a board's widths in pixels: its navigator and its
-    * right column, of its 1440 px window; the centre takes the rest.
+  /** The v4 golden's three columns: the navigator and the right column at
+    * fixed widths in pixels, the centre taking the rest of the window.
     */
-  private def boardColumns(
+  private def columns(
       nav: (LayoutNode, Double),
       centre: LayoutNode,
       right: (LayoutNode, Double)
   ): LayoutNode =
-    val board = 1440.0
-    split(
+    LayoutNode.Split(
       Axis.Horizontal,
-      nav._1   -> nav._2 / board,
-      centre   -> (board - nav._2 - right._2) / board,
-      right._1 -> right._2 / board
+      NonEmptyVector.of(
+        nav._1   -> CellSize.Pixels(nav._2),
+        centre   -> CellSize.Share(1.0),
+        right._1 -> CellSize.Pixels(right._2)
+      )
     )
+
+  /** The navigator column (248 px in the golden) and the inspector (300 px). */
+  private val NavPx       = 248.0
+  private val InspectorPx = 300.0
 
   private def layout(id: String, perspective: Perspective, root: LayoutNode, hint: MessageId) =
     PerspectiveLayout(LayoutId(id), perspective, root, hint)
@@ -124,10 +142,10 @@ object StudioLayouts:
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",
     Perspective.Data,
-    boardColumns(
-      navigator(sourcesPane) -> 252.0,
+    columns(
+      navigator(sourcesPane) -> NavPx,
       group(pane("data.import", "Import", Start)),
-      group(pane("data.checklist", "Checklist", Inspector)) -> 300.0
+      group(pane("data.checklist", "Checklist", Inspector)) -> InspectorPx
     ),
     MessageId.HintDataFirstRun
   )
@@ -139,20 +157,18 @@ object StudioLayouts:
   val dataVerify: PerspectiveLayout = layout(
     "data.verify",
     Perspective.Data,
-    boardColumns(
-      navigator(sourcesPane) -> 252.0,
-      split(
-        Axis.Vertical,
-        group(
-          PaneDecl(columnMapping, PaneTitle.Fixed("Column mapping"), Form),
-          PaneDecl(trialMetadata, PaneTitle.Fixed("Trial metadata"), Form)
-        ) -> 0.55,
-        group(
-          PaneDecl(admission, PaneTitle.Fixed("Admission"), Form),
-          pane("data.outside-frame", "Records outside frame", Table),
-          PaneDecl(dataIssues, PaneTitle.Fixed("Data issues"), Form)
-        ) -> 0.45
+    columns(
+      navigator(sourcesPane) -> NavPx,
+      // One page at a time in the centre (the golden's): Column mapping
+      // first, then Admission, which a trail at Admission brings forward.
+      group(
+        PaneDecl(columnMapping, PaneTitle.Fixed("Column mapping"), Form),
+        PaneDecl(admission, PaneTitle.Fixed("Admission"), Form),
+        PaneDecl(trialMetadata, PaneTitle.Fixed("Trial metadata"), Form),
+        PaneDecl(dataIssues, PaneTitle.Fixed("Data issues"), Form),
+        pane("data.outside-frame", "Records outside frame", Table)
       ),
+      // 372 px until Port 8 fits the geometry form to the golden's 300.
       group(PaneDecl(dataGeometry, PaneTitle.Fixed("Geometry"), Form)) -> 372.0
     ),
     MessageId.HintDataVerify
@@ -185,25 +201,25 @@ object StudioLayouts:
       navigator(
         PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
         PaneDecl(items, PaneTitle.Fixed("Items"), Navigator)
-      ),
-      split(
-        Axis.Vertical,
+      ) -> NavPx,
+      // The golden's heights: the stage 440, the timeline 102, records 248.
+      stack(
         group(
           PaneDecl(trialView, PaneTitle.Dynamic("Trial view"), Plot),
           table("explore.trial-view"),
           pane("explore.small-multiples", "Small multiples", Plot)
-        ) -> 0.55,
+        ) -> 440.0,
         group(
           PaneDecl(timeline, PaneTitle.Fixed("Timeline"), Plot),
           PaneDecl(timelineTable, PaneTitle.Fixed("Table"), Table)
-        ) -> 0.2,
+        ) -> 102.0,
         group(
           pane("explore.source-records", "Source records", Table)
             .copy(described = Some(RecordText(RecordTextId.TableName))),
           dynamic("explore.trial-inventory", "Trial inventory", Table)
-        ) -> 0.25
+        ) -> 248.0
       ),
-      group(pane("explore.inspector", "Inspector", Inspector))
+      group(pane("explore.inspector", "Inspector", Inspector)) -> InspectorPx
     ),
     MessageId.HintExplore
   )
@@ -231,24 +247,24 @@ object StudioLayouts:
     "analysis",
     Perspective.Analysis,
     columns(
-      navigator(PaneDecl(analyses, PaneTitle.Fixed("Analyses"), Navigator)),
-      split(
-        Axis.Vertical,
+      navigator(PaneDecl(analyses, PaneTitle.Fixed("Analyses"), Navigator)) -> NavPx,
+      // The golden's heights: the recipe 459, the resolved design 332.
+      stack(
         group(
           dynamic(recipe.value, "Recipe", Form),
           dynamic(recipeDiff.value, "Diff", Text),
           pane(recipeDescription.value, "Description", Form)
-        ) -> 0.6,
+        ) -> 459.0,
         group(
           // A region (the board's section) holding the table's own focus stop.
           PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Form),
           table("analysis.resolved-design")
-        ) -> 0.4
+        ) -> 332.0
       ),
       group(
         pane("analysis.preflight", "Preflight", Inspector),
         PaneDecl(diagnostics, PaneTitle.Fixed("Diagnostics"), Table)
-      )
+      ) -> InspectorPx
     ),
     MessageId.HintAnalysis
   )
@@ -263,23 +279,22 @@ object StudioLayouts:
     "compare.summary",
     Perspective.Results,
     columns(
-      navigator(pane("compare.participants", "Participants", Navigator)),
-      split(
-        Axis.Vertical,
-        split(
-          Axis.Horizontal,
-          group(
-            dynamic("compare.participant-plot", "Participant plot", Plot),
-            table("compare.participant-plot")
-          )                                                   -> 0.6,
-          group(scaleProfile, table("compare.scale-profile")) -> 0.4
-        ) -> 0.55,
+      navigator(pane("compare.participants", "Participants", Navigator)) -> 232.0,
+      // The golden's heights: the plot 412, the participant table 379.
+      stack(
+        group(
+          dynamic("compare.participant-plot", "Participant plot", Plot),
+          table("compare.participant-plot"),
+          scaleProfile,
+          table("compare.scale-profile")
+        ) -> 412.0,
         group(
           dynamic("compare.participant-table", "Participant table", Table),
           pane("compare.query-table", "Query table", Table)
-        ) -> 0.45
+        ) -> 379.0
       ),
-      group(pane("compare.reporting", "Reporting", Inspector))
+      // The inspector is closed by default here (overhaul decision 5).
+      rail(pane("compare.reporting", "Reporting", Inspector)) -> InspectorPx
     ),
     MessageId.HintCompareSummary
   )
@@ -292,9 +307,10 @@ object StudioLayouts:
       navigator(
         pane("compare.queries", "Queries", Navigator),
         pane("compare.items", "Items", Navigator)
-      ),
-      split(
-        Axis.Vertical,
+      ) -> 264.0,
+      // The golden's heights (the pair 421, across scales 370), the pair a
+      // little taller until its one pane (Port 4) frees its panel toolbars.
+      stack(
         split(
           Axis.Horizontal,
           group(
@@ -305,7 +321,7 @@ object StudioLayouts:
             dynamic("compare.reference-trial", "Reference trial", Plot),
             table("compare.reference-trial")
           ) -> 0.5
-        ) -> 0.6,
+        ) -> 443.0,
         group(
           pane("compare.contrast", "Contrast", Plot),
           pane("compare.pairs", "Pairs table", Table),
@@ -313,9 +329,9 @@ object StudioLayouts:
           // Not on the board: every plot has its Table twin (S10.5 F3, a
           // deliberate deviation for accessibility, PARITY_CHECKLIST Main).
           table("compare.scale-profile")
-        ) -> 0.4
+        ) -> 348.0
       ),
-      group(pane("compare.inspector", "Inspector", Inspector))
+      group(pane("compare.inspector", "Inspector", Inspector)) -> InspectorPx
     ),
     MessageId.HintCompareQuery
   )
@@ -327,16 +343,16 @@ object StudioLayouts:
     "figures",
     Perspective.Report,
     columns(
-      navigator(pane("figures.figures", "Figures", Navigator)),
-      split(
-        Axis.Vertical,
-        group(dynamic("figures.page", "Figure", Plot), table("figures.page")) -> 0.7,
-        group(
-          pane(methods.value, "methods.md", Text),
-          pane(methodsDiff.value, "Diff vs generated", Text)
-        ) -> 0.3
+      navigator(pane("figures.figures", "Figures", Navigator)) -> NavPx,
+      // The golden's Report: the figure page alone; Methods is its own page.
+      group(
+        dynamic("figures.page", "Figure", Plot),
+        table("figures.page"),
+        pane(methods.value, "Methods", Text),
+        pane(methodsDiff.value, "Diff vs generated", Text)
       ),
-      group(dynamic("figures.panel", "Panel", Inspector))
+      // The panel inspector is closed by default (overhaul decision 5).
+      rail(dynamic("figures.panel", "Panel", Inspector)) -> InspectorPx
     ),
     MessageId.HintFigures
   )
@@ -346,6 +362,15 @@ object StudioLayouts:
     * ladder's table is the Pairs table, its pairs and scores by scale.
     */
   private val namedTwins: Map[String, String] = Map("compare.contrast" -> "compare.pairs")
+
+  /** The id of `plot`'s Table twin, by convention or by name, in any layout. */
+  def twinTable(plot: String): String = namedTwins.getOrElse(plot, s"$plot.table")
+
+  /** The plot whose Table twin is `table`, if `table` is one. */
+  def twinPlot(table: String): Option[String] =
+    namedTwins
+      .collectFirst { case (plot, t) if t == table => plot }
+      .orElse(Option.when(table.endsWith(".table"))(table.stripSuffix(".table")))
 
   /** The Table twin of plot `plot`, or the plot of table `table`, in
     * `layout`: `<id>.table` by convention, else the named pairs above. Only
@@ -441,7 +466,8 @@ object StudioLayouts:
       }
       def weights(node: LayoutNode): Vector[LayoutError] = node match
         case LayoutNode.Split(_, children) =>
-          children.toVector.flatMap { (child, w) =>
+          children.toVector.flatMap { (child, size) =>
+            val w = size.value
             (if w > 0 && !w.isNaN && !w.isInfinite then Vector.empty
              else Vector(LayoutError.BadWeight(l.id.value, w))) ++ weights(child)
           }

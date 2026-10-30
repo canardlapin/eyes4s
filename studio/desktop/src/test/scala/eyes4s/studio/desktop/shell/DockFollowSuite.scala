@@ -58,6 +58,9 @@ class DockFollowSuite extends ShellFxSuite:
   fxStage.test("queued pane focus moves retain the latest model, dock and keyboard focus") {
     fx =>
       val w = boot(fx, start)
+      // The panel inspector opens closed (a rail); the model opens it.
+      dispatch(fx, w, Intent.FocusPane(inspector))
+      dispatch(fx, w, Intent.FocusPane(page))
       runOnFx {
         PerspectiveHost.focusInside(w.figures.pageNode)
         PerspectiveHost.focusInside(w.figures.inspectorNode)

@@ -123,7 +123,16 @@ abstract class ShellFxSuite extends StudioFxSuite:
     opened += w
     fx.show(w.root)
     runOnFx(w.bind(fx.stage))
+    // A pane the suite tests is shown in its group (overhaul v4: one pane of
+    // a group shows at a time), without moving the model's focus.
+    shownAtBoot.foreach(p =>
+      runOnFx(w.host.dock.update(scaladock.edit.activate(_, scaladock.PaneId(p.value))))
+    )
+    fx.awaitLayout()
     w
+
+  /** The pane this suite shows in its group when a window boots. */
+  protected def shownAtBoot: Option[eyes4s.studio.app.layout.PaneId] = None
 
   protected def dispatch(fx: FxStage, w: StudioWindow, intent: Intent): Unit =
     runOnFx(w.runtime.dispatch(intent))

@@ -55,6 +55,8 @@ class FigureMethodsFxSuite extends GoldenWindow:
   private val Replay = "D measures spatial correspondence, not sequential replay."
   private val Edited = "D measures where gaze went, not the order it went there."
 
+  override protected def shownAtBoot = Some(eyes4s.studio.app.layout.StudioLayouts.methods)
+
   private def generated(fx: FxStage, w: StudioWindow): String =
     eventually(fx, "the methods text is generated") {
       w.figures.vm.methods.exists(_.text.isRight)

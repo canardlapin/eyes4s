@@ -271,8 +271,13 @@ class KeyboardJourneySuite extends GoldenWindow:
       )
 
       audit(w, "after the mapping")
-      // Admission: ↓ in the decision's radio group chooses Review exclusions
+      // Admission: ⌃⇥ brings it forward in Data's centre group (overhaul v4),
+      // then ↓ in the decision's radio group chooses Review exclusions
       // (S10.5 K3), then Admit as r3.
+      fx.robot.press(KeyCode.TAB, eyes4s.studio.desktop.harness.Modifiers(control = true))
+      eventually(fx, "Admission shown")(
+        model(w).focusedPane == eyes4s.studio.app.layout.StudioLayouts.admission
+      )
       val radio = tabTo(fx, "the admission choice")(_.isInstanceOf[RadioButton])
       assert(name(radio).startsWith("Require complete"), name(radio))
       fx.robot.press(KeyCode.DOWN)
@@ -515,7 +520,9 @@ class KeyboardJourneySuite extends GoldenWindow:
       eventually(fx, "Figure 4 shown")(
         w.runtime.model.location.trail.contains(Place.Figure(figure))
       )
-      // The bundle's project snapshot, then Export bundle….
+      // The bundle's project snapshot, then Export bundle…, in the panel
+      // inspector: ⌘I opens it (it opens closed, overhaul decision 5).
+      chord(fx, CommandRegistry.inspector)
       tabTo(fx, "the bundle's project snapshot")(n =>
         Option(n.getAccessibleText).exists(t =>
           t.startsWith("project snapshot") && t.endsWith(", not in the bundle")

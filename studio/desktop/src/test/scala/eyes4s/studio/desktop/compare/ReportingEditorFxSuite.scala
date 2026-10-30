@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.compare
 
+import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.core.document.{ReportingContrast, ReportingFilter}
 import eyes4s.studio.core.fixture.StoryMoment
@@ -158,6 +159,8 @@ class ReportingEditorFxSuite extends ShellFxSuite:
   ) { fx =>
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val r = w.reporting
+    // Reporting opens closed on the summary (overhaul decision 5).
+    dispatch(fx, w, eyes4s.studio.app.Intent.FocusPane(StudioLayouts.compareReporting))
     eventually(fx, "run 7's summary")(r.shown("reuses").contains("35,876"))
     val derived = A11y.render(runOnFx(r.focusStops))
     runOnFx(r.groupNodes.find(_.isSelected).foreach(_.requestFocus()))

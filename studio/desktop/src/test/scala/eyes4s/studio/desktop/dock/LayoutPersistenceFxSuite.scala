@@ -27,17 +27,13 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
 
   fxStage.test("E2E18 pop-outs retain one live pane across perspective switches and close") {
     fx =>
-      val w      = boot(fx, StoryModels.t2Figures, nativeMenu = true)
-      val id     = eyes4s.studio.app.layout.PaneId.of("figures.page").toOption.get
-      val pane   = runOnFx(w.host.node(id).getOrElse(fail("page pane missing")))
-      val main   = runOnFx(windows.toSet)
+      val w    = boot(fx, StoryModels.t2Figures, nativeMenu = true)
+      val id   = eyes4s.studio.app.layout.PaneId.of("figures.page").toOption.get
+      val pane = runOnFx(w.host.node(id).getOrElse(fail("page pane missing")))
+      val main = runOnFx(windows.toSet)
+      // The pane header's pop out (overhaul v4: the studio draws the header).
       val popOut = runOnFx {
-        val group = Iterator
-          .iterate(pane)(_.getParent)
-          .takeWhile(_ != null)
-          .find(_.getStyleClass.contains("dock-group"))
-          .getOrElse(fail("page group missing"))
-        val button = group.lookup(".dock-header-button.popout")
+        val button = pane.lookup(".pane-action")
         assert(button != null && button.isVisible)
         button
       }

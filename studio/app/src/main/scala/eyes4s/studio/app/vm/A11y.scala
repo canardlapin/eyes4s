@@ -146,8 +146,11 @@ object A11y:
     val confirm = vm.confirmation.toVector.flatMap(c => button(c.confirm) ++ button(c.cancel))
     val layout  = model.layout
     val focused = model.focusedPane
-    val groups  =
-      if model.isMaximized then layout.groupOf(focused).toVector else layout.groups
+    // A collapsed rail is no stop until it holds the focused pane, which
+    // opens it (overhaul decision 5).
+    val groups =
+      if model.isMaximized then layout.groupOf(focused).toVector
+      else layout.groups.filter(g => !g.collapsed || g.panes.exists(_.id == focused))
     val dock = groups.flatMap { g =>
       val shown = g.panes.find(_.id == focused).getOrElse(layout.selectedPane(g))
       focus(shown.id).fold(pane(shown) +: inside(shown.id))(_.stops)

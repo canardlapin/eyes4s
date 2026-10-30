@@ -48,6 +48,7 @@ Verified by hand on macOS: pending. The hand check covers:
 | View | Analysis | `⌘2` | `perspective.analysis` |
 | View | Results | `⌘3` | `perspective.results` |
 | View | Report | `⌘4` | `perspective.report` |
+| View | Inspector | `⌘I` | `pane.inspector` |
 | View | Reset perspective | — | `view.reset-perspective` |
 | View | Appearance › Light | — | `view.appearance-light` |
 | View | Appearance › Dark | — | `view.appearance-dark` |

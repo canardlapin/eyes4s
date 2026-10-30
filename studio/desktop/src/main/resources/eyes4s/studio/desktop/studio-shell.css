@@ -584,17 +584,83 @@
 }
 
 .pane-placeholder {
-  -fx-padding: 12 14 12 14;
   -fx-background-color: -es-surface;
 }
 
-.pane-placeholder-title {
-  -fx-text-fill: -es-ink-3;
+/* An empty pane's body; a pane whose ticket has landed fills it edge to edge. */
+.pane-body {
+  -fx-padding: 12 14 12 14;
 }
 
-/* A pane whose ticket has landed: its content fills it, edge to edge. */
-.pane-placeholder.pane-hosted {
+.pane-placeholder.pane-hosted > .pane-body {
   -fx-padding: 0;
+}
+
+/* The pane header (overhaul v4, the golden's .ph): 36 px, the title 13/600
+ * in ink, the subtitle 12 in ink-3, the pane's controls at the right. The
+ * dock's own tab strip is hidden; a group's other panes are its switch. */
+.pane-header {
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+  -fx-padding: 0 8 0 14;
+  -fx-background-color: -es-surface;
+}
+
+.pane-title {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-font-size: 13px;
+}
+
+.pane-sub {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-size: 12px;
+}
+
+.pane-controls, .pane-actions {
+  -fx-alignment: center-right;
+  -fx-spacing: 8;
+}
+
+/* The golden's .seg: 24 px, 2 px inset, 20 px buttons. */
+.pane-seg {
+  -fx-alignment: center-left;
+  -fx-spacing: 2;
+  -fx-padding: 2;
+  -fx-min-height: 24px;
+  -fx-pref-height: 24px;
+  -fx-max-height: 24px;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 6;
+}
+
+.pane-seg-button {
+  -fx-min-height: 20px;
+  -fx-pref-height: 20px;
+  -fx-max-height: 20px;
+  -fx-padding: 0 8 0 8;
+  -fx-background-color: transparent;
+  -fx-background-radius: 4;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-size: 12px;
+}
+
+.pane-seg-button:selected {
+  -fx-background-color: -es-hairline-strong, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.pane-action {
+  -fx-min-width: 28px;
+  -fx-pref-width: 28px;
+  -fx-max-width: 28px;
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-background-radius: 6;
 }
 
 /* ---- 6 · status bar, 26 px (overhaul v4) ------------------------------- */

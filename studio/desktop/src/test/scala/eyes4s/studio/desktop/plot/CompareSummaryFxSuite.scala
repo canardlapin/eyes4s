@@ -548,6 +548,13 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     ) { fx =>
       val w = boot(fx, initial(), StoryMoment.T3)
       loaded(fx, w)
+      // The scale profile shares the participant plot's group (overhaul v4).
+      runOnFx(
+        w.host.dock.update(
+          scaladock.edit.activate(_, scaladock.PaneId("compare.scale-profile"))
+        )
+      )
+      fx.awaitLayout()
       val twin = w.summary.scaleProfile
       val plot = runOnFx(twin.plot).getOrElse(fail("no profile plot"))
       val cell = plot.source.rows

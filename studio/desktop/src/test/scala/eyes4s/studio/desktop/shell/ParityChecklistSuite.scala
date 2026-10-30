@@ -34,18 +34,18 @@ class ParityChecklistSuite extends ShellFxSuite:
       val expected = Map("appBar" -> 48.0, "contextStrip" -> 34.0, "statusBar" -> 26.0)
       heights.foreach((name, value) => assertEqualsDouble(value, expected(name), 1))
       val headers = w.root
-        .lookupAll(".dock-header")
+        .lookupAll(".pane-header")
         .asScala
         .toVector
         .filter(_.isVisible)
         .map(_.getLayoutBounds.getHeight)
       assertEquals(headers.size, 3)
-      headers.foreach(h => assertEqualsDouble(h, 28, 1))
+      headers.foreach(h => assertEqualsDouble(h, 36, 1))
       val sidebars = Vector(
         "sources"   -> w.firstRun.sources.getWidth,
         "checklist" -> w.firstRun.checklist.getWidth
       )
-      assertEqualsDouble(sidebars.toMap.apply("sources"), 252, 1)
+      assertEqualsDouble(sidebars.toMap.apply("sources"), 248, 1)
       assertEqualsDouble(sidebars.toMap.apply("checklist"), 300, 1)
       ujson.Obj(
         "heights"                -> ujson.Obj.from(heights.map((k, v) => k -> ujson.Num(v))),

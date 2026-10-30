@@ -197,9 +197,9 @@ class BoardParityCaptureFxSuite extends StoryCaptureFixture:
         )
         val wanted = Map("appBar" -> 48.0, "contextStrip" -> 34.0, "statusBar" -> 26.0)
         heights.foreach((name, h) => assertEqualsDouble(h, wanted(name), 1))
-        val headers = w.root.lookupAll(".dock-header").asScala.toVector.filter(_.isVisible)
+        val headers = w.root.lookupAll(".pane-header").asScala.toVector.filter(_.isVisible)
         assert(headers.nonEmpty)
-        headers.foreach(h => assertEqualsDouble(h.getLayoutBounds.getHeight, 28, 1))
+        headers.foreach(h => assertEqualsDouble(h.getLayoutBounds.getHeight, 36, 1))
         val labels = w.root.lookupAll("*").asScala.toVector.collect {
           case l: Labeled if l.isVisible && Option(l.getText).exists(_.nonEmpty) =>
             val b = l.localToScene(l.getBoundsInLocal)

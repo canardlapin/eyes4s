@@ -368,7 +368,13 @@ class GoldenJourneyFxSuite extends GoldenWindow:
           Location(Perspective.Report, Vector(Place.Figures, Place.Figure(figure)))
         )
       )
-      // The bundle's snapshot row (not the appearance's "includes images").
+      // The bundle's snapshot row (not the appearance's "includes images"),
+      // in the panel inspector, which opens closed (overhaul decision 5).
+      dispatch(
+        fx,
+        w,
+        Intent.FocusPane(eyes4s.studio.app.layout.PaneId.of("figures.panel").toOption.get)
+      )
       val row = control(fx, w, "project snapshot") {
         case b: Button
             if Option(b.getAccessibleText).exists(_.endsWith(", not in the bundle")) =>

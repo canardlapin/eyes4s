@@ -206,6 +206,20 @@ object CommandRegistry:
     always(Intent.ToggleMaximize)
   )
 
+  /** Open and focus the shown layout's inspector (⌘I, the golden's): the
+    * keyboard's way into a closed rail (overhaul decision 5).
+    */
+  val inspector: AppCommand = AppCommand(
+    CommandId.declared("pane.inspector"),
+    MessageId.CommandInspector,
+    MenuSection.View,
+    Some(KeyChord.command(Key.I)),
+    m =>
+      m.layout.groups
+        .find(_.panes.head.kind == eyes4s.studio.app.layout.PaneKind.Inspector)
+        .map(g => Intent.FocusPane(m.layout.selectedPane(g).id))
+  )
+
   /** Whether `job` can be cancelled: queued or running, and its run still
     * running in the document.
     */
@@ -375,6 +389,7 @@ object CommandRegistry:
     nextTab,
     previousTab,
     maximize,
+    inspector,
     cancelRun,
     showRun,
     reviewDraft,

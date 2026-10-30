@@ -5,17 +5,6 @@ BUTTON: Cancel run 8
 BUTTON: Summary · by retrieval response, current location
 LIST_VIEW: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed
 PARENT: Participant plot of Participant D at 2°: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: [responsive annotations recorded in tab-order.json]. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
-PARENT: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
 TOGGLE_BUTTON: σ 2°
 BUTTON: Explain P17 → keeps: by retrieval response › P17
 TABLE_VIEW: Participant summary at σ 2°, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.
-PARENT: Reporting
-RADIO_BUTTON: Group by: response
-TEXT_FIELD: First level (minuend)
-TEXT_FIELD: Subtract level (subtrahend)
-BUTTON: Apply contrast
-BUTTON: Clear contrast
-CHECK_BOX: Exclude queries with >25% of fixation duration outside the analysis window
-CHECK_BOX: Minimum queries per group: 3
-RADIO_BUTTON: Summary unit and weighting: Equal weight per participant
-BUTTON: Save as…

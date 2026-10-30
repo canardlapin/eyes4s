@@ -110,14 +110,32 @@ enum Axis derives CanEqual:
   /** Children stacked. */
   case Vertical
 
-/** A dock layout: splits of tab groups. */
-enum LayoutNode derives CanEqual:
-  case Split(axis: Axis, children: NonEmptyVector[(LayoutNode, Double)])
+/** A cell's size along its split: a share of the space the fixed cells
+  * leave, or a fixed width or height in pixels (the v4 golden's columns).
+  */
+enum CellSize derives CanEqual:
+  case Share(weight: Double)
+  case Pixels(px: Double)
 
-  /** A tab group; `selected` indexes `panes`. `navigator` groups may be
-    * minimized to a strip (DESIGN_SPEC section 3).
+  def value: Double = this match
+    case Share(w)  => w
+    case Pixels(p) => p
+
+/** A dock layout: splits of pane groups. */
+enum LayoutNode derives CanEqual:
+  case Split(axis: Axis, children: NonEmptyVector[(LayoutNode, CellSize)])
+
+  /** A pane group; `selected` indexes `panes`. `navigator` groups may be
+    * minimized to a strip (DESIGN_SPEC section 3). A `collapsed` group opens
+    * minimized, a rail at its edge (overhaul decision 5: the inspector is
+    * closed by default on Results' summary and in Report).
     */
-  case Group(panes: NonEmptyVector[PaneDecl], selected: Int, navigator: Boolean)
+  case Group(
+      panes: NonEmptyVector[PaneDecl],
+      selected: Int,
+      navigator: Boolean,
+      collapsed: Boolean = false
+  )
 
   /** Every group, in reading order (the F6 order). */
   def groups: Vector[Group] = this match

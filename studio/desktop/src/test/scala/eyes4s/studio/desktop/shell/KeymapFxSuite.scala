@@ -285,9 +285,14 @@ class KeymapFxSuite extends ShellFxSuite:
   fxStage.test("keyboard only: ⌘1–4, F6 and ⌃⇥ reach every pane of every layout") { fx =>
     val w       = boot(fx, StoryModels.t2Compare)
     val reached = scala.collection.mutable.Set.empty[String]
+    // ⌘I opens a layout's inspector, a closed rail where it starts closed.
+    def inspector(): Unit =
+      press(fx, KeyChord.command(Key.I))
+      reached += model(w).focusedPane.value
     Vector(Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4).foreach { k =>
       press(fx, KeyChord.command(k))
       reached ++= tour(fx, w)
+      inspector()
     }
     // Results' summary layout: Tab to its crumb, Space.
     press(fx, KeyChord.command(Key.Digit3))
@@ -300,6 +305,7 @@ class KeymapFxSuite extends ShellFxSuite:
     fx.robot.press(KeyCode.SPACE)
     assertEquals(runOnFx(w.host.active), Some("compare.summary"))
     reached ++= tour(fx, w)
+    inspector()
     // Results' drill, where the trail reaches a record (t2's Explore board).
     runOnFx(w.close())
     val drill = boot(fx, StoryModels.t2Explore)

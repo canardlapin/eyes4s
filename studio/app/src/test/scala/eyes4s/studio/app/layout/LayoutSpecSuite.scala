@@ -46,10 +46,10 @@ class LayoutSpecSuite extends munit.FunSuite:
       Vector(
         "Sources"               -> "data.sources",
         "Column mapping"        -> "data.column-mapping",
-        "Trial metadata"        -> "data.trial-metadata",
         "Admission"             -> "data.admission",
-        "Records outside frame" -> "data.outside-frame",
+        "Trial metadata"        -> "data.trial-metadata",
         "Data issues"           -> "data.issues",
+        "Records outside frame" -> "data.outside-frame",
         "Geometry"              -> "data.geometry"
       )
     ),
@@ -122,7 +122,7 @@ class LayoutSpecSuite extends munit.FunSuite:
         "Figures"           -> "figures.figures",
         "Figure 1"          -> "figures.page",
         "Table"             -> "figures.page.table",
-        "methods.md"        -> "figures.methods",
+        "Methods"           -> "figures.methods",
         "Diff vs generated" -> "figures.methods-diff",
         "Panel D"           -> "figures.panel"
       )

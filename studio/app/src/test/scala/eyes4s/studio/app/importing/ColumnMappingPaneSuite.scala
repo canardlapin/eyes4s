@@ -345,15 +345,17 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       )
     )
     assertEquals(geometry.count(_.role == A11yRole.TextField), GeometryField.values.length)
-    // The shell's Tab order places them right after the pane's stop.
+    // The shell's Tab order places them right after the pane's stop, once
+    // Column mapping shows in its group (Admission shows first, overhaul v4).
+    val shown = AppModel.update(m, Intent.FocusPane(StudioLayouts.columnMapping))._1
     val order = A11y.tabOrder(
-      m,
+      shown,
       inside = p => if p == StudioLayouts.columnMapping then stops else Vector.empty
     )
     val pane = order.indexOf(FocusStop(A11yRole.Region, "Column mapping"))
     assert(pane >= 0, order.toString)
     assertEquals(order.slice(pane + 1, pane + 1 + stops.size), stops)
-    assertEquals(order.size, A11y.tabOrder(m).size + stops.size)
+    assertEquals(order.size, A11y.tabOrder(shown).size + stops.size)
   }
 
   test("display controls persist mappings, follow undo and keep dropped inventory edits") {

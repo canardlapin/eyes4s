@@ -18,6 +18,7 @@ package eyes4s.studio.desktop.dock
 
 import eyes4s.studio.app.layout.{
   Axis as StudioAxis,
+  CellSize,
   LayoutNode,
   LayoutSpec,
   PaneDecl,
@@ -72,9 +73,19 @@ object DockLayouts:
   def paneId(pane: eyes4s.studio.app.layout.PaneId): scaladock.PaneId =
     scaladock.PaneId(pane.value)
 
-  /** `layout` as a scaladock layout. */
+  /** `layout` as a scaladock layout: its collapsed groups open minimized. */
   def state(layout: PerspectiveLayout): LayoutState =
-    LayoutState.of(node(layout.id.value, Vector.empty, layout.root))
+    LayoutState
+      .of(node(layout.id.value, Vector.empty, layout.root))
+      .copy(minimized = collapsed(layout.id.value, Vector.empty, layout.root).toSet)
+
+  private def collapsed(layout: String, path: Vector[Int], n: LayoutNode): Vector[NodeId] =
+    n match
+      case LayoutNode.Split(_, children) =>
+        children.toVector.zipWithIndex.flatMap { case ((child, _), i) =>
+          collapsed(layout, path :+ i, child)
+        }
+      case g: LayoutNode.Group => Vector(nodeId(layout, path)).filter(_ => g.collapsed)
 
   /** Every layout of `spec`, by perspective name, in declaration order. */
   def states(spec: LayoutSpec): Vector[(String, LayoutState)] =
@@ -110,6 +121,10 @@ object DockLayouts:
     case StudioAxis.Horizontal => scaladock.Axis.Horizontal
     case StudioAxis.Vertical   => scaladock.Axis.Vertical
 
+  private def size(s: CellSize): Size = s match
+    case CellSize.Share(w)  => Size.Fr(w)
+    case CellSize.Pixels(p) => Size.Px(p)
+
   private def nodeId(layout: String, path: Vector[Int]): NodeId =
     NodeId((layout +: path.map(_.toString)).mkString("/"))
 
@@ -122,14 +137,16 @@ object DockLayouts:
         nodeId(layout, path),
         axis(a),
         children.toVector.zipWithIndex.map { case ((child, weight), i) =>
-          Cell(node(layout, path :+ i, child), Size.Fr(weight))
+          Cell(node(layout, path :+ i, child), size(weight))
         }
       )
-    case LayoutNode.Group(panes, selected, navigator) =>
+    case LayoutNode.Group(panes, selected, _, _) =>
       val active = panes.toVector.lift(selected).getOrElse(panes.head)
+      // The studio draws each pane's header (overhaul v4): the dock's tab
+      // strip is hidden, and a group's other panes are a switch in it.
       Node.Group(
         nodeId(layout, path),
         panes.toVector.map(pane),
         paneId(active.id),
-        Header.Shown(if navigator then navigatorHeader else defaultHeader)
+        Header.Hidden
       )

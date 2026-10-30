@@ -41,6 +41,31 @@ final class StudioPanes(spec: LayoutSpec):
   private val declared: Map[String, PaneDecl] =
     spec.all.flatMap(_.panes).map(p => p.id.value -> p).toMap
 
+  /** The dock behind the pane headers, once the host has one. */
+  private var chrome: Option[StudioPanes.Chrome] = None
+
+  /** Give the headers their dock, and draw them. */
+  def attach(c: StudioPanes.Chrome): Unit =
+    chrome = Some(c)
+    refresh()
+
+  /** Redraw every header from the dock: its group's panes and which shows. */
+  def refresh(): Unit = views.values.foreach(_.header(chrome, declared))
+
+  /** A pane's subtitle, beside its title (the golden's grey `.sub`). */
+  def describe(pane: PaneId, subtitle: String): Unit =
+    subtitles.update(pane, subtitle)
+    views.get(pane).foreach(_.subtitle(subtitle))
+
+  private val subtitles = mutable.Map.empty[PaneId, String]
+
+  /** A pane's own header controls, at its right (toggles, segmented bars). */
+  def controls(pane: PaneId, nodes: javafx.scene.Node*): Unit =
+    extras.update(pane, nodes.toVector)
+    views.get(pane).foreach(_.controls(nodes.toVector))
+
+  private val extras = mutable.Map.empty[PaneId, Vector[javafx.scene.Node]]
+
   private val live       = mutable.LinkedHashMap.empty[PaneId, javafx.scene.Node]
   private val views      = mutable.Map.empty[PaneId, StudioPanes.Placeholder]
   private val hosted     = mutable.Map.empty[PaneId, javafx.scene.Node]
@@ -79,6 +104,9 @@ final class StudioPanes(spec: LayoutSpec):
       val name  = decl.fold(title)(_.accessibleName)
       val view  = StudioPanes.Placeholder(id, title, name, role, state)
       hosted.get(id).foreach(view.show)
+      subtitles.get(id).foreach(view.subtitle)
+      extras.get(id).foreach(view.controls)
+      view.header(chrome, declared)
       focusPlans.get(id).foreach(view.focus)
       created += id
       views.update(id, view)
@@ -94,6 +122,18 @@ final class StudioPanes(spec: LayoutSpec):
     }
 
 object StudioPanes:
+
+  /** What a pane's header asks of the dock: its group's panes in order and
+    * the one that shows, and the group's actions.
+    */
+  trait Chrome:
+    def group(pane: PaneId): Option[(Vector[PaneId], PaneId)]
+    def select(pane: PaneId): Unit
+    def popOut(pane: PaneId): Unit
+    def collapse(pane: PaneId): Unit
+
+  /** The golden's pane header (overhaul v4), 36 px. */
+  val HeaderPx: Double = 36
 
   /** The one pane type until real panes exist; its state is opaque JSON. */
   val placeholder: PaneType[ujson.Value] =
@@ -134,10 +174,137 @@ object StudioPanes:
       role: A11yRole,
       val state: ujson.Value
   ):
+    private val heading = Label(title)
+    heading.getStyleClass.addAll("pane-title", "pane-placeholder-title")
+    heading.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
+    private val sub = Label()
+    sub.getStyleClass.add("pane-sub")
+    sub.setMinWidth(0)
+    private val own    = javafx.scene.layout.HBox()
+    private val switch = javafx.scene.layout.HBox()
+    private val twin   = javafx.scene.layout.HBox()
+    private val action = javafx.scene.layout.HBox()
+    own.getStyleClass.add("pane-controls")
+    switch.getStyleClass.add("pane-seg")
+    twin.getStyleClass.add("pane-seg")
+    action.getStyleClass.add("pane-actions")
+
+    /** The header: title, subtitle, then the pane's own controls, its
+      * group's switch, Plot | Table, and pop out (or close, for an inspector).
+      */
+    val bar: javafx.scene.layout.HBox =
+      val spacer = javafx.scene.layout.Region()
+      javafx.scene.layout.HBox.setHgrow(spacer, Priority.ALWAYS)
+      javafx.scene.layout.HBox.setHgrow(sub, Priority.SOMETIMES)
+      val h = javafx.scene.layout.HBox(heading, sub, spacer, own, switch, twin, action)
+      h.getStyleClass.add("pane-header")
+      h.setMinHeight(HeaderPx)
+      h.setPrefHeight(HeaderPx)
+      h.setMaxHeight(HeaderPx)
+      h
+
+    // An unhosted pane's empty body under its header; hosted content takes
+    // its place as the pane's own child (navigators read their pane as their
+    // parent).
+    private val empty = javafx.scene.layout.Region()
+    empty.getStyleClass.add("pane-body")
+    VBox.setVgrow(empty, Priority.ALWAYS)
+
+    def subtitle(text: String): Unit = sub.setText(text)
+
+    def controls(nodes: Vector[javafx.scene.Node]): Unit = own.getChildren.setAll(nodes*): Unit
+
+    private def segment(
+        text: String,
+        on: Boolean,
+        act: () => Unit
+    ): javafx.scene.control.ToggleButton =
+      val b = javafx.scene.control.ToggleButton(text)
+      b.setMnemonicParsing(false)
+      b.setSelected(on)
+      b.setFocusTraversable(false)
+      b.getStyleClass.add("pane-seg-button")
+      b.setOnAction { _ =>
+        b.setSelected(on) // the dock decides; the header follows it
+        if !on then act()
+      }
+      b
+
+    private def iconAction(icon: eyes4s.studio.app.icons.Icon, name: String, act: () => Unit) =
+      val b = javafx.scene.control.Button()
+      b.setGraphic(
+        eyes4s.studio.desktop.icons.StudioIcons
+          .graphic(icon, eyes4s.studio.desktop.icons.IconSize.Px16)
+      )
+      b.getStyleClass.addAll("icon-button", "pane-action")
+      b.setAccessibleText(name)
+      b.setTooltip(javafx.scene.control.Tooltip(name))
+      b.setFocusTraversable(false)
+      b.setOnAction(_ => act())
+      b
+
+    /** Draw the header from the dock's view of this pane's group. */
+    def header(chrome: Option[Chrome], declared: Map[String, PaneDecl]): Unit =
+      import eyes4s.studio.app.layout.{PaneKind, StudioLayouts}
+      def decl(p: PaneId)    = declared.get(p.value)
+      def titleOf(p: PaneId) = decl(p).fold(p.value)(_.title.text)
+      val group              = chrome.flatMap(_.group(id))
+      val panes              = group.fold(Vector(id))(_._1)
+      val ids                = panes.map(_.value).toSet
+      // A plot's Table twin rides with its plot: Plot | Table, not a segment.
+      def plotOf(p: PaneId): Option[PaneId] =
+        StudioLayouts.twinPlot(p.value).map(PaneId(_)).filter(q => ids(q.value))
+      def tableOf(p: PaneId): Option[PaneId] =
+        Option
+          .when(decl(p).exists(_.kind == PaneKind.Plot))(
+            PaneId(StudioLayouts.twinTable(p.value))
+          )
+          .filter(q => ids(q.value))
+      val primaries = panes.filter(p => plotOf(p).isEmpty)
+      val primary   = plotOf(id).getOrElse(id)
+      heading.setText(titleOf(primary))
+      chrome match
+        case Some(c) =>
+          switch.getChildren.setAll(
+            (if primaries.size > 1 then
+               primaries.map(p => segment(titleOf(p), p == primary, () => c.select(p)))
+             else Vector.empty)*
+          )
+          twin.getChildren.setAll(
+            tableOf(primary).toVector.flatMap { t =>
+              Vector(
+                segment("Plot", id == primary, () => c.select(primary)),
+                segment("Table", id == t, () => c.select(t))
+              )
+            }*
+          )
+          val inspector = decl(id).exists(_.kind == PaneKind.Inspector)
+          action.getChildren.setAll(
+            if inspector then
+              iconAction(
+                eyes4s.studio.app.icons.Icon.Minimize,
+                s"Close ${titleOf(primary)}",
+                () => c.collapse(id)
+              )
+            else
+              iconAction(
+                eyes4s.studio.app.icons.Icon.PopOut,
+                s"Open ${titleOf(primary)} in a new window",
+                () => c.popOut(id)
+              )
+          )
+        case None =>
+          switch.getChildren.clear()
+          twin.getChildren.clear()
+          action.getChildren.clear()
+      Vector(switch, twin, action).foreach { box =>
+        val shown = !box.getChildren.isEmpty
+        box.setVisible(shown)
+        box.setManaged(shown)
+      }
+
     val node: VBox =
-      val heading = Label(title)
-      heading.getStyleClass.addAll("pane-placeholder-title", "t13")
-      val box = VBox(heading)
+      val box = VBox(bar, empty)
       box.getStyleClass.add("pane-placeholder")
       box.setId(s"pane-${id.value}")
       box.setAccessibleText(name)
@@ -163,7 +330,7 @@ object StudioPanes:
     def show(content: javafx.scene.Node): Unit =
       VBox.setVgrow(content, Priority.ALWAYS)
       node.getStyleClass.add("pane-hosted")
-      node.getChildren.setAll(content): Unit
+      node.getChildren.setAll(bar, content): Unit
       hosted.foreach(_.getPseudoClassStates.removeListener(cursorless))
       hosted = Option.when(CompositeFocus.isPaneContent(content))(content)
       node.getStyleClass.remove(CompositeFocus.PaneStyle): Unit

@@ -127,14 +127,14 @@ class AppShellFxSuite extends ShellFxSuite:
     assertEqualsDouble(height(w.shell.statusBar.node), 26, 1)
     val headers = runOnFx(
       w.root
-        .lookupAll(".dock-header")
+        .lookupAll(".pane-header")
         .asScala
         .toVector
         .filter(_.isVisible)
         .map(_.getLayoutBounds.getHeight)
     )
     assert(headers.nonEmpty)
-    headers.foreach(h => assertEqualsDouble(h, 28, 1))
+    headers.foreach(h => assertEqualsDouble(h, 36, 1))
     // The menu bar and shell rows fill the 900 px window.
     val dock = height(w.shell.dockArea)
     assertEqualsDouble(height(w.shell.menuBar) + 48 + 34 + dock + 26, 900, 1)
@@ -463,36 +463,21 @@ class AppShellFxSuite extends ShellFxSuite:
 
   // --- Maximize and keys the dock would otherwise own ------------------------
 
-  /** The maximize button in the header of the group showing `pane`. */
-  private def maximizeButton(w: StudioWindow, pane: String): javafx.scene.Node = runOnFx {
-    val node  = w.host.node(StudioPaneId.of(pane).fold(e => fail(e.message), identity)).get
-    val group = Iterator
-      .iterate(node)(_.getParent)
-      .takeWhile(_ != null)
-      .find(_.getStyleClass.contains("dock-group"))
-      .getOrElse(fail(s"$pane is in no group"))
-    group.lookup(".dock-header-button.maximize")
-  }
-
-  fxStage.test("the header's maximize reaches the model; ⌘⇧↩ then restores both") { fx =>
-    val w      = boot(fx, StoryModels.t2Compare)
-    val model  = () => runOnFx(w.runtime.model)
-    val docked = () => runOnFx(w.host.dock.state.maximized)
-    // Another group than the focused one (a wide one: a narrow header folds
-    // its maximize into the tab menu): the model follows focus too.
-    fx.robot.click(maximizeButton(w, "compare.contrast"))
-    assert(model().isMaximized)
-    assertEquals(model().focusedPane.value, "compare.contrast")
-    assert(docked().isDefined)
-    fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
-    assert(!model().isMaximized)
-    assertEquals(docked(), None)
-    // And the other way round: the key maximizes, the header restores.
-    fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
-    assert(model().isMaximized && docked().isDefined)
-    fx.robot.click(maximizeButton(w, "compare.contrast"))
-    assert(!model().isMaximized)
-    assertEquals(docked(), None)
+  fxStage.test("⌘⇧↩ maximizes the focused group and restores it; the dock follows the model") {
+    fx =>
+      val w      = boot(fx, StoryModels.t2Compare)
+      val model  = () => runOnFx(w.runtime.model)
+      val docked = () => runOnFx(w.host.dock.state.maximized)
+      // The v4 pane header has no maximize button (the golden's): the key is
+      // the way, on the focused group.
+      dispatch(fx, w, Intent.FocusPane(StudioPaneId.of("compare.contrast").toOption.get))
+      fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
+      assert(model().isMaximized)
+      assertEquals(model().focusedPane.value, "compare.contrast")
+      assert(docked().isDefined)
+      fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
+      assert(!model().isMaximized)
+      assertEquals(docked(), None)
   }
 
   fxStage.test("F6 and ⇧F6 cycle groups; ⌃⇥ and ⌃⇧⇥ cycle tabs through the dock") { fx =>
@@ -518,11 +503,11 @@ class AppShellFxSuite extends ShellFxSuite:
 
   fxStage.test("touring every perspective, focusing and maximizing saves no layout") { fx =>
     val w = boot(fx, StoryModels.t2Compare)
-    Vector(1, 2, 3, 4, 5).foreach { d =>
+    Vector(1, 2, 3, 4).foreach { d =>
       fx.robot.press(KeyCode.valueOf(s"DIGIT$d"), shortcut)
       fx.robot.press(KeyCode.F6)
     }
-    fx.robot.press(KeyCode.DIGIT4, shortcut)
+    fx.robot.press(KeyCode.DIGIT3, shortcut)
     dispatch(fx, w, Intent.OpenCrumb(0))
     fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
     assert(runOnFx(w.host.dock.state.maximized).isDefined)

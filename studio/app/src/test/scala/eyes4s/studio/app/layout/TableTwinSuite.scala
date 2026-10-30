@@ -81,7 +81,10 @@ class TableTwinSuite extends munit.FunSuite:
     val (b, bTable) = (decl("t.b", PaneKind.Plot), decl("t.b.table", PaneKind.Table))
     val root        = LayoutNode.Split(
       Axis.Horizontal,
-      NonEmptyVector.of(grp(a, aTable, b) -> 0.5, grp(bTable) -> 0.5)
+      NonEmptyVector.of(
+        grp(a, aTable, b) -> CellSize.Share(0.5),
+        grp(bTable)       -> CellSize.Share(0.5)
+      )
     )
     val layout = PerspectiveLayout(
       LayoutId("t"),

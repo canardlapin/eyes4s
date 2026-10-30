@@ -7,9 +7,6 @@ button: Admission, current location
 list: Sources
 button: Repair…
 button: Show 4 trials
-region: Column mapping
-text-field: Preset name
-button: Revert
 region: Admission
 button: Inventory: 960 trials
 button: Admitted: 937 trials
