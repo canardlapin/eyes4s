@@ -148,7 +148,37 @@ class TokenFilesSuite extends munit.FunSuite:
   // control (#B86E0E, with #D98A1C as its fill), and the selection fill
   // (--sel-fill) landed with ticket 9 (docs/studio/design/REVIEW.md): none is
   // open. A board revised ahead of the code records its ticket here.
-  private val deviations: Map[(String, String), String] = Map.empty
+  //
+  // The v4 overhaul golden (docs/studio/overhaul/FROZEN.md, v4i) supersedes
+  // the boards' chrome, role and map colours; the boards stay as the record
+  // of the 2026-10 design until the port replaces them.
+  private val overhaul = "v4 overhaul golden (docs/studio/overhaul/FROZEN.md)"
+  private val deviations: Map[(String, String), String] =
+    (List(
+      "ground",
+      "hairline",
+      "ink-2",
+      "ink-3",
+      "match-soft",
+      "query",
+      "query-soft",
+      "sel-fill",
+      "surface",
+      "surface-2",
+      "surface-3",
+      "warn-text"
+    ).map("light" -> _) ++ List(
+      "ground",
+      "hairline",
+      "ink-3",
+      "isoline-case",
+      "match",
+      "query",
+      "surface",
+      "surface-2",
+      "surface-3"
+    ).map("dark" -> _) ++ List("isoline-case", "ramp-0", "ramp-1", "ramp-2", "ramp-3")
+      .map("palettes" -> _)).map(_ -> overhaul).toMap
 
   // Board-only colours that are not product tokens: the stand-in stimulus
   // picture's pixels and the macOS title-bar buttons the boards draw.
@@ -186,11 +216,12 @@ class TokenFilesSuite extends munit.FunSuite:
     // Every token the boards do not name is a recorded addition: the inner
     // selection band, and the paper hatch of a figure tile's cells without
     // coverage (slice S27), which the Figures board never draws because its
-    // tiles have none.
+    // tiles have none; and the v4 overhaul golden's stronger rule and plot
+    // grid.
     val named = boards.flatMap(_._2.keySet).toSet
     assertEquals(
       Tokens.all.map(_.cssName).filterNot(named),
-      List("sel-ring-inner", "fig-hatch", "fig-hatch-ground")
+      List("hairline-strong", "plot-grid", "sel-ring-inner", "fig-hatch", "fig-hatch-ground")
     )
     // The deviations are real: the boards still say otherwise.
     deviations.keys.foreach { case (block, name) =>

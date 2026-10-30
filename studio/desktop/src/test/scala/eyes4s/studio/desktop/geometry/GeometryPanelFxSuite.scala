@@ -328,13 +328,13 @@ class GeometryPanelFxSuite extends StudioFxSuite:
           .toVector
         assertEquals(strokes, expected, what)
       }
-      // >=64 on Dark; 4-15 to >=64 on Mid; 1-3 and 4-15 on Light.
+      // 4-15 to >=64 on Dark; 1-3 to 16-63 on Mid; none on Light (v4 ramp).
       assertEquals(
         swatches.map(_._3.nonEmpty),
         stage match
-          case StageVariant.Dark  => Vector(false, false, false, true)
-          case StageVariant.Mid   => Vector(false, true, true, true)
-          case StageVariant.Light => Vector(true, true, false, false)
+          case StageVariant.Dark  => Vector(false, true, true, true)
+          case StageVariant.Mid   => Vector(true, true, true, false)
+          case StageVariant.Light => Vector(false, false, false, false)
       )
       fx.snapshot(StudioTheme.Light).foreach { p =>
         Files.copy(

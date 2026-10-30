@@ -220,7 +220,7 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
       // Where the map fades out is said to assistive technology (and shown as
       // the key's tooltip), as the board's title says it.
       val said = runOnFx(Option(p.rampItem.getAccessibleText))
-      assert(said.exists(_.contains("fading out below 10 percent of max")), said)
+      assert(said.exists(_.contains("fading out below 25 percent of max")), said)
       // Map off: no keys.
       fire(fx, p.toggles(TrialToggle.Map))
       eventually(fx, "the scene without its map")(scene(w).exists(_.map.isEmpty))

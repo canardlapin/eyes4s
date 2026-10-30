@@ -196,7 +196,7 @@ class TrialViewMapFxSuite extends StudioFxSuite:
   private lazy val cell = ret07.placement.width.toDouble / Columns
 
   fxStage.test(
-    "the map is the run's grid from the raster cache, drawn at 0.6, values unchanged"
+    "the map is the run's grid from the raster cache, drawn at 0.85, values unchanged"
   ) { fx =>
     val w    = Wired(fx)
     val hash = sloped.contentHash
@@ -227,14 +227,14 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     // The grid's values are as the backend served them.
     assertEquals(sloped.contentHash, hash)
     // On screen: a cell far from the isoline is its ramp colour over the
-    // blank screen, at 0.6 times its own alpha (below 10% of the limits, a
+    // blank screen, at 0.85 times its own alpha (below 25% of the limits, a
     // mass cell fades in).
     val img    = snapshot(fx, SnapshotScale.X1)
     val px     = pixelAt(w, frame, frameLeft + 5.5 * cell, frameTop + 5.5 * cell, 1)
     val argb   = MapColours.argb(slopedStyle, sloped.atTop(5, 5))
     val screen = Tokens.palette(PaletteToken.Screen)
-    val a      = ((argb >>> 24) & 0xff) / 255.0 * 0.6
-    assert(a < 0.6, s"cell (5, 5) should lie under the alpha floor, at alpha $a")
+    val a      = ((argb >>> 24) & 0xff) / 255.0 * 0.85
+    assert(a < 0.85, s"cell (5, 5) should lie under the alpha floor, at alpha $a")
     def mix(c: Int, s: Int) = math.round(c * a + s * (1.0 - a)).toInt
     val want                = (
       mix((argb >> 16) & 0xff, screen.red),
@@ -532,7 +532,7 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     assertEquals(legendBox._4, MapLegendScene.HeightPx)
     assert(runOnFx(w.view.getHeight) >= trialBox._2 + trialBox._4 + legendBox._4)
     // On screen: the zero swatch is see-through (the stage shows), the last
-    // is the ramp's darkest stop at 0.6 over the stage.
+    // is the ramp's darkest stop at 0.85 over the stage.
     val img                                  = snapshot(fx, SnapshotScale.X1)
     def swatchPixel(k: Int): (Int, Int, Int) =
       val p = runOnFx(
@@ -554,9 +554,9 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     assert(near(zero, (stage.red, stage.green, stage.blue)), s"zero swatch $zero")
     val full = swatchPixel(MapLegendScene.Swatches - 1)
     val want = (
-      over(0.6)(darkest.red, stage.red),
-      over(0.6)(darkest.green, stage.green),
-      over(0.6)(darkest.blue, stage.blue)
+      over(0.85)(darkest.red, stage.red),
+      over(0.85)(darkest.green, stage.green),
+      over(0.85)(darkest.blue, stage.blue)
     )
     assert(near(full, want), s"max swatch $full, expected about $want")
     // Its words are the catalogue's, the floor's included.
@@ -564,7 +564,7 @@ class TrialViewMapFxSuite extends StudioFxSuite:
       .flatMap(g => g +: g.children)
       .collect { case t: Grob.Text => t.label }
     assert(words.contains(MapLegendScene.rampText), words)
-    assert(MapLegendScene.rampText.endsWith("fades below 10% of max"), MapLegendScene.rampText)
+    assert(MapLegendScene.rampText.endsWith("fades below 25% of max"), MapLegendScene.rampText)
     w.dispose()
   }
 
@@ -607,7 +607,7 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     drawn(w, 1.0)(_.map.contains(grid.map))
     val (legend, _) = legendDrawn(w)
     val said        =
-      "Map legend: fixation duration mass per cell from 0 to max, fading out below 10 " +
+      "Map legend: fixation duration mass per cell from 0 to max, fading out below 25 " +
         "percent of max, shared colour limits across panels; isolines enclose 50 and 90 " +
         "percent of mass"
     assertEquals(legend.description, said)
