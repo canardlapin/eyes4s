@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/bbuchsbaum/eyesim",
+  "commit": "b6ccc1bc9967d32ab548db136a27d10dbaa0fd48",
+  "scope": "Supplemental fixation_revisits method replay; separate from the older required eyesim baseline; not a full package qualification",
+  "files": {
+    "fixations.R": "00278d2b465ecdbb5ba0c0bc1a62d8d6811bedc7aee0421014c1799d845622f9",
+    "revisits.R": "4ab82363dc77681297237efc3c75eed74d6719b10118937d7f336f3985d2651f"
+  }
+}

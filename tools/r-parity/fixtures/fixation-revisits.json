@@ -1,0 +1,551 @@
+{
+  "schema": 1,
+  "input_sha256": "381f4a886d93c2c2b1b8983eaf755365a7caec9d7258214bcea2ff05d8d73a19",
+  "oracle": "rational strict-distance predicates and weighted set unions; independent of eyesim and eyes4s",
+  "results": [
+    {
+      "case": "ABCA conditional null",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 141.4213562373095,
+          "expected": 0.3333333333333333
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 3,
+          "match_index": 0,
+          "distance": 0.0,
+          "expected": 0.6666666666666666
+        }
+      ],
+      "rate": 0.5,
+      "expected_revisits": 1.0
+    },
+    {
+      "case": "dwell cluster",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        }
+      ],
+      "rate": null,
+      "expected_revisits": null
+    },
+    {
+      "case": "unrestricted adjacent returns",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 1,
+          "match_index": 0,
+          "distance": 1.0,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 1,
+          "match_index": 1,
+          "distance": 1.0,
+          "expected": null
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": null
+    },
+    {
+      "case": "strict match boundary",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 10.0,
+          "expected": 0.5
+        }
+      ],
+      "rate": 0.0,
+      "expected_revisits": 0.5
+    },
+    {
+      "case": "inclusive arrival boundary",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 0.0,
+          "expected": 1.0
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": 1.0
+    },
+    {
+      "case": "not an exit from original region",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 9.0,
+          "expected": null
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": null
+    },
+    {
+      "case": "nearest differs from latest match",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 8.0,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 1,
+          "distance": 0.0,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 2,
+          "distance": 1.0,
+          "expected": null
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": null
+    },
+    {
+      "case": "expired history",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 200.0,
+          "expected": 1.0
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 100.0,
+          "expected": 0.5
+        }
+      ],
+      "rate": 0.0,
+      "expected_revisits": 1.5
+    },
+    {
+      "case": "overlapping coverage expires individually",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 100.0,
+          "expected": 0.5
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 200.0,
+          "expected": 0.5
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 2,
+          "distance": 0.0,
+          "expected": 1.0
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 100.0,
+          "expected": 0.5
+        }
+      ],
+      "rate": 0.25,
+      "expected_revisits": 2.5
+    },
+    {
+      "case": "weighted reference",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 0.0,
+          "expected": 0.25
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": 0.25
+    },
+    {
+      "case": "partial expectation support",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 200.0,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 3,
+          "match_index": 0,
+          "distance": 0.0,
+          "expected": 1.0
+        }
+      ],
+      "rate": 0.5,
+      "expected_revisits": null
+    },
+    {
+      "case": "empty reference",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 0.0,
+          "expected": null
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": null
+    },
+    {
+      "case": "zero reference mass",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 0.0,
+          "expected": null
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": null
+    },
+    {
+      "case": "single fixation",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        }
+      ],
+      "rate": null,
+      "expected_revisits": null
+    },
+    {
+      "case": "Manhattan diagonal",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": 7.0,
+          "expected": 0.5
+        }
+      ],
+      "rate": 0.0,
+      "expected_revisits": 0.5
+    },
+    {
+      "case": "Euclidean diagonal",
+      "rows": [
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": false,
+          "revisit": false,
+          "lag": null,
+          "match_index": null,
+          "distance": null,
+          "expected": null
+        },
+        {
+          "opportunity": true,
+          "revisit": true,
+          "lag": 2,
+          "match_index": 0,
+          "distance": 5.0,
+          "expected": 1.0
+        }
+      ],
+      "rate": 1.0,
+      "expected_revisits": 1.0
+    }
+  ]
+}

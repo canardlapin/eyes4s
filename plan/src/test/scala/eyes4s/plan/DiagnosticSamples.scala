@@ -997,5 +997,6 @@ object DiagnosticSamples:
       ),
       ProjectFinding.MissingSchema(DefinitionId.timeline, Vector(2))
     ),
-    generated[ScanpathComparisonError]("ScanpathComparisonError")
+    generated[ScanpathComparisonError]("ScanpathComparisonError"),
+    generated[RevisitError]("RevisitError")
   )
