@@ -18,7 +18,7 @@ package eyes4s.studio.app.keys
 
 import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.execution.JobPhase
+import eyes4s.studio.core.execution.{ExecutionJob, JobPhase}
 import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.core.command.{CommandError, HistoryStack}
 import eyes4s.studio.core.document.Perspective
@@ -207,19 +207,25 @@ object CommandRegistry:
     always(Intent.ToggleMaximize)
   )
 
-  /** Cancel the active job, when its run is still running in the document. */
+  /** Whether `job` can be cancelled: queued or running, and its run still
+    * running in the document.
+    */
+  def cancellable(m: AppModel, job: ExecutionJob): Boolean =
+    (job.phase match
+      case JobPhase.Queued | JobPhase.Running(_) => true
+      case _                                     => false
+    ) &&
+      m.document.job(job.run).contains(job.id)
+
+  /** Cancel the active job, when its run is still running in the document:
+    * ⌘. asks first, in the state menu (overhaul decision 3).
+    */
   val cancelRun: AppCommand = AppCommand(
     CommandId.declared("run.cancel"),
     MessageId.CommandCancelRun,
     MenuSection.Run,
-    None,
-    m =>
-      m.jobs.active
-        .filter(_.phase match
-          case JobPhase.Queued | JobPhase.Running(_) => true
-          case _                                     => false)
-        .filter(j => m.document.job(j.run).contains(j.id))
-        .map(j => Intent.CancelJob(j.id))
+    Some(KeyChord.command(Key.Period)),
+    m => m.jobs.active.filter(cancellable(m, _)).map(j => Intent.RequestCancelJob(j.id))
   )
 
   /** Show the run the shelf holds ready; disabled exactly when it holds none. */

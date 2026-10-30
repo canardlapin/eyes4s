@@ -41,6 +41,7 @@ object ShellKeys:
     case KeyCode.ESCAPE                   => Some(Key.Escape)
     case KeyCode.F6                       => Some(Key.F6)
     case KeyCode.TAB                      => Some(Key.Tab)
+    case KeyCode.PERIOD                   => Some(Key.Period)
     case _                                => None
 
   /** The key code a menu accelerator uses for `key`. */
@@ -58,6 +59,7 @@ object ShellKeys:
     case Key.Escape       => KeyCode.ESCAPE
     case Key.F6           => KeyCode.F6
     case Key.Tab          => KeyCode.TAB
+    case Key.Period       => KeyCode.PERIOD
 
   /** A chord as a menu accelerator, so the system menu shows it (S1.9). ⌘
     * is the platform's shortcut key, as in [[chord]].

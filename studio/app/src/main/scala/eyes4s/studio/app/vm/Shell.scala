@@ -20,6 +20,7 @@ import eyes4s.studio.app.{AppModel, Confirmation, Intent}
 import eyes4s.studio.app.jobs.JobHeadline
 import eyes4s.studio.core.backend.{ProgressTotal, RunId}
 import eyes4s.studio.core.execution.{ExecutionJob, JobPhase, Meter, MeterTotal}
+import eyes4s.studio.core.backend.AnalysisRevision
 import eyes4s.studio.app.keys.CommandRegistry
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
@@ -27,7 +28,8 @@ import eyes4s.studio.core.document.{
   AdmissionDecision,
   DatasetRevisionSpec,
   Perspective,
-  RecipeChange
+  RecipeChange,
+  RunRef
 }
 import eyes4s.studio.core.freshness.{
   Badge,
@@ -53,7 +55,8 @@ object Shell:
       p.banner,
       p.status,
       model.notice.map(n => NoticeVM(n.message(messages), Intent.Dismiss)),
-      p.confirmation
+      p.confirmation,
+      p.state
     )
 
   def appBar(model: AppModel, messages: Messages = Messages.english): AppBarVM =
@@ -67,6 +70,9 @@ object Shell:
 
   def status(model: AppModel, messages: Messages = Messages.english): StatusBarVM =
     Projection(model, messages).status
+
+  def state(model: AppModel, messages: Messages = Messages.english): StateButtonVM =
+    Projection(model, messages).state
 
   def confirmation(
       model: AppModel,
@@ -129,8 +135,8 @@ object Shell:
     private def cancel(job: ExecutionJob): ActionVM =
       ActionVM(
         messages(Cancel),
-        CommandRegistry.cancelRun.intent(m).contains(Intent.CancelJob(job.id)),
-        Intent.CancelJob(job.id),
+        CommandRegistry.cancelRun.intent(m).contains(Intent.RequestCancelJob(job.id)),
+        Intent.RequestCancelJob(job.id),
         Some(messages(JobCancelAccessible, job.run.number.toString, job.id.number.toString))
       )
 
@@ -512,12 +518,275 @@ object Shell:
         )
     }
 
+    // --- State button (overhaul decisions 2 and 3) ----------------------------------
+
+    private def jobActive: Boolean = m.jobs.headline match
+      case JobHeadline.Active(_) => true
+      case _                     => false
+
+    /** The job the Analysis slot shows, while there is one to tell. */
+    private def jobSlot: Option[StateSlotVM] = m.jobs.headline match
+      case JobHeadline.Idle        => None
+      case JobHeadline.Active(job) =>
+        val n = job.run.number.toString
+        job.phase match
+          case JobPhase.Queued =>
+            Some(StateSlotVM(messages(StateJob, n, messages(JobQueued).toLowerCase)))
+          case JobPhase.Running(progress) =>
+            val pairs = progress.pairs
+            Some(
+              StateSlotVM(
+                messages(StateJob, n, labels.stage(progress.stage).toLowerCase),
+                count = Some(messages(JobCount, Format.count(pairs.done), total(pairs.total))),
+                progress = fraction(pairs)
+              )
+            )
+          case _ =>
+            Some(StateSlotVM(messages(StateJob, n, messages(JobCancelling).toLowerCase)))
+      case JobHeadline.Failed(job, diagnostics) =>
+        Some(
+          StateSlotVM(failedTitle(job, diagnostics.size), dot = Some(FreshnessTone.Failed))
+        )
+      case JobHeadline.Ready(notice) =>
+        Some(StateSlotVM(messages(JobReady, notice.run.number.toString)))
+
+    private def shown: Option[RunRef] = m.freshness.badge match
+      case Badge.Shown(run, _, _) => Some(run)
+      case Badge.NoRun(_, _)      => None
+
+    def runSlot: StateSlotVM = m.freshness.badge match
+      case Badge.Shown(run, standing, newer) =>
+        if newer.isDefined || jobActive then
+          StateSlotVM(
+            messages(StateShowingRun, run.id.number.toString),
+            dot = Some(FreshnessTone.Showing)
+          )
+        else
+          StateSlotVM(
+            messages(StateRun, run.id.number.toString, badgeState(standing)),
+            dot = Some(tone(m.freshness.badge.tone))
+          )
+      case Badge.NoRun(_, _) =>
+        StateSlotVM(messages(StateNoRun), dot = Some(FreshnessTone.NoRun))
+
+    private def pendingWord(d: DatasetRevisionSpec): String = d.decision match
+      case AdmissionDecision.Verifying(_) => messages(StateVerifying)
+      case _                              => messages(StateNotAdmitted)
+
+    def dataSlot: StateSlotVM = pendingDataset match
+      case Some(d) =>
+        StateSlotVM(messages(StateDataQualified, d.id.label, pendingWord(d)), draft = true)
+      case None =>
+        doc.latestAdmitted match
+          case None => StateSlotVM(messages(StateNoData), muted = true)
+          case Some(d) if shown.forall(_.dataset == d.id) =>
+            StateSlotVM(messages(StateData, d.id.label), muted = true)
+          case Some(d) =>
+            val run = shown.fold("")(_.id.number.toString)
+            StateSlotVM(
+              messages(StateDataQualified, d.id.label, messages(StateNotInRun, run))
+            )
+
+    /** The draft's qualifier: running as the active job's run, blocked, or
+      * not run.
+      */
+    private def draftWord(chip: eyes4s.studio.core.freshness.DraftChip): String =
+      m.jobs.active.filter(_.stamp.revision == chip.draft.id) match
+        case Some(job) => messages(StateRunningAs, job.run.number.toString)
+        case None      =>
+          chip.readiness match
+            case DraftReadiness.Blocked(bs) =>
+              labels.plural(bs.length, BlockersOne, BlockersMany)
+            case _ => messages(StateNotRun)
+
+    private def savedAnalysis: Option[AnalysisRevision] = m.freshness.badge match
+      case Badge.Shown(run, _, _)   => Some(run.analysis)
+      case Badge.NoRun(analysis, _) => analysis
+
+    def analysisSlot: StateSlotVM = jobSlot.getOrElse(m.freshness.draft match
+      case Some(chip) =>
+        StateSlotVM(
+          messages(StateAnalysisQualified, chip.draft.id.label, draftWord(chip)),
+          draft = true
+        )
+      case None =>
+        savedAnalysis.fold(StateSlotVM(messages(StateNoAnalysis), muted = true))(a =>
+          StateSlotVM(messages(StateAnalysis, a.label), muted = true)
+        ))
+
+    private def cancellableJob: Option[ExecutionJob] =
+      m.jobs.active.filter(CommandRegistry.cancellable(m, _))
+
+    private def runSection: StateSectionVM =
+      val slot = runSlot
+      shown match
+        case Some(run) =>
+          val stale = m.freshness.badge match
+            case Badge.Shown(_, RunStanding.Stale(_), _) => banner.map(_.detail)
+            case _                                       => None
+          val completed = m.freshness.banner.collect {
+            case Banner.NewerCompleted(_, newer, _) =>
+              showAction(newer.id)
+          }
+          StateSectionVM(
+            slot.text,
+            dot = slot.dot,
+            facts = Vector(
+              messages(StateFactAnalysis) -> run.analysis.label,
+              messages(StateFactData)     -> run.dataset.label
+            ),
+            note = stale,
+            actions = completed.toVector
+          )
+        case None =>
+          StateSectionVM(
+            slot.text,
+            dot = slot.dot,
+            actions = Vector(
+              ActionVM(
+                messages(OpenAnalysis),
+                true,
+                Intent.SwitchPerspective(Perspective.Analysis)
+              )
+            )
+          )
+
+    private def openData: ActionVM =
+      ActionVM(messages(OpenInData), true, Intent.SwitchPerspective(Perspective.Data))
+
+    private def datasetSection: StateSectionVM = pendingDataset match
+      case Some(d) =>
+        val notes = pendingBadge(d)._2
+        StateSectionVM(
+          messages(StateDatasetHead, d.id.label, pendingWord(d)),
+          draft = true,
+          note = Option.when(notes.nonEmpty)(notes.mkString(" ")),
+          actions = Vector(openData)
+        )
+      case None =>
+        doc.latestAdmitted.fold(
+          StateSectionVM(messages(StateNoData), actions = Vector(openData))
+        )(d =>
+          StateSectionVM(
+            messages(StateDatasetHead, d.id.label, messages(StateAdmitted)),
+            actions = Vector(openData)
+          )
+        )
+
+    private def analysisSection: StateSectionVM = m.freshness.draft match
+      case Some(chip) =>
+        val draftNote = m.freshness.banner.collect { case Banner.DraftNotRun(_, _, _, _) =>
+          banner.map(b => s"${b.lead} ${b.detail}".trim)
+        }.flatten
+        StateSectionVM(
+          messages(StateAnalysisQualified, chip.draft.id.label, draftWord(chip)),
+          draft = true,
+          note = draftNote.orElse(draftChip.map(_.text)),
+          actions = Vector(
+            ActionVM(messages(ReviewInAnalysis), true, Intent.ReviewDraft),
+            ActionVM(messages(DiscardDraft), true, Intent.RequestDiscardDraft)
+          ),
+          destructive = Some(1)
+        )
+      case None =>
+        val running = m.jobs.active.filter(j => !savedAnalysis.contains(j.stamp.revision))
+        val head    = running.fold(
+          savedAnalysis.fold(messages(StateNoAnalysis))(a => messages(StateAnalysis, a.label))
+        )(j =>
+          messages(
+            StateAnalysisQualified,
+            j.stamp.revision.label,
+            messages(StateRunningAs, j.run.number.toString)
+          )
+        )
+        StateSectionVM(head)
+
+    private def jobsSection: StateSectionVM =
+      val head = messages(StateJobsHead)
+      m.jobs.headline match
+        case JobHeadline.Active(job) =>
+          val chip   = jobsChip
+          val show   = Option.when(newer(m.freshness.badge).isDefined)(showAction(job.run))
+          val cancel = cancellableJob.map(j =>
+            ActionVM(
+              messages(CancelRunEllipsis, j.run.number.toString),
+              true,
+              Intent.RequestCancelJob(j.id)
+            )
+          )
+          StateSectionVM(
+            head,
+            note = Some(chip.text),
+            progress = chip.progress,
+            actions = show.toVector ++ cancel
+          )
+        case JobHeadline.Failed(job, diagnostics) =>
+          StateSectionVM(
+            head,
+            note = Some(failedTitle(job, diagnostics.size)),
+            actions = Vector(ActionVM(jobsChip.title, true, Intent.OpenDiagnostics))
+          )
+        case JobHeadline.Ready(notice) =>
+          StateSectionVM(
+            head,
+            note = Some(messages(JobReady, notice.run.number.toString)),
+            actions = Vector(showAction(notice.run))
+          )
+        case JobHeadline.Idle =>
+          val ended = this.ended.map(_.text)
+          StateSectionVM(
+            head,
+            note = Some((Vector(messages(StateJobsNone)) ++ ended).mkString(" · "))
+          )
+
+    private def confirmSection: Option[StateSectionVM] = m.pending.collect {
+      case Confirmation.CancelRun(job, run) =>
+        val done = m.jobs.job(job).flatMap(_.phase.lastReport).flatMap { p =>
+          p.pairs.total match
+            case MeterTotal.Exact(t) =>
+              Some(messages(ConfirmCancelRunDone, Format.count(p.pairs.done), Format.count(t)))
+            case _ => None
+        }
+        val stays = shown.map(r => messages(ConfirmCancelRunShown, r.id.number.toString))
+        StateSectionVM(
+          messages(ConfirmCancelRun, run.number.toString),
+          note = Some((done.toVector ++ stays).mkString(" ")).filter(_.nonEmpty),
+          actions = Vector(
+            ActionVM(messages(CancelRunConfirm), true, Intent.Confirm),
+            ActionVM(messages(KeepRunning), true, Intent.Dismiss)
+          ),
+          destructive = Some(0),
+          default = Some(1)
+        )
+    }
+
+    def state: StateButtonVM =
+      val cancel = cancellableJob.map { j =>
+        val n = j.run.number.toString
+        ActionVM(
+          messages(StateCancelAccessible, n),
+          true,
+          Intent.RequestCancelJob(j.id),
+          Some(messages(StateCancelAccessible, n))
+        )
+      }
+      val vm = StateButtonVM(
+        runSlot,
+        dataSlot,
+        analysisSlot,
+        cancel,
+        "",
+        Vector(runSection, datasetSection, analysisSection, jobsSection),
+        confirmSection
+      )
+      vm.copy(accessible = messages(StateAccessible, vm.text))
+
     // --- Confirmation ------------------------------------------------------------
 
     /** Discard draft's question, while it is pending: "Discard draft rev 5
       * and its 1 change? Runs are not affected."
       */
-    def confirmation: Option[ConfirmationVM] = m.pending.map {
+    def confirmation: Option[ConfirmationVM] = m.pending.collect {
       case Confirmation.DiscardDraft(draft) =>
         val changes = m.freshness.draft.filter(_.draft.id == draft).fold(0)(_.changes)
         ConfirmationVM(

@@ -95,6 +95,15 @@ enum MessageId derives CanEqual:
   case PerspectiveAccessible, ProjectAccessible, CrumbCurrentAccessible, CrumbOpensAccessible
   case DraftChipAccessible, ConfirmDiscardDraft, KeepDraft, TabShowTable, TabShowPlot
 
+  // --- State button and menu (overhaul decisions 2 and 3) ---------------------------------
+  case StateRun, StateShowingRun, StateNoRun, StateData, StateDataQualified, StateNoData
+  case StateAnalysis, StateAnalysisQualified, StateNoAnalysis, StateNotRun, StateRunningAs
+  case StateJob, StateAccessible, StateCancelAccessible, StateDatasetHead, StateAdmitted
+  case StateNotAdmitted, StateVerifying, StateNotInRun, StateJobsHead, StateJobsNone
+  case StateFactAnalysis, StateFactData, OpenInData
+  case CancelRunEllipsis, ConfirmCancelRun, ConfirmCancelRunDone, ConfirmCancelRunShown
+  case CancelRunConfirm, KeepRunning, StateMenuTitle
+
 /** A message catalogue: one template per id. */
 trait Catalogue:
   def template(id: MessageId): String
@@ -105,15 +114,47 @@ object Catalogue:
   val english: Catalogue = id =>
     import MessageId.*
     id match
-      case AppName             => "Eyes Studio"
-      case Workspace           => "Workspace"
-      case UntitledProject     => "Untitled project"
-      case WindowTitle         => "{0}.eyes"
-      case PerspectiveData     => "Data"
-      case PerspectiveExplore  => "Explore"
-      case PerspectiveAnalysis => "Analysis"
-      case PerspectiveCompare  => "Compare"
-      case PerspectiveFigures  => "Figures"
+      case AppName => "Eyes Studio"
+      // State button: slots and menu
+      case StateRun               => "Run {0} · {1}"
+      case StateShowingRun        => "Showing run {0}"
+      case StateNoRun             => "No run yet"
+      case StateData              => "Data {0}"
+      case StateDataQualified     => "Data {0} · {1}"
+      case StateNoData            => "No data"
+      case StateAnalysis          => "Analysis {0}"
+      case StateAnalysisQualified => "Analysis {0} · {1}"
+      case StateNoAnalysis        => "No analysis"
+      case StateNotRun            => "not run"
+      case StateRunningAs         => "running as run {0}"
+      case StateJob               => "Run {0} · {1}"
+      case StateAccessible        => "Study state: {0}. Opens the state menu"
+      case StateCancelAccessible  => "Cancel run {0}"
+      case StateDatasetHead       => "Dataset {0} · {1}"
+      case StateAdmitted          => "admitted"
+      case StateNotAdmitted       => "not admitted"
+      case StateVerifying         => "verifying"
+      case StateNotInRun          => "not in run {0}"
+      case StateJobsHead          => "Jobs"
+      case StateJobsNone          => "None running"
+      case StateFactAnalysis      => "Analysis"
+      case StateFactData          => "Data"
+      case OpenInData             => "Open in Data"
+      case CancelRunEllipsis      => "Cancel run {0}…"
+      case ConfirmCancelRun       => "Cancel run {0}?"
+      case ConfirmCancelRunDone   => "{0} of {1} pairs are done."
+      case ConfirmCancelRunShown  => "Run {0} stays shown."
+      case CancelRunConfirm       => "Cancel run"
+      case KeepRunning            => "Keep running"
+      case StateMenuTitle         => "Study state"
+      case Workspace              => "Workspace"
+      case UntitledProject        => "Untitled project"
+      case WindowTitle            => "{0}.eyes"
+      case PerspectiveData        => "Data"
+      case PerspectiveExplore     => "Explore"
+      case PerspectiveAnalysis    => "Analysis"
+      case PerspectiveCompare     => "Compare"
+      case PerspectiveFigures     => "Figures"
 
       case JobsIdle             => "No jobs"
       case JobsIdleAccessible   => "Jobs: none running"

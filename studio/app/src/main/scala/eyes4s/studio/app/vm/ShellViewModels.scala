@@ -146,6 +146,56 @@ final case class ConfirmationVM(text: String, confirm: ActionVM, cancel: ActionV
 /** A notice to show once (a refused command, undo at a barrier). */
 final case class NoticeVM(text: String, dismiss: Intent) derives CanEqual
 
+/** One slot of the study-wide state button (overhaul decision 2): Run,
+  * Data or Analysis. A slot is muted when it agrees with the shown run and
+  * carries a qualifier only when it differs; `draft` draws the dashed mark
+  * of a dataset not yet admitted or an analysis draft not yet run. While a
+  * job runs, the Analysis slot is the job: its words, count and progress.
+  */
+final case class StateSlotVM(
+    text: String,
+    dot: Option[FreshnessTone] = None,
+    draft: Boolean = false,
+    muted: Boolean = false,
+    count: Option[String] = None,
+    progress: Option[Double] = None
+) derives CanEqual
+
+/** One section of the state menu: its head (with the slot's dot or draft
+  * mark), the facts and sentence under it, and its buttons. `destructive`
+  * marks the button drawn in --fail; `default` the one Enter and Esc press.
+  */
+final case class StateSectionVM(
+    head: String,
+    dot: Option[FreshnessTone] = None,
+    draft: Boolean = false,
+    facts: Vector[(String, String)] = Vector.empty,
+    note: Option[String] = None,
+    progress: Option[Double] = None,
+    actions: Vector[ActionVM] = Vector.empty,
+    destructive: Option[Int] = None,
+    default: Option[Int] = None
+) derives CanEqual
+
+/** The study-wide state button and its menu (overhaul decisions 2 and 3):
+  * three slots, the separate cancel button while a job can be cancelled,
+  * and the menu's sections (Run, Dataset, Analysis, Jobs). `confirm` is
+  * the inline cancel confirmation, open while it is pending; the menu then
+  * shows it alone.
+  */
+final case class StateButtonVM(
+    run: StateSlotVM,
+    data: StateSlotVM,
+    analysis: StateSlotVM,
+    cancel: Option[ActionVM],
+    accessible: String,
+    menu: Vector[StateSectionVM],
+    confirm: Option[StateSectionVM]
+) derives CanEqual:
+  def text: String = Vector(run, data, analysis)
+    .map(s => (Vector(s.text) ++ s.count).mkString(" "))
+    .mkString(" | ")
+
 /** Everything the shell draws around the dock. */
 final case class ShellVM(
     window: WindowVM,
@@ -154,5 +204,6 @@ final case class ShellVM(
     banner: Option[DraftBannerVM],
     status: StatusBarVM,
     notice: Option[NoticeVM],
-    confirmation: Option[ConfirmationVM]
+    confirmation: Option[ConfirmationVM],
+    state: StateButtonVM
 ) derives CanEqual

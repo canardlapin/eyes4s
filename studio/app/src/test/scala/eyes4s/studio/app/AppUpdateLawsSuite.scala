@@ -321,10 +321,16 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
     assertEquals(vm.Shell.project(blocked).notice.map(_.text), blocked.notice.map(_.message))
   }
 
-  test("t3: Cancel on the chip cancels run 8's job") {
+  test("t3: Cancel on the chip asks first; confirming cancels run 8's job") {
     import eyes4s.studio.core.fixture.StoryMoments.*
-    val cancel       = vm.Shell.appBar(StoryModels.t3Summary).jobs.action.get
-    val (_, effects) = AppModel.update(StoryModels.t3Summary, cancel.intent)
+    val cancel         = vm.Shell.appBar(StoryModels.t3Summary).jobs.action.get
+    val (asked, first) = AppModel.update(StoryModels.t3Summary, cancel.intent)
+    assertEquals(first, Vector.empty)
+    assertEquals(asked.pending, Some(Confirmation.CancelRun(run8Job, run8)))
+    // Keep running (Dismiss) cancels nothing; Confirm cancels the job.
+    val (kept, none) = AppModel.update(asked, Intent.Dismiss)
+    assertEquals((kept.pending, none), (None, Vector.empty))
+    val (_, effects) = AppModel.update(asked, Intent.Confirm)
     assert(effects.contains(AppEffect.Execution(ExecutionEffect.Cancel(run8Job))), effects)
   }
 

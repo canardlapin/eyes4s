@@ -160,6 +160,11 @@ final case class HoverAt(view: ViewId, target: StudioRef) derives CanEqual
 enum Confirmation derives CanEqual:
   case DiscardDraft(draft: AnalysisRevision)
 
+  /** Cancel a running job (overhaul decision 3): the state menu opens at
+    * its inline confirmation, and Keep running is the default.
+    */
+  case CancelRun(job: JobId, run: RunId)
+
 /** Something the shell should tell the user once; Dismiss clears it. */
 enum Notice derives CanEqual:
   /** A document command, undo or redo was refused; nothing changed. */
@@ -230,6 +235,8 @@ enum Notice derives CanEqual:
     case RunWaiting => SourcesText(eyes4s.studio.app.text.SourcesTextId.RunWaiting)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
+    case Outdated(Confirmation.CancelRun(_, run)) =>
+      s"${run.label.capitalize} is no longer running; nothing was cancelled."
 
 /** The checks of the project's stored inputs (S2.5): each asked check has
   * a round, and its answer names it. `runAfter` is the Save & run waiting
@@ -408,6 +415,11 @@ enum Intent derives CanEqual:
 
   // --- Jobs and runs --------------------------------------------------------------------
   case CancelJob(job: JobId)
+
+  /** Ask before cancelling (overhaul decision 3): ✕, ⌘. and Run › Cancel
+    * run open the state menu at its confirmation; Confirm cancels.
+    */
+  case RequestCancelJob(job: JobId)
 
   /** Show a finished run through the shelf (`RunShelf.show`): Compare and
     * the banner move to it. Refused (NotReady) unless it is the pending run.
@@ -937,6 +949,13 @@ object AppModel:
     case Intent.DismissReady(run) => (m.copy(jobs = m.jobs.dismiss(run)), none)
     case Intent.ReviewDraft       =>
       navigate(m, Location(Perspective.Analysis, draftTrail(m.document)))
+    case Intent.RequestCancelJob(job) =>
+      m.jobs
+        .job(job)
+        .filter(j => CommandRegistry.cancellable(m, j))
+        .fold((m, none))(j =>
+          (m.copy(pending = Some(Confirmation.CancelRun(j.id, j.run))), none)
+        )
     case Intent.RequestDiscardDraft =>
       m.document.draft.fold((m, none))(d =>
         (m.copy(pending = Some(Confirmation.DiscardDraft(d.id))), none)
@@ -953,6 +972,11 @@ object AppModel:
           val cleared = m.copy(pending = None)
           if m.document.draft.exists(_.id == draft) then
             update(cleared, Intent.Dispatch(Command.DiscardDraft))
+          else (cleared.copy(notice = Some(Notice.Outdated(c))), none)
+        case Some(c @ Confirmation.CancelRun(job, _)) =>
+          val cleared = m.copy(pending = None)
+          if m.jobs.job(job).exists(j => CommandRegistry.cancellable(m, j)) then
+            update(cleared, Intent.CancelJob(job))
           else (cleared.copy(notice = Some(Notice.Outdated(c))), none)
     case Intent.Dismiss => (m.copy(pending = None, notice = None), none)
 

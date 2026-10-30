@@ -199,7 +199,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       assertEquals(chip.label, "Cancel")
       assertEquals(chip.accessible, name)
       assertEquals(mirror.accessible, name)
-      assertEquals(chip.intent, Intent.CancelJob(StoryMoments.run8Job))
+      assertEquals(chip.intent, Intent.RequestCancelJob(StoryMoments.run8Job))
       assertEquals(A11y.tabOrder(model).count(_.name == name), 2)
     assertEquals(
       ActionVM("Show", true, Intent.CancelJob(StoryMoments.run8Job)).accessible,
