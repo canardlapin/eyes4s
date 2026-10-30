@@ -28,7 +28,7 @@ import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StudioFxSuite}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.runtime.{DesktopEffects, PlatformDialogs, ProjectPort}
-import javafx.scene.control.{Button, Label, Labeled}
+import javafx.scene.control.{Button, Labeled}
 import javafx.scene.text.Text
 
 import scala.jdk.CollectionConverters.*
@@ -157,61 +157,29 @@ abstract class ShellFxSuite extends StudioFxSuite:
 
   protected def texts(w: StudioWindow): Vector[String] = runOnFx {
     val bar          = w.shell.appBar
-    val jobs         = bar.jobs
+    val state        = bar.state
     val perspectives = Perspective.values.toVector.map { p =>
-      val t        = bar.switcher(p)
-      val shortcut = t.getGraphic.asInstanceOf[Label].getText
-      s"${drawn(t)} $shortcut${if t.isSelected then " (current)" else ""}"
+      val t = bar.switcher(p)
+      s"${drawn(t)}${if t.isSelected then " (current)" else ""}"
     }
     val app = Vector(
-      s"app.name: ${drawn(bar.wordmark)}",
       s"app.project: ${drawn(bar.project)}",
       s"app.perspectives: ${perspectives.mkString(" | ")}",
-      s"app.jobs: ${(Vector(jobs.drawnParts.mkString(" · ")) ++ Option
-          .when(jobs.cancel.isVisible)(action(jobs.cancel, jobs.cancel.getText))).mkString(" | ")}"
-    ) ++ Option.when(jobs.progress.isVisible)(
-      s"app.jobs.progress: ${Format.percent(jobs.progress.getProgress)}"
-    )
+      s"app.state: ${state.drawnSlots.mkString(" | ")}"
+    ) ++ Option.when(state.cancel.isVisible)(
+      s"app.state.cancel: ${action(state.cancel, state.cancel.getAccessibleText)}"
+    ) ++ state.drawnProgress.map(f => s"app.state.progress: ${Format.percent(f)}")
     val strip = w.shell.contextStrip.node.getChildren.asScala.toVector
     val nav   = strip.take(2).collect { case b: Button => action(b, b.getAccessibleText) }
     val trail = w.shell.contextStrip.crumbs.map { b =>
       if b.getPseudoClassStates.contains(Fx.Current) then s"*${drawn(b)}*" else drawn(b)
     }
-    val chips = strip.drop(4)
-    val fresh = chips.collect {
-      case l: Label if l.getStyleClass.contains("freshness") => drawn(l)
-    }
-    val notes = chips.collect {
-      case l: Label if l.getStyleClass.contains("context-note") => drawn(l)
-    }
-    val draft   = chips.collect { case b: Button => drawn(b) }
     val context = Vector(
       s"context.nav: ${nav.mkString(" | ")}",
-      s"context.trail: ${trail.mkString(" › ")}",
-      s"context.freshness: ${fresh.head}"
-    ) ++ fresh.drop(1).map(n => s"context.newer: $n") ++ notes.map(n => s"context.note: $n") ++
-      draft.map(d => s"context.draft: $d")
-    val bannerNode = w.shell.banner.node
-    val banner     =
-      if !bannerNode.isVisible then Vector.empty
-      else
-        val kids    = bannerNode.getChildren.asScala.toVector
-        val labels  = kids.collect { case l: Label => l }
-        val buttons = kids.collect { case b: Button => action(b, drawn(b)) }
-        Vector(s"banner.lead: ${drawn(labels.head)}") ++
-          labels.drop(1).map(l => s"banner.detail: ${drawn(l)}") ++
-          Option.when(buttons.nonEmpty)(s"banner.actions: ${buttons.mkString(" | ")}")
-    val status                               = w.shell.statusBar
-    def words(box: javafx.scene.layout.HBox) =
-      box.getChildren.asScala.toVector
-        .filter(_.isManaged)
-        .collect {
-          case l: Label  => drawn(l)
-          case b: Button => action(b, drawn(b))
-        }
-        .mkString(" ")
-    val line =
-      s"status: ${words(status.selected)} | ${drawn(status.hint)} | ${words(status.job)} | ${drawn(status.saved)}"
+      s"context.trail: ${trail.mkString(" / ")}"
+    )
+    val status = w.shell.statusBar
+    val line   = s"status: ${drawn(status.hint)} | ${drawn(status.saved)}"
     val notice =
       Option.when(w.shell.notice.node.isVisible)(s"notice: ${drawn(w.shell.notice.text)}")
     val confirm = Option.when(w.shell.confirmation.node.isVisible) {
@@ -221,7 +189,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // Drawn as Keep, then Discard (the destructive button last).
       s"confirm: ${drawn(w.shell.confirmation.text)} | ${buttons.reverse.mkString(" | ")}"
     }
-    app ++ context ++ banner ++ Vector(line) ++ notice ++ confirm
+    val menu =
+      Option.when(state.menu.isShowing && state.asking)(state.drawnMenu).toVector.flatten
+    app ++ context ++ Vector(line) ++ notice ++ confirm ++ menu
   }
 
   /** The S1.0 text rendering of the same model, minus the window line. */

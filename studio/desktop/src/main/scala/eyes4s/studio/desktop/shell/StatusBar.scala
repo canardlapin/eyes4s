@@ -18,14 +18,13 @@ package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.vm.StatusBarVM
-import javafx.scene.control.{Button, Label}
-import javafx.scene.layout.{HBox, Region}
+import javafx.scene.control.Label
+import javafx.scene.layout.HBox
 
-/** The status bar (ticket S1.8), 24 px, always four slots: `● Selected:
-  * path` · the context hint · the job (mirroring the jobs chip, with Cancel
-  * or Show) · `Saved hh:mm` from the last atomic save. It renders a
-  * [[StatusBarVM]]. The job slot's nodes are kept and updated in place, so a
-  * focused Cancel keeps its focus while the job's count changes.
+/** The status bar (ticket S1.8; overhaul v4), 26 px: the context hint, then
+  * `Saved hh:mm` from the last atomic save at the right. The selection and
+  * the job, which it once repeated, are the panes' and the state button's.
+  * It renders a [[StatusBarVM]].
   */
 final class StatusBar(dispatch: Intent => Unit):
 
@@ -33,56 +32,19 @@ final class StatusBar(dispatch: Intent => Unit):
   node.getStyleClass.addAll("status-bar", "t11")
   Fx.fixHeight(node, StatusBar.HeightPx)
 
-  /** The four slots as drawn, for tests: selected, hint, job, saved. */
-  val selected: HBox = HBox()
-  val hint: Label    = Fx.label("", "status-hint")
-  val job: HBox      = HBox()
-  val saved: Label   = Fx.label("", "status-saved")
+  /** The two slots as drawn, for tests: hint and saved. */
+  val hint: Label  = Fx.label("", "status-hint")
+  val saved: Label = Fx.label("", "status-saved")
 
-  private val dot   = Region()
-  private val label = Fx.label("", "status-label")
-  private val path  = Fx.label("", "mono", "t11", "status-path")
+  node.getChildren.setAll(hint, Fx.spacer(), saved)
 
-  /** The job slot: its words, its count in Plex Mono, and its button. */
-  val jobText: Label    = Fx.label("", "status-job-text")
-  val jobCount: Label   = Fx.label("", "mono", "t11", "status-job-count")
-  val jobAction: Button = Button()
-  jobAction.setMnemonicParsing(false)
-  jobAction.getStyleClass.addAll("bar-button", "status-action")
-
-  dot.getStyleClass.add("dot")
-  selected.getStyleClass.add("status-selected")
-  selected.getChildren.setAll(dot, label, path)
-  job.getStyleClass.add("status-job")
-  job.getChildren.setAll(jobText, jobCount, jobAction)
-  node.getChildren.setAll(selected, Fx.rule(), hint, Fx.spacer(), job, Fx.rule(), saved)
-
-  private def show(n: javafx.scene.Node, visible: Boolean): Unit =
-    n.setVisible(visible)
-    n.setManaged(visible)
+  // The bar dispatches nothing now; the parameter keeps the shell's wiring.
+  locally(dispatch)
 
   def render(vm: StatusBarVM): Unit =
-    vm.selected match
-      case Some(p) =>
-        label.setText(vm.selectedLabel)
-        path.setText(p)
-        show(path, true)
-      case None =>
-        label.setText(vm.noSelection)
-        show(path, false)
     hint.setText(vm.hint)
-    jobText.setText(vm.job.text)
-    jobCount.setText(vm.job.count.getOrElse(""))
-    show(jobCount, vm.job.count.isDefined)
-    vm.job.action match
-      case Some(a) =>
-        jobAction.setText(a.label)
-        jobAction.setAccessibleText(a.accessible)
-        jobAction.setDisable(!a.enabled)
-        jobAction.setOnAction(_ => dispatch(a.intent))
-        show(jobAction, true)
-      case None => show(jobAction, false)
     saved.setText(vm.saved)
 
 object StatusBar:
-  val HeightPx: Double = 24
+  /** The v4 golden's status bar. */
+  val HeightPx: Double = 26

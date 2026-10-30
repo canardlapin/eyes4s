@@ -24,15 +24,15 @@ import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.StudioTheme
-import javafx.scene.control.{Button, Label}
+import javafx.scene.control.Button
 import javafx.scene.input.KeyCode
-import javafx.scene.layout.{BorderStrokeStyle, Region}
+import javafx.scene.layout.Region
 
 import scala.jdk.CollectionConverters.*
 
-/** The context strip (ticket S1.6) in the window: back and forward, live
-  * crumbs that cross perspectives (E2E-17), and the freshness badge with the
-  * draft chip or the newer run's chip. Snapshots go to
+/** The trail row (ticket S1.6) in the window: back and forward, and live
+  * crumbs that cross perspectives (E2E-17); and the run's freshness and the
+  * draft, now in the toolbar's state button. Snapshots go to
   * `target/studio-snapshots/ContextStripFxSuite/`.
   */
 class ContextStripFxSuite extends ShellFxSuite:
@@ -51,17 +51,6 @@ class ContextStripFxSuite extends ShellFxSuite:
       .getOrElse(fail(s"no crumb '$label' in ${crumbs(w).map(b => runOnFx(drawn(b)))}"))
 
   private def location(w: StudioWindow) = runOnFx(w.runtime.model.location)
-
-  private def chips(w: StudioWindow): Vector[Label] = strip(w).drop(4).collect {
-    case l: Label if runOnFx(l.getStyleClass.contains("freshness")) => l
-  }
-
-  private def dotOf(l: Label): Vector[String] =
-    runOnFx(l.getGraphic.getStyleClass.asScala.toVector.filter(_.startsWith("tone-")))
-
-  private def draftChip(w: StudioWindow): Option[Button] = strip(w).drop(4).collectFirst {
-    case b: Button if runOnFx(b.getStyleClass.contains("draft-chip")) => b
-  }
 
   private def assertMatchesModel(w: StudioWindow): Unit =
     assertNoDiff(texts(w).mkString("\n"), expected(w).mkString("\n"))
@@ -143,56 +132,59 @@ class ContextStripFxSuite extends ShellFxSuite:
     assertEquals(location(w), before)
   }
 
-  fxStage.test("t2: the badge's teal dot, and the dashed draft chip opens Analysis") { fx =>
-    assumeFullStage(fx)
-    val w     = boot(fx, StoryModels.t2Compare)
-    val badge = chips(w)
-    assertEquals(
-      badge.map(l => runOnFx(drawn(l))),
-      Vector("Analysis rev 4 · run 7 · data r3 · current")
-    )
-    assertEquals(dotOf(badge.head), Vector("tone-current"))
-    val chip = draftChip(w).getOrElse(fail("no draft chip"))
-    assertEquals(runOnFx(drawn(chip)), "Draft rev 5 · 1 change · ready")
-    assertEquals(
-      runOnFx(chip.getAccessibleText),
-      "Draft rev 5 · 1 change · ready; review in Analysis"
-    )
-    val dashed = runOnFx(chip.getBorder.getStrokes.get(0).getTopStyle)
-    assertNotEquals(dashed, BorderStrokeStyle.SOLID)
-    assert(!dashed.getDashArray.isEmpty, "the draft chip's border is dashed")
-    // The strip is 32 px and the chips fit in it.
-    assertEqualsDouble(runOnFx(w.shell.contextStrip.node.getHeight), 32, 1)
-    fx.snapshot(StudioTheme.Light)
-    fx.robot.click(chip)
-    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Analysis)
-    assertEquals(runOnFx(drawn(crumbs(w).last)), "Draft rev 5")
-    // Explore is view-only: no draft chip there.
-    fx.robot.press(KeyCode.DIGIT2, shortcut)
-    assertEquals(draftChip(w), None)
-  }
+  // The freshness badge and the draft chip moved into the toolbar's state
+  // button (overhaul decision 2); their tones are checked there.
 
-  fxStage.test("t3: the two-chip form: 'Showing …' with a hollow dot, then the running run") {
+  fxStage.test("t2: the run's teal dot, the draft's dashed mark; Review in Analysis opens it") {
     fx =>
       assumeFullStage(fx)
-      val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-      val c = chips(w)
-      assertEquals(
-        c.map(l => runOnFx(drawn(l))),
-        Vector("Showing analysis rev 4 · run 7 · data r3", "Rev 5 · run 8 running · 48%")
+      val w     = boot(fx, StoryModels.t2Compare)
+      val state = w.shell.appBar.state
+      assertEquals(runOnFx(state.drawnSlots.head), "Run 7 · current")
+      assertEquals(runOnFx(state.drawnMarks(0)), Vector("tone-current"))
+      assertEquals(runOnFx(state.drawnMarks(2)), Vector("draftmark"))
+      val mark = runOnFx(
+        state.button.lookupAll(".draftmark").asScala.collectFirst { case r: Region => r }.get
       )
-      assertEquals(c.map(dotOf), Vector(Vector("tone-showing"), Vector("tone-running")))
-      // The hollow dot: a ring of ink 2 around the surface.
-      val fills = runOnFx(c.head.getGraphic.asInstanceOf[Region].getBackground.getFills.size)
-      assertEquals(fills, 2)
-      assertEquals(draftChip(w), None)
+      val dashed = runOnFx(mark.getBorder.getStrokes.get(0).getTopStyle)
+      assert(!dashed.getDashArray.isEmpty, "the draft mark is dashed")
+      assertEqualsDouble(runOnFx(w.shell.contextStrip.node.getHeight), 34, 1)
+      fx.snapshot(StudioTheme.Light)
+      fx.robot.click(runOnFx(state.button))
+      eventually(fx, "the state menu")(state.menu.isShowing)
+      val review = runOnFx(
+        state.content
+          .lookupAll(".state-action")
+          .asScala
+          .collectFirst {
+            case b: Button if b.getText == "Review in Analysis" => b
+          }
+          .get
+      )
+      // The menu is its own popup window: its buttons are fired, not clicked.
+      runOnFx(review.fire())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Analysis)
+      assertEquals(runOnFx(drawn(crumbs(w).last)), "Draft rev 5")
+  }
+
+  fxStage.test("t3: showing run 7 with the idle dot; the job's count ticks, the trail stays") {
+    fx =>
+      assumeFullStage(fx)
+      val w     = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+      val state = w.shell.appBar.state
+      assertEquals(
+        runOnFx(state.drawnSlots),
+        Vector("Showing run 7", "Data r3", "Run 8 · comparing 21,400 / 44,845")
+      )
+      assertEquals(runOnFx(state.drawnMarks(0)), Vector("tone-showing"))
       assertMatchesModel(w)
       fx.snapshot(StudioTheme.Light)
-      // Progress moves the chip, and only the chip: the crumbs are the same nodes.
+      // Progress moves the slot, and only the slot: the crumbs are the same nodes.
       val before = crumbs(w)
       w.session.await(w.session.fixture.get.advanceToPairs(StoryMoments.run8Job, 33_634L))
-      eventually(fx, "the chip at 75%")(
-        chips(w).lastOption.exists(l => drawn(l) == "Rev 5 · run 8 running · 75%")
+      eventually(fx, "the slot at 33,634")(
+        state.drawnSlots.lastOption.contains("Run 8 · comparing 33,634 / 44,845")
       )
       assert(crumbs(w).zip(before).forall(_ eq _), "the trail was rebuilt by a progress tick")
   }
@@ -205,24 +197,22 @@ class ContextStripFxSuite extends ShellFxSuite:
     "lost"
   )
 
-  fxStage.test("failed: run 8 fails; the badge stays current and a failed chip says so") { fx =>
+  fxStage.test("failed: run 8 fails; run 7 stays current and the job slot says so") { fx =>
     assumeFullStage(fx)
-    val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    val w     = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    val state = w.shell.appBar.state
     w.session.await(w.session.fixture.get.fail(StoryMoments.run8Job, Vector(lost, lost)))
-    eventually(fx, "the failed chip")(
-      chips(w).size == 2 && drawn(chips(w).last).contains("failed")
-    )
+    eventually(fx, "the failed slot")(state.drawnSlots.lastOption.exists(_.contains("failed")))
     // Job events keep arriving after the first failed render; wait for quiet.
     eventually(fx, "the shell to match the model")(texts(w) == expected(w))
-    val c = chips(w)
-    assertEquals(runOnFx(drawn(c.head)), "Analysis rev 4 · run 7 · data r3 · current")
-    assertEquals(dotOf(c.head), Vector("tone-current"))
-    assertEquals(dotOf(c.last), Vector("tone-failed"))
+    assertEquals(runOnFx(state.drawnSlots.head), "Run 7 · current")
+    assertEquals(runOnFx(state.drawnMarks(0)), Vector("tone-current"))
+    assertEquals(runOnFx(state.drawnMarks(2)), Vector("tone-failed"))
     assertMatchesModel(w)
     fx.snapshot(StudioTheme.Light)
   }
 
-  fxStage.test("stale: showing run 5 on r2 marks the badge stale") { fx =>
+  fxStage.test("stale: showing run 5 on r2 marks the run slot stale") { fx =>
     assumeFullStage(fx)
     val stale = AppModel
       .update(
@@ -230,10 +220,10 @@ class ContextStripFxSuite extends ShellFxSuite:
         Intent.Dispatch(eyes4s.studio.core.command.Command.ShowRun(Some(StoryMoments.run5)))
       )
       ._1
-    val w = boot(fx, stale)
-    val c = chips(w)
-    assertEquals(dotOf(c.head), Vector("tone-stale"))
-    assert(runOnFx(drawn(c.head)).endsWith("· stale"), runOnFx(drawn(c.head)))
+    val w     = boot(fx, stale)
+    val state = w.shell.appBar.state
+    assertEquals(runOnFx(state.drawnMarks(0)), Vector("tone-stale"))
+    assertEquals(runOnFx(state.drawnSlots.head), "Run 5 · stale")
     assertMatchesModel(w)
   }
 

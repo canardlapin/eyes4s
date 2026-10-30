@@ -216,135 +216,276 @@
   -fx-background-color: -es-ink-3;
 }
 
-/* ---- 2 · app bar, 44 px ------------------------------------------------- */
+/* ---- 2 · toolbar, 48 px (overhaul v4) ------------------------------------ */
 
+/* A StackPane: the row (brand, then the state button at the right) under
+ * the perspective switcher, centred on the window. */
 .app-bar {
-  -fx-alignment: center-left;
-  -fx-spacing: 10;
-  -fx-padding: 0 12 0 14;
+  -fx-padding: 0 12 1 16;
   -fx-background-color: -es-hairline, -es-surface;
   -fx-background-insets: 0, 0 0 1 0;
 }
 
 .brand {
   -fx-alignment: center-left;
-  -fx-spacing: 7;
-  -fx-padding: 0 4 0 0;
+  -fx-spacing: 8;
   -es-current: -es-ink;
 }
 
-.wordmark {
-  -fx-text-fill: -es-ink;
+.project-chip {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-padding: 0 8 0 8;
+  -fx-background-color: transparent;
+  -fx-background-radius: 6;
+  -fx-font-family: "IBM Plex Sans Medm";
+  -fx-font-size: 13px;
+}
+
+.project-chip:hover {
+  -fx-background-color: -es-surface-2;
 }
 
 .project-chip > .label {
-  -fx-text-fill: -es-ink-2;
+  -fx-text-fill: -es-ink;
+  -fx-padding: 0;
+}
+
+/* The golden's chevron, 16 px with a 6 px gap. */
+.project-chip > .arrow-button {
+  -fx-padding: 0 0 0 6;
 }
 
 .project-chip > .arrow-button > .arrow {
-  -fx-background-color: -es-ink-2;
+  -fx-shape: "M4 6 8 10 12 6 11.3 5.3 8 8.6 4.7 5.3z";
+  -fx-scale-shape: false;
+  -fx-padding: 8;
+  -fx-background-color: -es-ink;
 }
 
-/* The switcher pill: 32 px (28 px buttons in a 2 px inset), centred in the
- * bar and clear of its hairline, as on the boards. */
+/* The switcher pill: 32 px (28 px buttons in a 2 px inset). */
 .perspectives {
+  -fx-translate-x: -2;
   -fx-min-height: 32px;
   -fx-pref-height: 32px;
   -fx-max-height: 32px;
   -fx-spacing: 2;
   -fx-padding: 2;
   -fx-background-color: -es-surface-3;
-  -fx-background-radius: 7;
+  -fx-background-radius: 8;
 }
 
 .perspective {
   -fx-min-height: 28px;
   -fx-pref-height: 28px;
   -fx-max-height: 28px;
-  -fx-padding: 0 12 0 12;
-  -fx-graphic-text-gap: 7;
+  -fx-padding: 0 14 0 14;
   -fx-background-color: transparent;
-  -fx-background-radius: 5;
+  -fx-background-radius: 6;
   -fx-text-fill: -es-ink-2;
   -fx-font-family: "IBM Plex Sans Medm";
+  -fx-font-size: 13px;
 }
 
 .perspective:selected {
-  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-color: -es-hairline-strong, -es-surface;
   -fx-background-insets: 0, 1;
-  -fx-background-radius: 5, 4;
+  -fx-background-radius: 6, 5;
   -fx-text-fill: -es-ink;
 }
 
-.perspective .shortcut {
-  -fx-text-fill: -es-ink-2;
-}
+/* ---- the state button and its menu (overhaul decisions 2 and 3) ---------- */
 
-.jobs {
+.state-cluster {
   -fx-alignment: center-right;
-  -fx-spacing: 6;
+  -fx-spacing: 4;
 }
 
-.jobs-chip-parts {
+.state {
+  -fx-min-height: 30px;
+  -fx-pref-height: 30px;
+  -fx-max-height: 30px;
+  -fx-padding: 0 6 0 10;
+  -fx-background-color: -es-hairline-strong, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 8, 7;
+  -fx-font-size: 12px;
+}
+
+.state:hover {
+  -fx-background-color: -es-hairline-strong, -es-surface-2;
+}
+
+.state-parts {
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+}
+
+.state-part {
   -fx-alignment: center-left;
   -fx-spacing: 6;
+  -fx-padding: 0 4 0 4;
 }
 
-.jobs-part {
+.state-part .label {
   -fx-text-fill: -es-ink-2;
+  -fx-font-size: 12px;
 }
 
-.jobs-title {
-  -fx-font-family: "IBM Plex Sans SmBld";
+.state-part.muted .label {
+  -fx-text-fill: -es-ink-3;
+}
+
+.state-sep {
+  -fx-min-width: 1px;
+  -fx-pref-width: 1px;
+  -fx-max-width: 1px;
+  -fx-min-height: 14px;
+  -fx-pref-height: 14px;
+  -fx-max-height: 14px;
+  -fx-background-color: -es-hairline-strong;
+}
+
+.state-chevron {
+  -es-current: -es-ink-2;
+}
+
+/* The dashed draft mark: a dataset not yet admitted, a draft not yet run. */
+.draftmark {
+  -fx-min-width: 9px;
+  -fx-pref-width: 9px;
+  -fx-max-width: 9px;
+  -fx-min-height: 9px;
+  -fx-pref-height: 9px;
+  -fx-max-height: 9px;
+  -fx-border-color: -es-ink-3;
+  -fx-border-width: 1.5;
+  -fx-border-radius: 1.5;
+  -fx-border-style: segments(2, 1.6);
+}
+
+.state-bar-track {
+  -fx-min-height: 4px;
+  -fx-pref-height: 4px;
+  -fx-max-height: 4px;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 2;
+}
+
+.state-bar {
+  -fx-min-width: 64px;
+  -fx-pref-width: 64px;
+  -fx-max-width: 64px;
+}
+
+.state-menu-bar {
+  -fx-min-width: 240px;
+  -fx-pref-width: 240px;
+  -fx-max-width: 240px;
+}
+
+.state-bar-fill {
+  -fx-min-height: 4px;
+  -fx-pref-height: 4px;
+  -fx-max-height: 4px;
+  -fx-background-color: -es-accent;
+  -fx-background-radius: 2;
+}
+
+.state-cancel {
+  -fx-min-width: 28px;
+  -fx-pref-width: 28px;
+  -fx-max-width: 28px;
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-background-color: -es-hairline-strong, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 8, 7;
+  -es-current: -es-ink-3;
+}
+
+.state-menu {
+  -fx-pref-width: 440px;
+  -fx-background-color: -es-hairline-strong, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 8, 7;
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 24, 0, 0, 8);
+}
+
+.state-section {
+  -fx-spacing: 8;
+  -fx-padding: 12 14 12 14;
+  -fx-border-color: transparent transparent -es-hairline transparent;
+  -fx-border-width: 0 0 1 0;
+}
+
+.state-section-head {
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+}
+
+.state-section-title {
+  -fx-font-family: "IBM Plex Sans Medm";
+  -fx-font-size: 13px;
   -fx-text-fill: -es-ink;
 }
 
-.jobs-count {
-  -fx-font-family: "IBM Plex Mono";
+.state-fact {
+  -fx-spacing: 12;
 }
 
-/* Idle is the board's plain chip: regular weight in ink-2. */
-.jobs:idle .jobs-title {
-  -fx-font-family: "IBM Plex Sans";
+.state-fact-key {
+  -fx-min-width: 96px;
+  -fx-font-size: 11px;
+  -fx-text-fill: -es-ink-3;
+}
+
+.state-fact-value, .state-note {
+  -fx-font-size: 11px;
   -fx-text-fill: -es-ink-2;
+  -fx-wrap-text: true;
 }
 
-.jobs:failed .jobs-chip {
-  -fx-background-color: -es-fail, -es-fail-soft;
-  -es-current: -es-fail;
+.state-actions {
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
 }
 
-.jobs:failed .jobs-part {
+.state-destructive {
   -fx-text-fill: -es-fail;
 }
 
-.jobs-progress {
-  -fx-pref-width: 64px;
-  -fx-pref-height: 4px;
-  -fx-max-height: 4px;
+.state-default {
+  -fx-background-color: -es-accent;
+  -fx-text-fill: -es-on-accent;
 }
 
-.jobs-progress > .track {
-  -fx-background-color: -es-surface-3;
-  -fx-background-insets: 0;
-  -fx-background-radius: 2;
-}
-
-.jobs-progress > .bar {
-  -fx-background-color: -es-ink-2;
-  -fx-background-insets: 0;
-  -fx-background-radius: 2;
-  -fx-padding: 2;
-}
-
-/* ---- 3 · context strip, 32 px ------------------------------------------- */
+/* ---- 3 · trail row, 34 px (overhaul v4) ---------------------------------- */
 
 .context-strip {
   -fx-alignment: center-left;
   -fx-spacing: 4;
-  -fx-padding: 0 10 0 10;
+  -fx-padding: 0 12 1 8;
   -fx-background-color: -es-hairline, -es-surface;
   -fx-background-insets: 0, 0 0 1 0;
+}
+
+/* Back and forward: the golden's 28 px icon buttons. */
+.context-strip > .icon-button {
+  -fx-min-width: 28px;
+  -fx-pref-width: 28px;
+  -fx-max-width: 28px;
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-background-radius: 6;
+}
+
+.context-strip > .icon-button:hover {
+  -fx-background-color: -es-surface-2;
+  -es-current: -es-ink;
 }
 
 .trail {
@@ -353,29 +494,34 @@
   -fx-padding: 0 0 0 4;
 }
 
+/* The separator is decorative: a drawn slash, not text. */
+.trail .sep {
+  -fx-shape: "M5.2 3.5 6 3.5 2.8 12.5 2 12.5z";
+  -fx-scale-shape: false;
+  -fx-min-width: 4px;
+  -fx-pref-width: 4px;
+  -fx-max-width: 4px;
+  -fx-min-height: 16px;
+  -fx-pref-height: 16px;
+  -fx-max-height: 16px;
+  -fx-background-color: -es-hairline-strong;
+}
+
 .crumb {
-  -fx-min-height: 22px;
-  -fx-pref-height: 22px;
-  -fx-max-height: 22px;
-  -fx-padding: 0 6 0 6;
+  -fx-padding: 2 4 2 4;
   -fx-background-color: transparent;
   -fx-background-radius: 4;
-  -fx-text-fill: -es-ink-2;
+  -fx-text-fill: -es-ink-3;
+  -fx-font-size: 12px;
 }
 
 .crumb:hover {
-  -fx-background-color: -es-surface-3;
+  -fx-background-color: -es-surface-2;
 }
 
 .crumb:current {
   -fx-text-fill: -es-ink;
   -fx-font-family: "IBM Plex Sans SmBld";
-}
-
-.freshness {
-  -fx-min-height: 22px;
-  -fx-pref-height: 22px;
-  -fx-max-height: 22px;
 }
 
 .dot.tone-current {
@@ -394,30 +540,9 @@
   -fx-background-color: -es-fail;
 }
 
-/* The two-chip form (Results board, t3): the shown run's dot is hollow. */
-.dot.tone-showing {
-  -fx-background-color: -es-ink-2, -es-surface;
-  -fx-background-insets: 0, 1.5;
-  -fx-background-radius: 4, 3;
-}
-
-.context-note {
-  -fx-text-fill: -es-ink-3;
-}
-
-.draft-chip {
-  -fx-min-height: 22px;
-  -fx-pref-height: 22px;
-  -fx-max-height: 22px;
-  -fx-background-color: -es-surface;
-  -fx-border-color: -es-ink-2;
-  -fx-border-style: segments(3, 2);
-  -fx-border-radius: 6;
-  -fx-text-fill: -es-ink;
-}
-
-.draft-chip:blocked {
-  -fx-border-color: -es-fail;
+/* Showing an older run while a newer one runs: the golden's idle dot. */
+.dot.tone-showing, .dot.tone-no-run, .dot.tone-cancelled {
+  -fx-background-color: -es-ink-3;
 }
 
 /* ---- notices ------------------------------------------------------------ */
@@ -452,27 +577,6 @@
   -fx-text-fill: -es-fail;
 }
 
-/* ---- 4 · draft banner, 30 px -------------------------------------------- */
-
-.draft-banner {
-  -fx-alignment: center-left;
-  -fx-spacing: 10;
-  -fx-padding: 0 12 0 12;
-  -fx-background-color: -es-surface-2;
-  -fx-border-color: transparent transparent -es-ink-2 transparent;
-  -fx-border-style: segments(3, 2);
-  -fx-border-width: 0 0 1 0;
-}
-
-.banner-lead {
-  -fx-text-fill: -es-ink;
-  -fx-font-family: "IBM Plex Sans SmBld";
-}
-
-.banner-detail {
-  -fx-text-fill: -es-ink-2;
-}
-
 /* ---- 5 · dock area and placeholder panes -------------------------------- */
 
 .dock-area {
@@ -493,44 +597,19 @@
   -fx-padding: 0;
 }
 
-/* ---- 6 · status bar, 24 px ---------------------------------------------- */
+/* ---- 6 · status bar, 26 px (overhaul v4) ------------------------------- */
 
 .status-bar {
   -fx-alignment: center-left;
-  -fx-spacing: 12;
-  -fx-padding: 0 12 0 12;
-  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-spacing: 16;
+  -fx-padding: 1 14 0 14;
+  -fx-background-color: -es-hairline, -es-surface;
   -fx-background-insets: 0, 1 0 0 0;
 }
 
 .status-bar .label {
-  -fx-text-fill: -es-ink-2;
-}
-
-.status-selected, .status-job {
-  -fx-alignment: center-left;
-  -fx-spacing: 6;
-}
-
-.status-selected .dot {
-  -fx-min-width: 6px;
-  -fx-pref-width: 6px;
-  -fx-max-width: 6px;
-  -fx-min-height: 6px;
-  -fx-pref-height: 6px;
-  -fx-max-height: 6px;
-  -fx-background-color: -es-ink;
-}
-
-.status-bar .status-path {
-  -fx-text-fill: -es-ink;
-}
-
-.status-action {
-  -fx-min-height: 18px;
-  -fx-pref-height: 18px;
-  -fx-max-height: 18px;
-  -fx-padding: 0 6 0 6;
+  -fx-text-fill: -es-ink-3;
+  -fx-font-size: 11px;
 }
 
 /* ---- The About box (S1.14) ---------------------------------------------------------- */
@@ -556,6 +635,18 @@
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
   -fx-background-radius: 4, 3;
+}
+
+.state:focus-visible, .state-cancel:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 8, 6;
+}
+
+.project-chip:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 6, 4;
 }
 
 .chip:focus-visible {

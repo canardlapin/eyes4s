@@ -31,7 +31,7 @@ class ParityChecklistSuite extends ShellFxSuite:
         "contextStrip" -> w.shell.contextStrip.node.getLayoutBounds.getHeight,
         "statusBar"    -> w.shell.statusBar.node.getLayoutBounds.getHeight
       )
-      val expected = Map("appBar" -> 44.0, "contextStrip" -> 32.0, "statusBar" -> 24.0)
+      val expected = Map("appBar" -> 48.0, "contextStrip" -> 34.0, "statusBar" -> 26.0)
       heights.foreach((name, value) => assertEqualsDouble(value, expected(name), 1))
       val headers = w.root
         .lookupAll(".dock-header")
@@ -59,7 +59,7 @@ class ParityChecklistSuite extends ShellFxSuite:
     val lines = texts(w)
     assert(lines.contains("app.project: Untitled project"))
     assert(lines.contains("context.trail: *New project*"))
-    assert(lines.contains("context.freshness: No dataset · no analysis"))
+    assert(lines.contains("app.state: No run yet | No data | No analysis"))
     assertEquals(runOnFx(w.shell.statusBar.saved.getText), "Not saved")
     val captures = fx.snapshot(StudioTheme.Light)
     java.nio.file.Files.writeString(

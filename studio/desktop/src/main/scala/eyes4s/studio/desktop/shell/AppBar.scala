@@ -18,44 +18,34 @@ package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.icons.Icon
-import eyes4s.studio.app.vm.{ActionVM, AppBarVM}
+import eyes4s.studio.app.vm.{ActionVM, AppBarVM, StateButtonVM}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.desktop.icons.{IconSize, StudioIcons}
-import javafx.scene.control.{
-  ContentDisplay,
-  Label,
-  MenuButton,
-  MenuItem,
-  ToggleButton,
-  ToggleGroup
-}
-import javafx.scene.layout.HBox
+import javafx.geometry.Pos
+import javafx.scene.control.{MenuButton, MenuItem, ToggleButton, ToggleGroup, Tooltip}
+import javafx.scene.layout.{HBox, StackPane}
 
-/** The app bar (ticket S1.4), 44 px: the eye mark and "Eyes Studio"
-  * wordmark (13/600), the project chip and its menu, the perspective
-  * switcher (five toggle buttons with their shortcuts, one group), and the
-  * jobs chip.
+/** The toolbar (ticket S1.4; overhaul v4), 48 px: the eye mark and the
+  * project menu on the left, the study-wide state button on the right, and
+  * the perspective switcher centred on the window (a [[StackPane]] over the
+  * row, so the switcher reads the same in every perspective).
   */
 final class AppBar(dispatch: Intent => Unit):
 
-  val wordmark: Label = Fx.label("", "t13", "wordmark")
-
-  private val brand = HBox(StudioIcons.graphic(Icon.EyeAperture, IconSize.Px20), wordmark)
+  private val brand = HBox(StudioIcons.graphic(Icon.EyeAperture, IconSize.Px20))
   brand.getStyleClass.add("brand")
 
   val project: MenuButton = MenuButton()
-  project.getStyleClass.addAll("chip", "project-chip")
+  project.getStyleClass.addAll("project-chip")
   project.setMnemonicParsing(false)
+  brand.getChildren.add(project)
 
   /** One group: exactly one perspective is selected, as the model says. */
   val group: ToggleGroup = ToggleGroup()
 
   val switcher: Map[Perspective, ToggleButton] =
     Perspective.values.toVector.map { p =>
-      val t        = ToggleButton()
-      val shortcut = Fx.label("", "mono", "t11", "shortcut")
-      t.setGraphic(shortcut)
-      t.setContentDisplay(ContentDisplay.RIGHT)
+      val t = ToggleButton()
       t.setToggleGroup(group)
       t.setMnemonicParsing(false)
       t.getStyleClass.add("perspective")
@@ -65,16 +55,24 @@ final class AppBar(dispatch: Intent => Unit):
   /** The switcher pill. */
   val perspectives: HBox = HBox(Perspective.values.toVector.map(switcher)*)
   perspectives.getStyleClass.add("perspectives")
+  perspectives.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
 
-  val jobs: JobsChip = JobsChip(dispatch)
+  val state: StateButton = StateButton(dispatch)
 
-  val node: HBox =
-    HBox(brand, project, Fx.spacer(), perspectives, Fx.spacer(), jobs.node)
+  // Three layers in reading order, so Tab goes project, switcher, state:
+  // the brand at the left, the switcher centred on the window, the state
+  // button at the right.
+  brand.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
+  state.node.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
+  StackPane.setAlignment(brand, Pos.CENTER_LEFT)
+  StackPane.setAlignment(perspectives, Pos.CENTER)
+  StackPane.setAlignment(state.node, Pos.CENTER_RIGHT)
+
+  val node: StackPane = StackPane(brand, perspectives, state.node)
   node.getStyleClass.add("app-bar")
   Fx.fixHeight(node, AppBar.HeightPx)
 
-  def render(vm: AppBarVM, projectMenu: Vector[ActionVM]): Unit =
-    wordmark.setText(vm.appName)
+  def render(vm: AppBarVM, projectMenu: Vector[ActionVM], stateVm: StateButtonVM): Unit =
     project.setText(vm.project)
     project.setAccessibleText(vm.projectAccessible)
     project.getItems.setAll(projectMenu.map { a =>
@@ -87,15 +85,14 @@ final class AppBar(dispatch: Intent => Unit):
     vm.perspectives.foreach { b =>
       val t = switcher(b.perspective)
       t.setText(b.label)
-      t.getGraphic match
-        case l: Label => l.setText(b.shortcut)
-        case _        => ()
       t.setAccessibleText(b.accessible)
+      if Option(t.getTooltip).forall(_.getText != b.accessible) then
+        t.setTooltip(Tooltip(b.accessible))
       t.setSelected(b.selected)
       t.setOnAction(_ => dispatch(b.intent))
     }
-    jobs.render(vm.jobs)
+    state.render(stateVm)
 
 object AppBar:
-  /** DESIGN_SPEC section 3. */
-  val HeightPx: Double = 44
+  /** The v4 golden's toolbar. */
+  val HeightPx: Double = 48

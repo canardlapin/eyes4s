@@ -95,44 +95,36 @@ class AppShellFxSuite extends ShellFxSuite:
     }
   }
 
-  fxStage.test("t2 · Main board: app bar, context strip and status bar read as the board") {
-    fx =>
-      assumeFullStage(fx)
-      val w = boot(fx, StoryModels.t2Compare)
-      assertEquals(runOnFx(fx.stage.getTitle), "memory-study.eyes")
-      val lines = texts(w)
-      val board = Vector(
-        "app.name: Eyes Studio",
-        "app.project: memory-study",
-        "app.perspectives: Data ⌘1 | Explore ⌘2 | Analysis ⌘3 | Compare ⌘4 (current) | Figures ⌘5",
-        "app.jobs: No jobs",
-        "context.nav: Back (⌘[) | [Forward (⌘])]",
-        "context.trail: Summary · by retrieval response › Remembered › P17 › ret_07 · beach-042 › *pair ret_07 × enc_03 · matched*",
-        "context.freshness: Analysis rev 4 · run 7 · data r3 · current",
-        "context.draft: Draft rev 5 · 1 change · ready",
-        "banner.lead: Showing run 7 (analysis rev 4).",
-        "banner.detail: Draft rev 5 adds σ 8° and has not been run.",
-        "banner.actions: Review in Analysis | Discard draft",
-        "status: Selected: P17 › ret_07 × enc_03 (matched) · σ 2° | Prev / Next steps controls · F6 next pane | No jobs | Saved 10:24"
-      )
-      assertNoDiff(lines.mkString("\n"), board.mkString("\n"))
-      val wordmark = runOnFx(w.shell.appBar.wordmark.getFont)
-      assertEquals(wordmark.getSize, 13.0)
-      assertEquals(wordmark.getFamily, "IBM Plex Sans SmBld")
+  fxStage.test("t2 · Main board: toolbar, trail and status bar read as the v4 golden") { fx =>
+    assumeFullStage(fx)
+    val w = boot(fx, StoryModels.t2Compare)
+    assertEquals(runOnFx(fx.stage.getTitle), "memory-study.eyes")
+    val lines = texts(w)
+    val board = Vector(
+      "app.project: memory-study",
+      "app.perspectives: Data | Explore | Analysis | Compare (current) | Figures",
+      "app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run",
+      "context.nav: Back (⌘[) | [Forward (⌘])]",
+      "context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / *pair ret_07 × enc_03 · matched*",
+      "status: Prev / Next steps controls · F6 next pane | Saved 10:24"
+    )
+    assertNoDiff(lines.mkString("\n"), board.mkString("\n"))
+    val project = runOnFx(w.shell.appBar.project.lookup(".label").asInstanceOf[Label].getFont)
+    assertEquals(project.getSize, 13.0)
+    assertEquals(project.getFamily, "IBM Plex Sans Medm")
   }
 
   // --- Metrics (PARITY_CHECKLIST "Shared shell", ±1 px from node bounds) -------
 
   fxStage.test(
-    "shell metrics: app bar 44, context strip 32, banner 30, tab headers 28, status bar 24"
+    "shell metrics (v4): toolbar 48, trail 34, tab headers 28, status bar 26"
   ) { fx =>
     assumeFullStage(fx)
     val w                 = boot(fx, StoryModels.t2Compare)
     def height(r: Region) = runOnFx(r.getLayoutBounds.getHeight)
-    assertEqualsDouble(height(w.shell.appBar.node), 44, 1)
-    assertEqualsDouble(height(w.shell.contextStrip.node), 32, 1)
-    assertEqualsDouble(height(w.shell.banner.node), 30, 1)
-    assertEqualsDouble(height(w.shell.statusBar.node), 24, 1)
+    assertEqualsDouble(height(w.shell.appBar.node), 48, 1)
+    assertEqualsDouble(height(w.shell.contextStrip.node), 34, 1)
+    assertEqualsDouble(height(w.shell.statusBar.node), 26, 1)
     val headers = runOnFx(
       w.root
         .lookupAll(".dock-header")
@@ -145,19 +137,20 @@ class AppShellFxSuite extends ShellFxSuite:
     headers.foreach(h => assertEqualsDouble(h, 28, 1))
     // The menu bar and shell rows fill the 900 px window.
     val dock = height(w.shell.dockArea)
-    assertEqualsDouble(height(w.shell.menuBar) + 44 + 32 + 30 + dock + 24, 900, 1)
-    // The switcher pill: 32 px, radius 7, centred in the bar, clear of its
-    // bottom hairline (Main.dc.html).
-    val pill                  = w.shell.appBar.perspectives
-    val (top, bottom, radius) = runOnFx {
+    assertEqualsDouble(height(w.shell.menuBar) + 48 + 34 + dock + 26, 900, 1)
+    // The switcher pill: 32 px, radius 8, centred in the toolbar and on the
+    // window, clear of its bottom hairline (the v4 golden).
+    val pill                          = w.shell.appBar.perspectives
+    val (top, bottom, radius, centre) = runOnFx {
       val b = w.shell.appBar.node.sceneToLocal(pill.localToScene(pill.getLayoutBounds))
       val r = pill.getBackground.getFills.get(0).getRadii.getTopLeftHorizontalRadius
-      (b.getMinY, b.getMaxY, r)
+      (b.getMinY, b.getMaxY, r, (b.getMinX + b.getMaxX) / 2.0)
     }
     assertEqualsDouble(bottom - top, 32, 1)
-    assertEqualsDouble(top, (44 - 32) / 2.0, 1)
-    assert(bottom <= 43, s"the pill reaches $bottom, over the hairline at 43")
-    assertEqualsDouble(radius, 7, 0)
+    assertEqualsDouble(top, (48 - 32) / 2.0, 1)
+    assert(bottom <= 47, s"the pill reaches $bottom, over the hairline at 47")
+    assertEqualsDouble(radius, 8, 0)
+    assertEqualsDouble(centre, 720, 1)
   }
 
   // --- Perspectives: ⌘1–5, retained panes, Compare by trail depth ------------
@@ -251,30 +244,75 @@ class AppShellFxSuite extends ShellFxSuite:
     "lost"
   )
 
-  fxStage.test("jobs chip idle at t2: 'No jobs', nothing to open") { fx =>
-    val w    = boot(fx, StoryModels.t2Compare)
-    val jobs = w.shell.appBar.jobs
-    assertEquals(runOnFx(jobs.drawnParts), Vector("No jobs"))
-    assert(runOnFx(!jobs.progress.isVisible && !jobs.cancel.isVisible))
-    assertEquals(runOnFx(jobs.chip.getAccessibleText), "Jobs: none running")
+  fxStage.test(
+    "state button idle at t2: three slots, no cancel; the menu lists four sections"
+  ) { fx =>
+    val w     = boot(fx, StoryModels.t2Compare)
+    val state = w.shell.appBar.state
+    assertEquals(
+      runOnFx(state.drawnSlots),
+      Vector("Run 7 · current", "Data r3", "Analysis rev 5 · not run")
+    )
+    assert(!runOnFx(state.cancel.isVisible))
+    assertEquals(
+      runOnFx(state.button.getAccessibleText),
+      "Study state: Run 7 · current | Data r3 | Analysis rev 5 · not run. Opens the state menu"
+    )
+    fx.robot.click(runOnFx(state.button))
+    eventually(fx, "the state menu")(state.menu.isShowing)
+    assertEquals(
+      runOnFx(state.drawnSections),
+      Vector("Run 7 · current", "Dataset r3 · admitted", "Analysis rev 5 · not run", "Jobs")
+    )
+    fx.snapshot(StudioTheme.Light)
+    runOnFx(state.menu.hide())
+    // Closing the menu asks nothing of the model.
+    assertEquals(runOnFx(w.runtime.model.pending), None)
   }
 
   fxStage.test(
-    "jobs chip running at t3: run 8 adopted from the fake backend; Cancel reaches it"
+    "state button running at t3: run 8 adopted from the fake backend; ✕ asks, Cancel run reaches it"
   ) { fx =>
     assumeFullStage(fx)
-    val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-    val jobs = w.shell.appBar.jobs
+    val w     = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    val state = w.shell.appBar.state
     assertEquals(
-      runOnFx(jobs.drawnParts.mkString(" · ")),
-      "Run 8 · Comparing · 21,400 / 44,845 pairs"
+      runOnFx(state.drawnSlots),
+      Vector("Showing run 7", "Data r3", "Run 8 · comparing 21,400 / 44,845")
     )
-    assert(runOnFx(jobs.progress.isVisible && jobs.cancel.isVisible))
-    assertEqualsDouble(runOnFx(jobs.progress.getProgress), 21400.0 / 44845.0, 1e-9)
-    assertEquals(runOnFx(drawn(jobs.cancel)), "Cancel")
+    assert(runOnFx(state.cancel.isVisible))
+    assertEqualsDouble(runOnFx(state.drawnProgress).get, 21400.0 / 44845.0, 1e-9)
+    assertEquals(runOnFx(state.cancel.getAccessibleText), "Cancel run 8")
+    fx.robot.click(runOnFx(state.cancel))
+    eventually(fx, "the inline confirmation")(state.menu.isShowing && state.asking)
+    assertEquals(
+      runOnFx(state.drawnMenu),
+      Vector(
+        "menu: Cancel run 8? | 21,400 of 44,845 pairs are done. Run 7 stays shown. | Cancel run / Keep running"
+      )
+    )
+    // Keep running is the default and has the focus: Enter keeps the run.
+    val keep = runOnFx(
+      state.content.lookupAll(".state-default").asScala.collectFirst { case b: Button => b }.get
+    )
+    assert(runOnFx((keep.getScene.getFocusOwner eq keep) && keep.isDefaultButton))
     fx.snapshot(StudioTheme.Light)
-    fx.robot.click(runOnFx(jobs.cancel))
-    eventually(fx, "the cancelled run")(!jobs.text.startsWith("Run 8 · Comparing"))
+    val confirm = runOnFx(
+      state.content
+        .lookupAll(".state-destructive")
+        .asScala
+        .collectFirst { case b: Button =>
+          b
+        }
+        .get
+    )
+    // The menu is its own popup window: its buttons are fired, not clicked.
+    runOnFx(confirm.fire())
+    fx.awaitLayout()
+    eventually(fx, "the cancelled run")(
+      !state.drawnSlots.exists(_.startsWith("Run 8 · comparing"))
+    )
+    assert(!runOnFx(state.menu.isShowing))
     // The cancel reached the execution service; only the not-yet-wired
     // journal (S2.4b) is recorded.
     assertEquals(
@@ -291,29 +329,59 @@ class AppShellFxSuite extends ShellFxSuite:
     )
   }
 
-  fxStage.test("jobs chip failed: 'Run 8 failed · 2 diagnostics' opens the Diagnostics pane") {
+  fxStage.test("Esc at the confirmation keeps the run: the model's question is dismissed") {
     fx =>
-      val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-      val jobs = w.shell.appBar.jobs
-      w.session.await(w.session.fixture.get.fail(StoryMoments.run8Job, Vector(lost, lost)))
-      eventually(fx, "the failed chip")(jobs.text == "Run 8 failed · 2 diagnostics")
-      assertEquals(runOnFx(jobs.drawnParts.mkString(" · ")), "Run 8 failed · 2 diagnostics")
-      assert(runOnFx(!jobs.progress.isVisible && !jobs.cancel.isVisible))
-      fx.snapshot(StudioTheme.Light)
-
-      fx.robot.click(runOnFx(jobs.chip))
-      assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Analysis)
-      assertEquals(runOnFx(w.host.active), Some("analysis"))
-      val diagnostics = w.host.dockId(StudioLayouts.diagnostics)
-      assertEquals(runOnFx(w.host.dock.state.focused), Some(diagnostics))
-      val pane = runOnFx(w.host.node(StudioLayouts.diagnostics))
-      assert(runOnFx(pane.exists(n => n.getScene eq fx.scene) && pane.exists(_.isVisible)))
-      assertEquals(
-        runOnFx(pane.flatMap(_.lookup(".pane-placeholder-title") match
-          case l: Label => Some(l.getText)
-          case _        => None)),
-        Some("Diagnostics")
+      val w     = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+      val state = w.shell.appBar.state
+      fx.robot.click(runOnFx(state.cancel))
+      eventually(fx, "the inline confirmation")(state.menu.isShowing && state.asking)
+      runOnFx(
+        javafx.event.Event.fireEvent(
+          state.content,
+          javafx.scene.input.KeyEvent(
+            javafx.scene.input.KeyEvent.KEY_PRESSED,
+            "",
+            "",
+            KeyCode.ESCAPE,
+            false,
+            false,
+            false,
+            false
+          )
+        )
       )
+      eventually(fx, "the closed menu")(!state.menu.isShowing)
+      assertEquals(runOnFx(w.runtime.model.pending), None)
+      assert(runOnFx(state.drawnSlots.last.startsWith("Run 8 · comparing")))
+  }
+
+  fxStage.test(
+    "state button failed: 'Run 8 failed · 2 diagnostics' opens the Diagnostics pane"
+  ) { fx =>
+    val w     = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    val state = w.shell.appBar.state
+    w.session.await(w.session.fixture.get.fail(StoryMoments.run8Job, Vector(lost, lost)))
+    eventually(fx, "the failed slot")(
+      state.drawnSlots.lastOption.contains("Run 8 failed · 2 diagnostics")
+    )
+    assert(runOnFx(!state.cancel.isVisible))
+    fx.robot.click(runOnFx(state.button))
+    eventually(fx, "the state menu")(state.menu.isShowing)
+    val open = runOnFx(
+      state.content
+        .lookupAll(".state-action")
+        .asScala
+        .collectFirst {
+          case b: Button if b.getText == "Run 8 failed · 2 diagnostics" => b
+        }
+        .get
+    )
+    runOnFx(open.fire())
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.runtime.model.perspective), Perspective.Analysis)
+    assertEquals(runOnFx(w.host.active), Some("analysis"))
+    val diagnostics = w.host.dockId(StudioLayouts.diagnostics)
+    assertEquals(runOnFx(w.host.dock.state.focused), Some(diagnostics))
   }
 
   // --- Layouts in the presentation state; View › Reset perspective ------------

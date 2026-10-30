@@ -1,5 +1,6 @@
 menu-button: Project memory-study
 toggle-button: Data (⌘1)
+button: Study state: Run 5 · current | Data r3 · not admitted | Analysis rev 3. Opens the state menu
 button: Back (⌘[)
 button: Dataset r3 (draft)
 button: Admission, current location

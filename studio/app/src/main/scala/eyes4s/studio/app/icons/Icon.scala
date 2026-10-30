@@ -79,6 +79,16 @@ enum Icon(val id: String, val layers: List[IconLayer], val source: IconSource) d
         IconSource.Board("Analysis.dc.html")
       )
 
+  /** Cancel a running job: the state button's separate ✕ (overhaul
+    * decision 3), drawn as the v4 golden's `x`.
+    */
+  case Close
+      extends Icon(
+        "close",
+        List(IconLayer("m4 4 8 8M12 4l-8 8", IconPaint.Stroke)),
+        IconSource.Drawn
+      )
+
   /** Trail back (⌘[). */
   case Back
       extends Icon(

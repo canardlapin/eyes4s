@@ -36,7 +36,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
 
   private def snapshot(model: AppModel): String = ShellText.render(Shell.project(model))
 
-  private val perspectives = "Data ⌘1 | Explore ⌘2 | Analysis ⌘3 | Compare ⌘4 | Figures ⌘5"
+  private val perspectives = "Data | Explore | Analysis | Compare | Figures"
 
   private def switcher(current: String): String =
     perspectives.replace(current, s"$current (current)")
@@ -45,14 +45,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.firstRun),
       s"""|window: Untitled project
-          |app.name: Eyes Studio
           |app.project: Untitled project
-          |app.perspectives: ${switcher("Data ⌘1")}
-          |app.jobs: No jobs
+          |app.perspectives: ${switcher("Data")}
+          |app.state: No run yet | No data | No analysis
           |context.nav: [Back (⌘[)] | [Forward (⌘])]
           |context.trail: *New project*
-          |context.freshness: No dataset · no analysis
-          |status: No selection | Drop files anywhere in this window | No jobs | Not saved""".stripMargin
+          |status: Drop files anywhere in this window | Not saved""".stripMargin
     )
   }
 
@@ -60,15 +58,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.t1Data),
       s"""|window: memory-study.eyes
-          |app.name: Eyes Studio
           |app.project: memory-study
-          |app.perspectives: ${switcher("Data ⌘1")}
-          |app.jobs: No jobs
+          |app.perspectives: ${switcher("Data")}
+          |app.state: Run 5 · current | Data r3 · not admitted | Analysis rev 3
           |context.nav: Back (⌘[) | [Forward (⌘])]
-          |context.trail: Dataset r3 (draft) › *Admission*
-          |context.freshness: Dataset r3 · draft · no run on r3 yet
-          |context.note: Run 5 (rev 3) used r2 · becomes stale when r3 is admitted
-          |status: Selected: fixations.csv › Admission | Mapping and geometry changes apply when r3 is admitted | No jobs | Saved 10:24""".stripMargin
+          |context.trail: Dataset r3 (draft) / *Admission*
+          |status: Mapping and geometry changes apply when r3 is admitted | Saved 10:24""".stripMargin
     )
   }
 
@@ -76,18 +71,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.t2Compare),
       s"""|window: memory-study.eyes
-          |app.name: Eyes Studio
           |app.project: memory-study
-          |app.perspectives: ${switcher("Compare ⌘4")}
-          |app.jobs: No jobs
+          |app.perspectives: ${switcher("Compare")}
+          |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
-          |context.trail: Summary · by retrieval response › Remembered › P17 › ret_07 · beach-042 › *pair ret_07 × enc_03 · matched*
-          |context.freshness: Analysis rev 4 · run 7 · data r3 · current
-          |context.draft: Draft rev 5 · 1 change · ready
-          |banner.lead: Showing run 7 (analysis rev 4).
-          |banner.detail: Draft rev 5 adds σ 8° and has not been run.
-          |banner.actions: Review in Analysis | Discard draft
-          |status: Selected: P17 › ret_07 × enc_03 (matched) · σ 2° | Prev / Next steps controls · F6 next pane | No jobs | Saved 10:24""".stripMargin
+          |context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / *pair ret_07 × enc_03 · matched*
+          |status: Prev / Next steps controls · F6 next pane | Saved 10:24""".stripMargin
     )
   }
 
@@ -95,14 +84,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.t2Explore),
       s"""|window: memory-study.eyes
-          |app.name: Eyes Studio
           |app.project: memory-study
-          |app.perspectives: ${switcher("Explore ⌘2")}
-          |app.jobs: No jobs
+          |app.perspectives: ${switcher("Explore")}
+          |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
-          |context.trail: Summary · by retrieval response › Remembered › P17 › ret_07 · beach-042 › pair ret_07 × enc_03 › enc_03 · fixation 6 › *fixations.csv record 7,214*
-          |context.freshness: Analysis rev 4 · run 7 · data r3 · current
-          |status: Selected: P17 › enc_03 › fixation 6 · fixations.csv record 7,214 | View state only · no analysis changed | No jobs | Saved 10:24""".stripMargin
+          |context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / pair ret_07 × enc_03 / enc_03 · fixation 6 / *fixations.csv record 7,214*
+          |status: View state only · no analysis changed | Saved 10:24""".stripMargin
     )
   }
 
@@ -110,15 +97,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.t2Analysis),
       s"""|window: memory-study.eyes
-          |app.name: Eyes Studio
           |app.project: memory-study
-          |app.perspectives: ${switcher("Analysis ⌘3")}
-          |app.jobs: No jobs
+          |app.perspectives: ${switcher("Analysis")}
+          |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
-          |context.trail: Analyses › Encoding → retrieval reinstatement · analysis 1 › *Draft rev 5*
-          |context.freshness: Analysis rev 4 · run 7 · data r3 · current
-          |context.draft: Draft rev 5 · 1 change · ready
-          |status: Selected: Draft rev 5 › Scales | Edits change the draft only · runs are never relabelled | No jobs | Saved 10:24""".stripMargin
+          |context.trail: Analyses / Encoding → retrieval reinstatement · analysis 1 / *Draft rev 5*
+          |status: Edits change the draft only · runs are never relabelled | Saved 10:24""".stripMargin
     )
   }
 
@@ -126,18 +110,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.t2Figures),
       s"""|window: memory-study.eyes
-          |app.name: Eyes Studio
           |app.project: memory-study
-          |app.perspectives: ${switcher("Figures ⌘5")}
-          |app.jobs: No jobs
+          |app.perspectives: ${switcher("Figures")}
+          |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
-          |context.trail: Figures › Figure 1 › *Panel D*
-          |context.freshness: Analysis rev 4 · run 7 · data r3 · current
-          |context.draft: Draft rev 5 · 1 change · ready
-          |banner.lead: Figure 1 shows run 7 (analysis rev 4).
-          |banner.detail: Draft rev 5 adds σ 8° and has not been run. Figures never follow a draft.
-          |banner.actions: Review in Analysis | Discard draft
-          |status: Selected: Figure 1 › Panel D (run 7 · σ 2°) | Arrow keys move between panels · Enter opens the binding | No jobs | Saved 10:24""".stripMargin
+          |context.trail: Figures / Figure 1 / *Panel D*
+          |status: Arrow keys move between panels · Enter opens the binding | Saved 10:24""".stripMargin
     )
   }
 
@@ -145,19 +123,14 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     assertNoDiff(
       snapshot(StoryModels.t3Summary),
       s"""|window: memory-study.eyes
-          |app.name: Eyes Studio
           |app.project: memory-study
-          |app.perspectives: ${switcher("Compare ⌘4")}
-          |app.jobs: Run 8 · Comparing · 21,400 / 44,845 pairs | Cancel
-          |app.jobs.progress: 48%
+          |app.perspectives: ${switcher("Compare")}
+          |app.state: Showing run 7 | Data r3 | Run 8 · comparing 21,400 / 44,845
+          |app.state.cancel: Cancel run 8
+          |app.state.progress: 48%
           |context.nav: [Back (⌘[)] | [Forward (⌘])]
           |context.trail: *Summary · by retrieval response*
-          |context.freshness: Showing analysis rev 4 · run 7 · data r3
-          |context.newer: Rev 5 · run 8 running · 48%
-          |banner.lead: Showing run 7 (rev 4).
-          |banner.detail: Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you choose Show.
-          |banner.actions: [Show run 8 · when finished]
-          |status: Selected: P17 · by retrieval response · σ 2° | Enter on a participant opens its queries · F6 next pane | Run 8 · Comparing 21,400 / 44,845 Cancel | Saved 10:24""".stripMargin
+          |status: Enter on a participant opens its queries · F6 next pane | Saved 10:24""".stripMargin
     )
   }
 
@@ -200,7 +173,9 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       assertEquals(chip.accessible, name)
       assertEquals(mirror.accessible, name)
       assertEquals(chip.intent, Intent.RequestCancelJob(StoryMoments.run8Job))
-      assertEquals(A11y.tabOrder(model).count(_.name == name), 2)
+      // The tab order reaches the cancel once: the state button's ✕.
+      assertEquals(A11y.tabOrder(model).count(_.name == name), 0)
+      assertEquals(A11y.tabOrder(model).count(_.name == "Cancel run 8"), 1)
     assertEquals(
       ActionVM("Show", true, Intent.CancelJob(StoryMoments.run8Job)).accessible,
       "Show"

@@ -55,7 +55,7 @@ Verified by hand on macOS: pending. The hand check covers:
 | View | Appearance › System | — | `view.appearance-system` |
 | Go | Back | `⌘[` | `navigate.back` |
 | Go | Forward | `⌘]` | `navigate.forward` |
-| Run | Cancel run | — | `run.cancel` |
+| Run | Cancel run | `⌘.` | `run.cancel` |
 | Run | Show the finished run | — | `run.show` |
 | Run | Review draft in Analysis | — | `draft.review` |
 | Run | Discard draft | — | `draft.discard` |

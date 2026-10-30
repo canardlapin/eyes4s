@@ -1,12 +1,10 @@
 menu-button: Project memory-study
 toggle-button: Figures (⌘5)
+button: Study state: Run 7 · current | Data r3 | Analysis rev 5 · not run. Opens the state menu
 button: Back (⌘[)
 button: Figures
 button: Figure 1
 button: Panel D, current location
-button: Draft rev 5 · 1 change · ready; review in Analysis
-button: Review in Analysis
-button: Discard draft
 list: Figures
 button: New figure
 menu-button: Start figure with

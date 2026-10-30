@@ -1,10 +1,10 @@
 menu-button: Project memory-study
 toggle-button: Analysis (⌘3)
+button: Study state: Run 7 · current | Data r3 | Analysis rev 5 · not run. Opens the state menu
 button: Back (⌘[)
 button: Analyses
 button: Encoding → retrieval reinstatement · analysis 1
 button: Draft rev 5, current location
-button: Draft rev 5 · 1 change · ready; review in Analysis
 list: Analyses
 toggle-button: Draft rev 5 · data r3 · not run
 toggle-button: rev 4 · run 7 · data r3 · current

@@ -114,13 +114,12 @@ object A11y:
   private def button(a: ActionVM): Option[FocusStop] =
     Option.when(a.enabled)(FocusStop(A11yRole.Button, a.accessible))
 
-  /** Every stop Tab visits, top to bottom: app bar (the project chip, the
-    * selected perspective, the jobs chip when it opens something, Cancel),
-    * context strip, notice,
-    * confirmation, banner, one stop per visible dock group (the pane it
-    * shows) followed by that pane's own controls (`inside`: a form pane's
-    * controls, derived from its view-model; by default a pane has none),
-    * and the status bar's action. `focus` replaces a pane's complete plan
+  /** Every stop Tab visits, top to bottom: the toolbar (the project chip,
+    * the selected perspective, the state button and, while a job can be
+    * cancelled, its ✕), the trail row, notice, confirmation, then one stop
+    * per visible dock group (the pane it shows) followed by that pane's own
+    * controls (`inside`: a form pane's controls, derived from its
+    * view-model; by default a pane has none). `focus` replaces a pane's complete plan
     * when its served content owns focus; it never appends a redundant shell
     * stop. A disabled button is no stop.
     */
@@ -132,21 +131,19 @@ object A11y:
   ): Vector[FocusStop] =
     val vm     = Shell.project(model, messages)
     val bar    = vm.appBar
-    val jobs   = bar.jobs
+    val state  = vm.state
     val appBar = Vector(FocusStop(A11yRole.MenuButton, bar.projectAccessible)) ++
       // The switcher is one toggle group: Tab stops on its selected button
       // and the arrow keys move within it (⌘1–5 reach any perspective).
       bar.perspectives
         .filter(_.selected)
         .map(p => FocusStop(A11yRole.ToggleButton, p.accessible)) ++
-      jobs.open.map(_ => FocusStop(A11yRole.Button, jobs.accessible)) ++
-      jobs.action.flatMap(button)
+      Vector(FocusStop(A11yRole.Button, state.accessible)) ++
+      state.cancel.flatMap(button)
     val context = button(vm.context.back).toVector ++ button(vm.context.forward) ++
-      vm.context.trail.map(c => FocusStop(A11yRole.Button, c.accessible)) ++
-      vm.context.draft.map(d => FocusStop(A11yRole.Button, d.accessible))
+      vm.context.trail.map(c => FocusStop(A11yRole.Button, c.accessible))
     val notice  = vm.notice.map(_ => FocusStop(A11yRole.Button, messages(MessageId.Dismiss)))
     val confirm = vm.confirmation.toVector.flatMap(c => button(c.confirm) ++ button(c.cancel))
-    val banner  = vm.banner.toVector.flatMap(_.actions.flatMap(button))
     val layout  = model.layout
     val focused = model.focusedPane
     val groups  =
@@ -155,8 +152,7 @@ object A11y:
       val shown = g.panes.find(_.id == focused).getOrElse(layout.selectedPane(g))
       focus(shown.id).fold(pane(shown) +: inside(shown.id))(_.stops)
     }
-    val status = vm.status.job.action.flatMap(button)
-    appBar ++ context ++ notice ++ confirm ++ banner ++ dock ++ status
+    appBar ++ context ++ notice ++ confirm ++ dock
 
   /** The committed file's text: one stop per line. */
   def render(stops: Vector[FocusStop]): String = stops.map(_.render).mkString("", "\n", "\n")

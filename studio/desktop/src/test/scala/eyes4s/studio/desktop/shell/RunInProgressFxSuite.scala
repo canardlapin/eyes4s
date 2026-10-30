@@ -21,7 +21,7 @@ import eyes4s.studio.core.execution.{ExecutionEvent, RunReady}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.harness.StudioTheme
-import javafx.scene.control.{Button, Label}
+import javafx.scene.control.Button
 import java.nio.file.{Files, StandardCopyOption}
 import scala.jdk.CollectionConverters.*
 
@@ -38,11 +38,8 @@ class RunInProgressFxSuite extends ShellFxSuite:
       runOnFx(w.runtime.model.document.presentation.shownRun),
       Some(StoryMoments.run7)
     )
-    val runningWords = runOnFx(w.shell.banner.node.getChildren.asScala.collect {
-      case l: Label => drawn(l)
-    }.toVector)
-    assertEquals(runningWords.head, "Showing run 7 (rev 4).")
-    assert(runningWords.last.contains("until you choose Show"))
+    val state = w.shell.appBar.state
+    assertEquals(runOnFx(state.drawnSlots.head), "Showing run 7")
     fx.snapshot(StudioTheme.Light).foreach { path =>
       Files.copy(
         path,
@@ -67,22 +64,27 @@ class RunInProgressFxSuite extends ShellFxSuite:
         StandardCopyOption.REPLACE_EXISTING
       ): Unit
     }
+    assertEquals(runOnFx(state.drawnSlots.last), "Run 8 ready — Show")
+    fx.robot.click(runOnFx(state.button))
+    eventually(fx, "the state menu")(state.menu.isShowing)
     val show = runOnFx(
-      w.shell.banner.node.getChildren.asScala
-        .collectFirst {
-          case b: Button if drawn(b) == "Show run 8" => b
-        }
+      state.content
+        .lookupAll(".state-action")
+        .asScala
+        .collectFirst { case b: Button if b.getText == "Show run 8" => b }
         .getOrElse(fail("Show run 8 button missing"))
     )
     assert(!runOnFx(show.isDisabled))
-    fx.robot.click(show)
+    // The menu is its own popup window: its buttons are fired, not clicked.
+    runOnFx(show.fire())
+    fx.awaitLayout()
     assertEquals(
       runOnFx(w.runtime.model.document.presentation.shownRun),
       Some(StoryMoments.run8)
     )
     assertEquals(runOnFx(w.runtime.model.selection.selected), selected)
     assertEquals(runOnFx(w.runtime.model.jobs.ready), None)
-    assert(!runOnFx(w.shell.banner.node.isVisible))
+    assertEquals(runOnFx(state.drawnSlots.head), "Run 8 · current")
     dispatch(
       fx,
       w,

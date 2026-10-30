@@ -32,9 +32,9 @@ import javafx.scene.control.{
 import javafx.scene.input.{KeyCode, KeyCodeCombination, KeyCombination, KeyEvent}
 import javafx.scene.layout.{Priority, StackPane, VBox}
 
-/** The window's content (tickets S1.4–S1.9): app bar, context strip,
-  * notice, confirmation, draft banner, the perspective host's dock, and the
-  * status bar, top to bottom (DESIGN_SPEC section 3). It renders the shell
+/** The window's content (tickets S1.4–S1.9; overhaul v4): toolbar, trail
+  * row, notice, confirmation, the perspective host's dock, and the status
+  * bar, top to bottom. It renders the shell
   * view-models of each model and dispatches the intents they carry; keys go
   * through the app's keymap. `model` is read when a tab's context menu opens.
   */
@@ -51,7 +51,6 @@ final class AppShell(
 
   val appBar: AppBar             = AppBar(dispatch)
   val contextStrip: ContextStrip = ContextStrip(dispatch)
-  val banner: DraftBanner        = DraftBanner(dispatch)
   val statusBar: StatusBar       = StatusBar(dispatch)
   val notice: NoticeBar          = NoticeBar(dispatch, messages)
   val confirmation: ConfirmBar   = ConfirmBar(dispatch)
@@ -76,7 +75,6 @@ final class AppShell(
       contextStrip.node,
       notice.node,
       confirmation.node,
-      banner.node,
       dockArea,
       statusBar.node
     )
@@ -168,9 +166,8 @@ final class AppShell(
 
   def render(model: AppModel): Unit =
     val vm = Shell.project(model, messages)
-    appBar.render(vm.appBar, Menus.project(model, messages))
+    appBar.render(vm.appBar, Menus.project(model, messages), vm.state)
     contextStrip.render(vm.context)
-    banner.render(vm.banner)
     statusBar.render(vm.status)
     notice.render(vm.notice)
     confirmation.render(vm.confirmation)

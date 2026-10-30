@@ -28,46 +28,39 @@ object ShellText:
 
   def appBar(vm: AppBarVM): Vector[String] =
     val perspectives = vm.perspectives
-      .map(p => s"${p.label} ${p.shortcut}${if p.selected then " (current)" else ""}")
+      .map(p => s"${p.label}${if p.selected then " (current)" else ""}")
       .mkString(" | ")
-    val jobs = (Vector(vm.jobs.text) ++ vm.jobs.action.map(action)).mkString(" | ")
-    Vector(
-      s"app.name: ${vm.appName}",
-      s"app.project: ${vm.project}",
-      s"app.perspectives: $perspectives",
-      s"app.jobs: $jobs"
-    ) ++ vm.jobs.progress.map(f =>
-      s"app.jobs.progress: ${eyes4s.studio.app.text.Format.percent(f)}"
-    )
+    Vector(s"app.project: ${vm.project}", s"app.perspectives: $perspectives")
+
+  /** The state button: its three slots, then the separate cancel. */
+  def state(vm: StateButtonVM): Vector[String] =
+    Vector(s"app.state: ${vm.text}") ++ vm.cancel.map(c => s"app.state.cancel: ${action(c)}") ++
+      vm.analysis.progress.map(f =>
+        s"app.state.progress: ${eyes4s.studio.app.text.Format.percent(f)}"
+      )
+
+  /** The state menu, one line per section; the confirmation alone when it asks. */
+  def stateMenu(vm: StateButtonVM): Vector[String] =
+    vm.confirm.fold(vm.menu)(Vector(_)).map { s =>
+      val parts = Vector(s.head) ++ s.facts.map((k, v) => s"$k $v") ++ s.note ++
+        Option.when(s.actions.nonEmpty)(s.actions.map(action).mkString(" / "))
+      s"menu: ${parts.mkString(" | ")}"
+    }
 
   def context(vm: ContextStripVM): Vector[String] =
     val trail =
-      vm.trail.map(c => if c.current then s"*${c.label}*" else c.label).mkString(" › ")
+      vm.trail.map(c => if c.current then s"*${c.label}*" else c.label).mkString(" / ")
     Vector(
       s"context.nav: ${action(vm.back)} | ${action(vm.forward)}",
-      s"context.trail: $trail",
-      s"context.freshness: ${vm.freshness.text}"
-    ) ++ vm.newer.map(n => s"context.newer: ${n.text}") ++ vm.notes.map(n =>
-      s"context.note: $n"
-    ) ++ vm.draft.map(d => s"context.draft: ${d.text}")
+      s"context.trail: $trail"
+    )
 
-  def banner(vm: Option[DraftBannerVM]): Vector[String] = vm.toVector.flatMap { b =>
-    Vector(s"banner.lead: ${b.lead}") ++
-      Option.when(b.detail.nonEmpty)(s"banner.detail: ${b.detail}") ++
-      Option.when(b.actions.nonEmpty)(
-        s"banner.actions: ${b.actions.map(action).mkString(" | ")}"
-      )
-  }
-
-  def status(vm: StatusBarVM): Vector[String] =
-    val selected = vm.selected.fold(vm.noSelection)(p => s"${vm.selectedLabel} $p")
-    val job = (Vector(vm.job.text) ++ vm.job.count ++ vm.job.action.map(action)).mkString(" ")
-    Vector(s"status: $selected | ${vm.hint} | $job | ${vm.saved}")
+  def status(vm: StatusBarVM): Vector[String] = Vector(s"status: ${vm.hint} | ${vm.saved}")
 
   def render(vm: ShellVM): String =
     (Vector(s"window: ${vm.window.title}${if vm.window.edited then " (edited)" else ""}") ++
-      appBar(vm.appBar) ++ context(vm.context) ++ banner(vm.banner) ++ status(vm.status) ++
+      appBar(vm.appBar) ++ state(vm.state) ++ context(vm.context) ++ status(vm.status) ++
       vm.notice.map(n => s"notice: ${n.text}") ++ vm.confirmation.map(c =>
         s"confirm: ${c.text} | ${action(c.confirm)} | ${action(c.cancel)}"
-      ))
+      ) ++ vm.state.confirm.map(_ => stateMenu(vm.state).mkString("\n")))
       .mkString("\n")
