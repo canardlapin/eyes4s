@@ -215,17 +215,17 @@ class AppShellFxSuite extends ShellFxSuite:
   }
 
   fxStage.test(
-    "Compare shows the summary layout at the Summary crumb and the query layout below it"
+    "Results shows the summary layout at the Summary crumb and the pair layout below it"
   ) { fx =>
     val w       = boot(fx, StoryModels.t2Compare)
     val profile = StudioPaneId.of("compare.scale-profile").fold(e => fail(e.message), identity)
-    val shared  = runOnFx(w.host.node(profile))
     assertEquals(runOnFx(w.host.active), Some("compare.query"))
+    assert(runOnFx(w.host.dock.state.findPane(w.host.dockId(profile))).isEmpty)
     val crumbs = runOnFx(w.shell.contextStrip.crumbs)
     fx.robot.click(crumbs.head)
     assertEquals(runOnFx(w.host.active), Some("compare.summary"))
+    // The scale profile is the summary's (overhaul v4).
     assert(runOnFx(w.host.dock.state.findPane(w.host.dockId(profile))).isDefined)
-    assert(runOnFx(w.host.node(profile)).exists(n => shared.exists(_ eq n)))
     // Deeper than the Summary crumb: the query layout again.
     dispatch(
       fx,
@@ -484,19 +484,19 @@ class AppShellFxSuite extends ShellFxSuite:
     val w       = boot(fx, StoryModels.t2Compare)
     def focused = runOnFx(w.runtime.model.focusedPane.value)
     def docked  = runOnFx(w.host.dock.state.focused.map(_.value))
-    assertEquals(focused, "compare.query-trial")
+    assertEquals(focused, "compare.pair")
     fx.robot.press(KeyCode.F6)
-    assertEquals(focused, "compare.reference-trial")
+    assertEquals(focused, "compare.contrast")
     fx.robot.press(KeyCode.F6, Modifiers(shift = true))
-    assertEquals(focused, "compare.query-trial")
+    assertEquals(focused, "compare.pair")
     fx.robot.press(KeyCode.TAB, Modifiers(control = true))
     fx.awaitLayout()
-    assertEquals(focused, "compare.query-trial.table")
-    assertEquals(docked, Some("compare.query-trial.table"))
+    assertEquals(focused, "compare.pair.table")
+    assertEquals(docked, Some("compare.pair.table"))
     fx.robot.press(KeyCode.TAB, Modifiers(control = true, shift = true))
     fx.awaitLayout()
-    assertEquals(focused, "compare.query-trial")
-    assertEquals(docked, Some("compare.query-trial"))
+    assertEquals(focused, "compare.pair")
+    assertEquals(docked, Some("compare.pair"))
   }
 
   // --- Saved layouts: no spurious saves; unreadable ones never block ----------

@@ -122,9 +122,10 @@ object StudioLayouts:
   val compareQueries: PaneId = PaneId("compare.queries")
   val compareItems: PaneId   = PaneId("compare.items")
 
-  /** The panes that host Compare's query and reference trial panels (S8.2). */
-  val queryTrial: PaneId     = PaneId("compare.query-trial")
-  val referenceTrial: PaneId = PaneId("compare.reference-trial")
+  /** The pane that hosts Results' pair (S8.2; overhaul v4): the query's and
+    * the reference's stages side by side, their legend and the control strip.
+    */
+  val pair: PaneId = PaneId("compare.pair")
 
   /** The pane that hosts Compare's scale ladder and contrast readout (S8.3). */
   val contrast: PaneId = PaneId("compare.contrast")
@@ -308,28 +309,15 @@ object StudioLayouts:
         pane("compare.queries", "Queries", Navigator),
         pane("compare.items", "Items", Navigator)
       ) -> 264.0,
-      // The golden's heights (the pair 421, across scales 370), the pair a
-      // little taller until its one pane (Port 4) frees its panel toolbars.
+      // The golden's heights: the pair 421, across scales 370.
       stack(
-        split(
-          Axis.Horizontal,
-          group(
-            dynamic("compare.query-trial", "Query trial", Plot),
-            table("compare.query-trial")
-          ) -> 0.5,
-          group(
-            dynamic("compare.reference-trial", "Reference trial", Plot),
-            table("compare.reference-trial")
-          ) -> 0.5
-        ) -> 443.0,
+        group(PaneDecl(pair, PaneTitle.Fixed("Pair"), Plot), table(pair.value)) -> 421.0,
+        // Across scales and its Table (the pairs and scores by scale); the
+        // scale profile is the summary's.
         group(
-          pane("compare.contrast", "Contrast", Plot),
-          pane("compare.pairs", "Pairs table", Table),
-          scaleProfile,
-          // Not on the board: every plot has its Table twin (S10.5 F3, a
-          // deliberate deviation for accessibility, PARITY_CHECKLIST Main).
-          table("compare.scale-profile")
-        ) -> 348.0
+          pane("compare.contrast", "Across scales", Plot),
+          pane("compare.pairs", "Pairs table", Table)
+        ) -> 370.0
       ),
       group(pane("compare.inspector", "Inspector", Inspector)) -> InspectorPx
     ),

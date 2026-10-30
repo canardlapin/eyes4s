@@ -357,7 +357,7 @@ class GeometrySceneSuite extends munit.FunSuite:
   }
 
   test("on Light, a fill that reads on its ground has no casing; others wear the halo") {
-    // Outside the frame every level reads on the Light stage: 1-3 (3.75)
+    // Outside the frame every level reads on the Light stage: 1-3 (3.31)
     // and >=64 (13.07) are not cased.
     val light = get(
       GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 1, 104 -> 4))
@@ -443,7 +443,7 @@ class GeometrySceneSuite extends munit.FunSuite:
         v -> Wcag.contrast(ramp0, stage(v)).fold(e => fail(e.message), identity)
       )
     val pinned =
-      Vector(StageVariant.Dark -> 4.14, StageVariant.Mid -> 1.08, StageVariant.Light -> 3.75)
+      Vector(StageVariant.Dark -> 4.14, StageVariant.Mid -> 1.08, StageVariant.Light -> 3.31)
     assertEquals(measured.map(_._1).toSet, pinned.map(_._1).toSet)
     pinned.foreach { (v, expected) =>
       assertEqualsDouble(measured.toMap.apply(v), expected, QuotedPlaces, clue(v))

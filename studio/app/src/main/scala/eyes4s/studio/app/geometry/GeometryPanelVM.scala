@@ -203,10 +203,7 @@ object GeometryPanelVM:
 
   /** The document's stage as the renderer's token variant. */
   def stageOf(model: AppModel): StageVariant =
-    model.document.presentation.stage match
-      case StageAppearance.Dark  => StageVariant.Dark
-      case StageAppearance.Mid   => StageVariant.Mid
-      case StageAppearance.Light => StageVariant.Light
+    eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(model)._2
 
   /** A thumbnail's count line: a missing or unreadable asset first ("Missing
     * asset · forest-044.png", the Data board's caption), then off screen

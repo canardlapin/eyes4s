@@ -37,6 +37,9 @@ enum TrialTextId derives CanEqual:
 
   /** The mark encoding and the order-line disclaimer. */
   case MarkerArea, OrderNote
+  // The pair's shared legend row (overhaul v4, the golden's words).
+  case LegendArea, LegendOutside, LegendOrder, LegendRampShared, LegendRampPerPanel
+  case LegendIsolines, PairSubtitle, AcrossSubtitle
 
   /** The analysis-window outline's label. */
   case WindowLabel
@@ -90,6 +93,14 @@ object TrialText:
       case Placement           => "{0}×{1} at ({2}, {3}) in {4}×{5}"
       case Separator           => " · "
       case MarkerArea          => "Marker area ∝ duration"
+      case LegendArea          => "area shows duration"
+      case LegendOutside       => "outside window"
+      case LegendOrder         => "order, not saccades"
+      case LegendRampShared    => "max density · shared · photo in grey"
+      case LegendRampPerPanel  => "max density · per panel · photo in grey"
+      case LegendIsolines      => "50 · 90% of mass"
+      case PairSubtitle        => "σ {0}, declared {1} px/°, not calibrated"
+      case AcrossSubtitle      => "{0} · every control pair, B, M"
       case OrderNote       => "Lines show order between fixation centres, not measured saccades"
       case WindowLabel     => "analysis window · image frame {0}×{1}"
       case MissingLabel    => "Missing asset · {0}"

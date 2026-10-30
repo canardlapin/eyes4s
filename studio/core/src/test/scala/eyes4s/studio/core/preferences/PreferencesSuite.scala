@@ -258,10 +258,12 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
     )
   }
 
-  test("defaults: light, a dark stage, nothing recent, no layouts, no export directory") {
+  test(
+    "defaults: light, a stage that follows the theme, nothing recent, no layouts, no export directory"
+  ) {
     val d = UserPreferences.defaults
     assertEquals(
       (d.appearance, d.stage, d.recent, d.layouts, d.exportDirectory),
-      (AppearanceChoice.Light, StageAppearance.Dark, RecentProjects.empty, Vector.empty, None)
+      (AppearanceChoice.Light, StageAppearance.Theme, RecentProjects.empty, Vector.empty, None)
     )
   }

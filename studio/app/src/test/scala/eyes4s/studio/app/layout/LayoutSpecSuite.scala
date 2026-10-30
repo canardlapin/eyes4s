@@ -87,18 +87,14 @@ class LayoutSpecSuite extends munit.FunSuite:
       "Main.dc.html",
       compareQuery,
       Vector(
-        "Queries"                          -> "compare.queries",
-        "Items"                            -> "compare.items",
-        "Query P17 · ret_07 · beach-042"   -> "compare.query-trial",
-        "Table"                            -> "compare.query-trial.table",
-        "Matched P17 · enc_03 · beach-042" -> "compare.reference-trial",
-        "Table"                            -> "compare.reference-trial.table",
-        "Contrast"                         -> "compare.contrast",
-        "Pairs table"                      -> "compare.pairs",
-        "Scale profile"                    -> "compare.scale-profile",
-        // Not on the board: the scale profile's Table twin (S10.5 F3).
-        "Table"     -> "compare.scale-profile.table",
-        "Inspector" -> "compare.inspector"
+        "Queries" -> "compare.queries",
+        "Items"   -> "compare.items",
+        // The v4 golden's one Pair pane: both trials, their legend, the strip.
+        "Pair"          -> "compare.pair",
+        "Table"         -> "compare.pair.table",
+        "Across scales" -> "compare.contrast",
+        "Pairs table"   -> "compare.pairs",
+        "Inspector"     -> "compare.inspector"
       )
     ),
     (
@@ -180,23 +176,26 @@ class LayoutSpecSuite extends munit.FunSuite:
       case g: LayoutNode.Group =>
         g.copy(panes =
           g.panes.map(p =>
-            if p.id.value == "compare.scale-profile" then
-              p.copy(title = PaneTitle.Fixed("Profile"))
+            if p.id.value == "compare.inspector" then p.copy(title = PaneTitle.Fixed("Other"))
             else p
           )
         )
-    val renamed = compareSummary.copy(root = rename(compareSummary.root))
-    val bad     = LayoutSpec(
+    // A second Results layout that declares the pair's inspector differently.
+    val copied = compareQuery.copy(
+      id = LayoutId.of("compare.query-copy").toOption.get,
+      root = rename(compareQuery.root)
+    )
+    val bad = LayoutSpec(
       spec.perspectives.map((p, ls) =>
-        (p, ls.map(l => if l.id == compareSummary.id then renamed else l))
+        (p, if p == Perspective.Results then ls :+ copied else ls)
       )
     )
     assertEquals(
       problems(bad),
       Vector(
         LayoutError.ConflictingPane(
-          "compare.scale-profile",
-          Vector("compare.query", "compare.summary")
+          "compare.inspector",
+          Vector("compare.query", "compare.query-copy")
         )
       )
     )
@@ -207,11 +206,9 @@ class LayoutSpecSuite extends munit.FunSuite:
     all.groupBy(_.id).foreach { (id, decls) =>
       assertEquals(decls.distinct.size, 1, id)
     }
+    // The v4 layouts share no pane: the scale profile is the summary's only.
     val shared = compareSummary.panes.map(_.id).intersect(compareQuery.panes.map(_.id))
-    assertEquals(
-      shared.map(_.value),
-      Vector("compare.scale-profile", "compare.scale-profile.table")
-    )
+    assertEquals(shared.map(_.value), Vector.empty)
   }
 
   test("Results: summary at the Summary crumb, the pair below it, the drill at a record") {

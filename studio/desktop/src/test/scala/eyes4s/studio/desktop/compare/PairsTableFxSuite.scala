@@ -21,7 +21,6 @@ import eyes4s.studio.app.layout.PaneId
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.harness.StudioTheme
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import eyes4s.studio.desktop.plot.PlotHostStatus
 import eyes4s.studio.desktop.trial.{GoldenTrials, StimulusSource}
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.StackPane
@@ -80,9 +79,8 @@ class PairsTableFxSuite extends ShellFxSuite:
   }
 
   Vector(
-    "contrast"      -> "compare.contrast",
-    "pairs"         -> "compare.pairs",
-    "scale-profile" -> "compare.scale-profile"
+    "contrast" -> "compare.contrast",
+    "pairs"    -> "compare.pairs"
   ).foreach { (label, id) =>
     fxStage.test(s"board tabs: $label stays in the full Compare layout") { fx =>
       assumeFullStage(fx)
@@ -112,12 +110,6 @@ class PairsTableFxSuite extends ShellFxSuite:
       assertEqualsDouble(runOnFx(w.shell.appBar.node.getHeight), 48.0, 1.0)
       assertEqualsDouble(runOnFx(w.shell.contextStrip.node.getHeight), 34.0, 1.0)
       assertEqualsDouble(runOnFx(w.shell.statusBar.node.getHeight), 26.0, 1.0)
-      if label == "scale-profile" then
-        eventually(fx, "the profile actually draws, not just its table values") {
-          w.summary.scaleProfile.plotHost.status.get match
-            case PlotHostStatus.Drawn(_) => true
-            case _                       => false
-        }
       fx.snapshot(StudioTheme.Light): Unit
     }
   }

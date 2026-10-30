@@ -91,10 +91,11 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
           case _                        => false)
       }
       val hosts = Vector(
-        "query"            -> trials(0).plotHost,
-        "query-legend"     -> trials(0).legendPlotHost,
-        "reference"        -> trials(1).plotHost,
-        "reference-legend" -> trials(1).legendPlotHost
+        // Both stages, and the pair's shared legend keys (overhaul v4).
+        "query"       -> trials(0).plotHost,
+        "ramp-key"    -> w.summary.panels.legendKeys(0),
+        "reference"   -> trials(1).plotHost,
+        "isoline-key" -> w.summary.panels.legendKeys(1)
       )
       def drawn(): Unit = eventually(fx, "all four actual canvas frames drawn") {
         hosts.forall(_._2.status.get.isInstanceOf[PlotHostStatus.Drawn])
@@ -226,9 +227,10 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
         runOnFx(trials.zip(originalLimits).foreach { (t, limit) => t.setMaxWidth(limit._1) })
         fx.awaitLayout(); drawn()
         compare("width-" + reduction.toString)
-      // A small native screen may collapse the canvas while captions stay visible.
-      // Exercise that legitimate Waiting state explicitly, then demand the original pixels.
-      runOnFx(trials.foreach(_.setMaxHeight(1.0)))
+      // A small native screen may collapse the canvas to nothing. The pair's stages
+      // carry no caption band (overhaul v4), so collapse them to zero height to
+      // exercise that legitimate Waiting state, then demand the original pixels.
+      runOnFx(trials.foreach(_.setMaxHeight(0.0)))
       fx.awaitLayout(); resized("collapsed-height")
       assert(runOnFx(hosts.exists { (_, host) =>
         host.status.get.isInstanceOf[PlotHostStatus.Waiting] &&

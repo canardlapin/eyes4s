@@ -263,6 +263,14 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
   def focus(pane: StudioPaneId, plan: eyes4s.studio.app.vm.PaneFocus): Unit =
     panes.focus(DockLayouts.paneId(pane), plan)
 
+  /** A studio pane's subtitle (see [[StudioPanes.describe]]). */
+  def describe(pane: StudioPaneId, subtitle: String): Unit =
+    panes.describe(DockLayouts.paneId(pane), subtitle)
+
+  /** A studio pane's own header controls (see [[StudioPanes.controls]]). */
+  def controls(pane: StudioPaneId, nodes: javafx.scene.Node*): Unit =
+    panes.controls(DockLayouts.paneId(pane), nodes*)
+
   /** The scaladock id of a studio pane. */
   def dockId(pane: StudioPaneId): PaneId = DockLayouts.paneId(pane)
 

@@ -131,7 +131,7 @@ object UserPreferences:
   val defaults: UserPreferences =
     UserPreferences(
       AppearanceChoice.Light,
-      StageAppearance.Dark,
+      StageAppearance.Theme,
       RecentProjects.empty,
       Vector.empty,
       None

@@ -129,8 +129,30 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
 
   private var current: Option[TrialSceneInput]       = None
   private var rasters: Map[AssetRef, StimulusRaster] = Map.empty
-  private var recency: Vector[AssetRef]              = Vector.empty
-  private val failuresWrapper                        =
+
+  // The stimuli in grey, as drawn under a map (overhaul v4, "photo in grey"),
+  // one per loaded image while it is held.
+  private var greyed: Map[AssetRef, (intaglio.RasterImage, intaglio.RasterImage)] = Map.empty
+
+  private def underMap(held: Map[AssetRef, StimulusRaster]): Map[AssetRef, StimulusRaster] =
+    greyed = greyed.filter((k, v) =>
+      held.get(k).exists {
+        case StimulusRaster.Loaded(img) => img eq v._1
+        case _                          => false
+      }
+    )
+    held.map {
+      case (k, StimulusRaster.Loaded(img)) =>
+        val grey = greyed.get(k).map(_._2).getOrElse {
+          val g = TrialView.grey(img)
+          greyed = greyed.updated(k, (img, g))
+          g
+        }
+        k -> StimulusRaster.Loaded(grey)
+      case other => other
+    }
+  private var recency: Vector[AssetRef] = Vector.empty
+  private val failuresWrapper           =
     ReadOnlyObjectWrapper[Map[AssetRef, StimulusError]](this, "stimulusFailures", Map.empty)
   private var requested: Set[AssetRef]       = Set.empty
   private var aspect: Option[Double]         = None
@@ -333,7 +355,8 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   private def render(): Unit =
     current.foreach { input =>
       needed(input).filter(rasters.contains).foreach(touch)
-      val ready   = input.copy(rasters = rasters, map = mapLayer)
+      val held    = if mapLayer.isDefined then underMap(rasters) else rasters
+      val ready   = input.copy(rasters = held, map = mapLayer)
       val wrapped = TrialCaptions.lines(ready, getWidth)
       TrialScene(ready.copy(options = ready.options.copy(captionLines = wrapped))) match
         case Right(scene) =>
@@ -405,6 +428,21 @@ object TrialView:
 
   /** The most decoded stimulus rasters a view holds at once. */
   val RasterLimit: Int = 6
+
+  /** A stimulus as drawn under a density map (the golden's "photo in grey"):
+    * its luminance, then CSS contrast 0.13 and brightness 1.23, so the map
+    * reads over a quiet grey picture.
+    */
+  def grey(image: intaglio.RasterImage): intaglio.RasterImage =
+    import intaglio.{alpha, blue, green, red}
+    val dims = intaglio.RasterDimensions.unsafe(image.width, image.height)
+    intaglio.RasterImage.tabulate(dims) { (x, y) =>
+      val p = image.pixelUnsafe(x, y)
+      val l = (0.2126 * p.red + 0.7152 * p.green + 0.0722 * p.blue) / 255.0
+      val v = math.max(0.0, math.min(1.0, ((l - 0.5) * 0.13 + 0.5) * 1.23))
+      val c = math.round(v * 255.0).toInt
+      intaglio.Rgba32.unsafe(c, c, c, p.alpha)
+    }
 
   /** The map raster store every view draws maps from. */
   lazy val sharedMaps: MapRasterStore = MapRasterStore()

@@ -178,7 +178,7 @@ class TokenFilesSuite extends munit.FunSuite:
       "surface-2",
       "surface-3"
     ).map("dark" -> _) ++ List("isoline-case", "ramp-0", "ramp-1", "ramp-2", "ramp-3")
-      .map("palettes" -> _)).map(_ -> overhaul).toMap
+      .map("palettes" -> _) :+ ("stage-light" -> "stage")).map(_ -> overhaul).toMap
 
   // Board-only colours that are not product tokens: the stand-in stimulus
   // picture's pixels and the macOS title-bar buttons the boards draw.
@@ -199,7 +199,7 @@ class TokenFilesSuite extends munit.FunSuite:
     ) ++ List(StageVariant.Mid, StageVariant.Light).map { stage =>
       val v = stage.cssName
       (
-        v,
+        s"stage-$v",
         declarations(main, s"[data-stage=$v],.es[data-stage=$v]", "--stage"),
         web(Theme.Light, stage)
       )

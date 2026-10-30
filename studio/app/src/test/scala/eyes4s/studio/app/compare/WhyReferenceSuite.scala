@@ -748,7 +748,7 @@ class WhyReferenceSuite extends munit.FunSuite:
     assertEquals(a0.kind, "View only")
     assertEquals(
       a0.stages.map(c => (c.label, c.chosen)),
-      Vector("Dark" -> true, "Mid" -> false, "Light" -> false)
+      Vector("Dark" -> true, "Mid" -> false, "Light" -> false, "Theme" -> false)
     )
     assertEquals(
       a0.limits.map(c => (c.label, c.chosen)),

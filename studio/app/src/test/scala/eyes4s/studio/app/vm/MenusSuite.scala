@@ -226,12 +226,12 @@ class MenusSuite extends munit.FunSuite:
 
   test("S1.9: a tab's context menu offers the plot's table twin and Reset perspective") {
     def pane(id: String) = ok(eyes4s.studio.app.layout.PaneId.of(id))
-    val plot             = Menus.tab(t2, pane("compare.query-trial"))
+    val plot             = Menus.tab(t2, pane("compare.pair"))
     assertEquals(plot.map(_.label), Vector("Show table", "Reset perspective"))
-    assertEquals(plot.head.intent, Intent.FocusPane(pane("compare.query-trial.table")))
-    val table = Menus.tab(t2, pane("compare.query-trial.table"))
+    assertEquals(plot.head.intent, Intent.FocusPane(pane("compare.pair.table")))
+    val table = Menus.tab(t2, pane("compare.pair.table"))
     assertEquals(table.map(_.label), Vector("Show plot", "Reset perspective"))
-    assertEquals(table.head.intent, Intent.FocusPane(pane("compare.query-trial")))
+    assertEquals(table.head.intent, Intent.FocusPane(pane("compare.pair")))
     assertEquals(
       Menus.tab(t2, pane("compare.inspector")).map(_.label),
       Vector("Reset perspective")
@@ -239,7 +239,7 @@ class MenusSuite extends munit.FunSuite:
     // A pane of another layout gets nothing.
     assertEquals(Menus.tab(t2, pane("figures.page")), Vector.empty)
     // Show table focuses the twin.
-    assertEquals(run(t2, plot.head.intent)._1.focusedPane, pane("compare.query-trial.table"))
+    assertEquals(run(t2, plot.head.intent)._1.focusedPane, pane("compare.pair.table"))
   }
 
   test("Discard draft asks in words: the draft and its changes; Keep draft dismisses") {

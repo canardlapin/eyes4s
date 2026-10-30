@@ -144,10 +144,8 @@ final class StudioWindow private (
     else if pane == StudioLayouts.sources then sources.focusStops
     else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
       eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
-    else if pane == StudioLayouts.queryTrial then
-      eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
-    else if pane == StudioLayouts.referenceTrial then
-      eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
+    else if pane == StudioLayouts.pair then
+      eyes4s.studio.app.compare.TrialPanels.pairStops(summary.panelsVM) ++ summary.strip.stop
     else if pane == StudioLayouts.contrast then summary.contrastStops
     else if pane == StudioLayouts.compareInspector then compareInspector.focusStops
     else if pane == StudioLayouts.compareReporting then reporting.focusStops
@@ -615,14 +613,17 @@ object StudioWindow:
       "compare.participant-table"      -> summary.participantNode,
       "compare.query-table"            -> summary.queryTable,
       "compare.queries"                -> summary.queries.node,
-      "compare.query-trial"            -> summary.panels.queryNode,
-      "compare.reference-trial"        -> summary.panels.referenceNode,
+      "compare.pair"                   -> summary.panels.pairNode,
       "compare.contrast"               -> summary.contrastNode,
       "compare.pairs"                  -> summary.pairsNode,
-      "compare.query-trial.table"      -> summary.queryTrialTable,
-      "compare.reference-trial.table"  -> summary.referenceTrialTable,
+      "compare.pair.table"             -> summary.pairTables,
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    host.controls(StudioLayouts.pair, summary.panels.headerControls*)
+    summary.onRendered { () =>
+      host.describe(StudioLayouts.pair, summary.pairSubtitle)
+      host.describe(StudioLayouts.contrast, summary.acrossSubtitle)
+    }
     summary.onRendered(() => summary.focusPlans.foreach((id, plan) => host.focus(id, plan)))
     // Compare's inspector (S8.4): why this reference, beside the panels.
     val compareInspector = CompareInspectorHost(
@@ -630,7 +631,8 @@ object StudioWindow:
       dispatch,
       LedgerSource.of(session),
       () => summary.inspectorInputs,
-      summary.chooseLimits
+      summary.chooseLimits,
+      Some((summary.readout.node, () => summary.readoutStops))
     )
     host.host(StudioLayouts.compareInspector, compareInspector.node)
     summary.onRendered(() => compareInspector.refresh())

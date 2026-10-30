@@ -128,7 +128,7 @@
 
 [data-stage=light],
 .es[data-stage=light] {
-  --stage: #F2F2F2;
+  --stage: #E7E4DD;
   --on-stage: #1C1E21;
   --halo: #1C1E21;
 }

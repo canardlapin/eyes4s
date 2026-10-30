@@ -392,6 +392,13 @@ final class CompareSummaryHost(
   val referenceTrialTable: TableTwinView =
     TableTwinView.attach(view("compare.reference-trial.table"), selection, app)
 
+  /** The pair's Table (overhaul v4): both trials' fixations, query first. */
+  val pairTables: javafx.scene.layout.VBox =
+    val v = javafx.scene.layout.VBox(queryTrialTable, referenceTrialTable)
+    Vector(queryTrialTable, referenceTrialTable)
+      .foreach(t => javafx.scene.layout.VBox.setVgrow(t, javafx.scene.layout.Priority.ALWAYS))
+    v
+
   private def rows: Vector[QueryRow] = state.queries match
     case Some(QueriesAnswer.Answered(rs)) => rs
     case _                                => Vector.empty
@@ -487,24 +494,23 @@ final class CompareSummaryHost(
   /** The contrast readout beside the ladder. */
   val readout: ContrastReadoutView = ContrastReadoutView(app, () => retryLadder())
 
-  /** The contrast pane: the ladder and its readout. */
+  /** The Across scales pane: the ladder (overhaul v4); its readout leads
+    * the inspector.
+    */
   val contrastNode: HBox =
     HBox.setHgrow(ladder.plotNode, Priority.ALWAYS)
-    // The readout scrolls when the pane is shorter than it, never overflowing the tabs.
-    val side = javafx.scene.control.ScrollPane(readout.node)
-    side.setFitToWidth(true)
-    side.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER)
-    side.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
-    side.setFocusTraversable(false)
-    val box = HBox(ladder.plotNode, side)
+    val box = HBox(ladder.plotNode)
     box.setMinHeight(0.0)
     box
+
+  /** The readout's stops, in the inspector it leads: Prev and Next. */
+  def readoutStops: Vector[eyes4s.studio.app.vm.FocusStop] = ContrastPane.focusStops(contrastVM)
 
   /** The stops inside the contrast pane: the ladder, one stop with a roving
     * cursor named by the plot it draws, while it shows one, then Prev and Next.
     */
   def contrastStops: Vector[eyes4s.studio.app.vm.FocusStop] =
-    ladder.focusStops ++ ContrastPane.focusStops(contrastVM)
+    ladder.focusStops
 
   /** Complete Results contracts, derived from served view-models and portable
     * plot/table cursor state. No native role/name introspection is involved.
@@ -530,6 +536,29 @@ final class CompareSummaryHost(
         }
       )
       .toMap
+
+  /** The pair pane's subtitle (the golden's): the focused scale and the
+    * run's declared pixels per degree.
+    */
+  def pairSubtitle: String =
+    val m = model()
+    (for
+      f   <- panelState.focus
+      l   <- contrast.ladder.collect { case LadderAnswer.Answered(l) => l }
+      s   <- l.scales.find(_.scale == f.scale)
+      run <- m.document.run(f.run)
+      d   <- m.document.dataset(run.dataset)
+    yield eyes4s.studio.app.text.TrialText(
+      eyes4s.studio.app.text.TrialTextId.PairSubtitle,
+      s.label,
+      eyes4s.studio.app.text.Format.decimal(d.geometry.pixelsPerDegree.value, 0)
+    )).getOrElse("")
+
+  /** Across scales' subtitle (the golden's): the focused query. */
+  def acrossSubtitle: String = panelState.focus.fold("")(f =>
+    eyes4s.studio.app.text
+      .TrialText(eyes4s.studio.app.text.TrialTextId.AcrossSubtitle, f.query.trial)
+  )
 
   /** The contrast pane's view-model now. */
   def contrastVM: ContrastVM =
@@ -868,8 +897,14 @@ final class CompareSummaryHost(
         ladder.rebuild(ScaleLadderPlot(ladderColumns, cv.focusScale))
       show("ladder", cv.ladder.map(Right(_)), theme)(ladder.show(_, theme), ladder.clear())
       val pv = panelsVM
-      panels.render(pv, theme, eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(m)._2)
+      panels.render(
+        pv,
+        theme,
+        eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(m)._2,
+        m.document.presentation.mapOpacity.value
+      )
       maps.sync(panelState.focus, pv, m.document.presentation.mapOpacity.value)
+      renderStrip(eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(m)._2)
       def table(p: Option[TrialPanelVM]) = p.map(_.content).collect {
         case PanelContent.Shown(c) => TrialPanels.fixationTable(c).left.map(_.message)
       }
@@ -882,6 +917,48 @@ final class CompareSummaryHost(
         referenceTrialTable.clear()
       )
       rendered.foreach(_())
+
+  // The pair's control strip (overhaul decision 7): the focused query's
+  // ladder at the focused scale, each reference's map read once.
+  val strip: PairStripView = PairStripView(app)
+  panels.stripSlot.getChildren.setAll(strip.node)
+  private var stripMaps =
+    Map.empty[(RunId, ScaleIndex, TrialKey), Either[String, DensityGrid]]
+  private var stripAsked = Set.empty[(RunId, ScaleIndex, TrialKey)]
+
+  private def renderStrip(stage: eyes4s.studio.app.tokens.StageVariant): Unit =
+    val focused = for
+      f <- panelState.focus
+      l <- contrast.ladder.collect { case LadderAnswer.Answered(l) => l }
+      s <- l.scales.find(_.scale == f.scale)
+    yield (f, s)
+    focused match
+      case None         => strip.clear()
+      case Some((f, s)) =>
+        val trials = s.matchedTrial +: s.controls.map(_.reference)
+        trials.map((f.run, f.scale, _)).filterNot(stripAsked).foreach { key =>
+          stripAsked += key
+          inputs.mapGrid(
+            MapId.Result(key._1, key._3, key._2),
+            answer =>
+              Platform.runLater { () =>
+                stripMaps = stripMaps.updated(key, answer)
+                renderStrip(eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(model())._2)
+              }
+          )
+        }
+        val shown = TrialPanels.referenceOf(f, rows).map((d, k) => f.pair(d, k))
+        strip.render(
+          eyes4s.studio.app.compare.PairStrip
+            .vm(
+              f.run,
+              f.scale,
+              s,
+              shown.orElse(Some(s.matched)),
+              t => stripMaps.get((f.run, f.scale, t))
+            ),
+          stage
+        )
 
   private def renderPaired(paired: Option[PairedDescriptiveVM]): Unit =
     headline.setVisible(paired.isDefined)

@@ -699,7 +699,8 @@ object WhyReference:
           WhyText(st match
             case StageAppearance.Dark  => StageDark
             case StageAppearance.Mid   => StageMid
-            case StageAppearance.Light => StageLight),
+            case StageAppearance.Light => StageLight
+            case StageAppearance.Theme => StageTheme),
           p.stage == st
         )
       ),

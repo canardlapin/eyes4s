@@ -41,7 +41,10 @@ import eyes4s.studio.viz.trial.{
   TrialSceneInput
 }
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, Label, ToggleButton}
+import eyes4s.studio.app.text.{TrialText, TrialTextId}
+import eyes4s.studio.desktop.plot.CanvasPlotHost
+import eyes4s.studio.viz.maps.{MapLegendKeys, MapLegendScene}
+import javafx.scene.control.{Button, CheckBox, Label, ToggleButton}
 import javafx.scene.layout.{HBox, Priority, Region, StackPane, VBox}
 
 /** Compare's query and reference trial panels on the desktop (ticket S8.2;
@@ -124,15 +127,29 @@ final class TrialPanelsView(
     VBox.setVgrow(stage, Priority.ALWAYS)
     private val spacer = Region()
     HBox.setHgrow(spacer, Priority.ALWAYS)
-    private val head = HBox(6.0, pill, title)
+    // The golden's caption: the role's glyph, its name in 600, the trial.
+    val glyph        = Region()
+    private val head = HBox(6.0, glyph, pill, title)
     head.setAlignment(Pos.CENTER_LEFT)
+    head.getStyleClass.add("pair-caption")
     count.getStyleClass.addAll("lbl", "mono")
     private val bar = HBox(8.0, tools, spacer, count)
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("panel-toolbar")
     readout.getStyleClass.add("panel-toolbar")
-    val node: VBox = VBox(4.0, head, bar, readout, note, mapStatus, stage)
+    val node: VBox = VBox(head, bar, readout, note, mapStatus, stage)
     node.getStyleClass.addAll("trial-panel", styleClass)
+    // The pair's toggles are the pane header's (overhaul v4), and its numbers
+    // are the inspector's and Across scales': the panel keeps them for its
+    // accessible text and for tests, undrawn.
+    Vector(bar, readout, note).foreach { n =>
+      n.setVisible(false)
+      n.setManaged(false)
+    }
+    HBox.setHgrow(node, Priority.ALWAYS)
+    node.setMinWidth(0)
+    node.setPrefWidth(0)
+    view.placeLegend(eyes4s.studio.desktop.trial.MapLegendPlacement.InHostLegend)
     Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
       .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
@@ -163,6 +180,7 @@ final class TrialPanelsView(
           if changed then refresh()
           pill.setText(p.role.label)
           pill.getStyleClass.setAll("panel-pill", pillClass(p.role))
+          glyph.getStyleClass.setAll("pair-glyph", pillClass(p.role))
           title.setText(p.title)
           count.setText(p.count)
           readout.setText(p.readout.text)
@@ -194,11 +212,9 @@ final class TrialPanelsView(
   underlayToggle.getStyleClass.add("tog")
   underlayToggle.setAccessibleText(PanelText(PanelTextId.Underlay))
   underlayToggle.setOnAction(_ => underlay(underlayToggle.isSelected))
-  query.tools.getChildren.add(underlayToggle)
 
   private val back = Button()
   back.getStyleClass.add("tog")
-  reference.tools.getChildren.add(back)
 
   // Asks again for what failed: the panels' answers and the views' stimuli.
   private val retry = Button(PanelText(PanelTextId.Retry))
@@ -209,7 +225,7 @@ final class TrialPanelsView(
     query.view.retry()
     reference.view.retry()
   }
-  query.tools.getChildren.add(retry)
+
   private var failed               = false
   private var mapsFailed           = false
   def mapFailed(on: Boolean): Unit =
@@ -225,6 +241,122 @@ final class TrialPanelsView(
       Vector(query, reference).exists(!_.view.stimulusFailures.get.isEmpty)
     retry.setVisible(show)
     retry.setManaged(show)
+
+  // The pane header's toggles (overhaul v4): Points, Order and Map act on
+  // both trials; Underlay on the query's.
+  private def headerToggle(id: PanelTextId, act: Boolean => Unit): CheckBox =
+    val c = CheckBox(PanelText(id))
+    c.setMnemonicParsing(false)
+    c.getStyleClass.add("pane-tog")
+    c.setAccessibleText(PanelText(id))
+    c.setOnAction(_ => act(c.isSelected))
+    c
+  private def both(which: PanelOverlay)(on: Boolean): Unit =
+    Vector(query -> PanelSide.Query, reference -> PanelSide.Reference).foreach { (p, side) =>
+      Vector(p.points, p.order, p.map)
+        .zip(Vector(PanelOverlay.Points, PanelOverlay.Order, PanelOverlay.Map))
+        .collect { case (b, w) if w == which => b }
+        .foreach(_.setSelected(on))
+      overlayChanged(side, which, on)
+    }
+  private val pointsAll   = headerToggle(PanelTextId.Points, both(PanelOverlay.Points))
+  private val orderAll    = headerToggle(PanelTextId.Order, both(PanelOverlay.Order))
+  private val mapAll      = headerToggle(PanelTextId.Map, both(PanelOverlay.Map))
+  private val underlayAll =
+    headerToggle(PanelTextId.Underlay, on => { underlayToggle.setSelected(on); underlay(on) })
+  underlayAll.setText(PanelText(PanelTextId.UnderlayShort))
+
+  /** The pair pane header's controls, in order. */
+  val headerControls: Vector[javafx.scene.Node] =
+    Vector(pointsAll, orderAll, mapAll, underlayAll, retry, back)
+
+  /** The shared legend row under both stages (the golden's): marks, the
+    * outside-window ring, order, the map's ramp and isolines.
+    */
+  val legendRow: HBox = HBox()
+  legendRow.getStyleClass.add("pair-legend")
+  private var keyed: Option[((Double, Theme), Option[MapLegendKeys])] = None
+  private val rampKey = keyHost(MapLegendScene.RampKeyWidthPx, MapLegendScene.RampKeyHeightPx)
+  private val isolineKey =
+    keyHost(MapLegendScene.IsolineKeyWidthPx, MapLegendScene.IsolineKeyHeightPx)
+  private def keyHost(w: Double, h: Double): CanvasPlotHost =
+    val host = CanvasPlotHost()
+    host.setMinSize(w, h)
+    host.setPrefSize(w, h)
+    host.setMaxSize(w, h)
+    host
+  private def legendText(words: String): Label =
+    val l = Label(words)
+    l.getStyleClass.addAll("pair-legend-label", "t11")
+    l
+  private def legendItem(nodes: javafx.scene.Node*): HBox =
+    val h = HBox(6.0, nodes*)
+    h.setAlignment(Pos.CENTER_LEFT)
+    h.getStyleClass.add("pair-legend-item")
+    h
+  private def glyphOf(style: String): Region =
+    val r = Region()
+    r.getStyleClass.addAll("pair-glyph", style)
+    r
+  private def drawLegend(vm: TrialPanelsVM, theme: Theme, opacity: Double): Unit =
+    val marks = legendItem(
+      glyphOf("pill-query"),
+      glyphOf("pill-matched"),
+      legendText(TrialText(TrialTextId.LegendArea))
+    )
+    val outside =
+      legendItem(glyphOf("pair-outside"), legendText(TrialText(TrialTextId.LegendOutside)))
+    val order =
+      legendItem(glyphOf("pair-order"), legendText(TrialText(TrialTextId.LegendOrder)))
+    val keys = keyed match
+      case Some((at, k)) if at == (opacity, theme) => k
+      case _                                       =>
+        val k = eyes4s.studio.app.maps.MapOpacity
+          .of(opacity)
+          .flatMap(o => MapLegendScene.keys(o, theme).toOption)
+        keyed = Some(((opacity, theme), k))
+        k
+    val map = keys.toVector.flatMap { k =>
+      rampKey.show(k.ramp)
+      isolineKey.show(k.isoline)
+      Vector(
+        legendItem(
+          legendText(TrialText(TrialTextId.MapLegendZero)),
+          rampKey,
+          legendText(
+            TrialText(
+              if query.view.requestedMap
+                  .exists(_.limits == eyes4s.studio.app.maps.LimitsScope.PerPanel)
+              then TrialTextId.LegendRampPerPanel
+              else TrialTextId.LegendRampShared
+            )
+          )
+        ),
+        legendItem(isolineKey, legendText(TrialText(TrialTextId.LegendIsolines)))
+      )
+    }
+    legendRow.getChildren.setAll((Vector(marks, outside, order) ++ map)*)
+    val shown = vm.query.isDefined || vm.reference.isDefined
+    legendRow.setVisible(shown)
+    legendRow.setManaged(shown)
+
+  /** The shared legend's map keys: the ramp strip and the isoline sample. */
+  def legendKeys: Vector[CanvasPlotHost] = Vector(rampKey, isolineKey)
+
+  /** The two stages side by side. */
+  private val stages = HBox(query.node, reference.node)
+  stages.getStyleClass.add("pair-stages")
+  VBox.setVgrow(stages, Priority.ALWAYS)
+
+  /** Where the control strip goes, under the legend. */
+  val stripSlot: VBox = VBox()
+  stripSlot.getStyleClass.add("pair-strip-slot")
+
+  /** The pair pane's content (overhaul v4): both stages, the legend, the strip. */
+  val pairNode: VBox = VBox(stages, legendRow, stripSlot)
+  pairNode.getStyleClass.add("pair-pane")
+  Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
+    .foreach(url => pairNode.getStylesheets.add(url.toExternalForm))
 
   /** The query panel's content. */
   def queryNode: VBox = query.node
@@ -288,7 +420,12 @@ final class TrialPanelsView(
   def pressBack(): Unit = back.fire()
 
   /** Binds `vm`, the stages drawn on the `stage` surround. */
-  def render(vm: TrialPanelsVM, theme: Theme, stage: StageVariant = StageVariant.Dark): Unit =
+  def render(
+      vm: TrialPanelsVM,
+      theme: Theme,
+      stage: StageVariant = StageVariant.Dark,
+      mapOpacity: Double = eyes4s.studio.app.maps.MapOpacity.Default.value
+  ): Unit =
     query.show(vm.query, vm.empty)
     reference.show(vm.reference, None)
     val remembered = vm.remembered.fold(RememberedImage.Absent)(r =>
@@ -311,6 +448,20 @@ final class TrialPanelsView(
     underlayToggle.setSelected(vm.underlay)
     underlayToggle.setVisible(vm.query.isDefined)
     underlayToggle.setManaged(vm.query.isDefined)
+    val shownOverlays = vm.query.orElse(vm.reference).map(_.overlays)
+    shownOverlays.foreach { o =>
+      pointsAll.setSelected(o.points)
+      orderAll.setSelected(o.order)
+      mapAll.setSelected(o.map)
+    }
+    Vector(pointsAll, orderAll, mapAll).foreach { c =>
+      c.setVisible(shownOverlays.isDefined)
+      c.setManaged(shownOverlays.isDefined)
+    }
+    underlayAll.setSelected(vm.underlay)
+    underlayAll.setVisible(vm.query.isDefined)
+    underlayAll.setManaged(vm.query.isDefined)
+    drawLegend(vm, theme, mapOpacity)
     val extras = vm.extras
     reference.note.setText(extras.fold("")(_.matched))
     extras.flatMap(_.back) match
@@ -352,7 +503,12 @@ object TrialPanelsView:
             theme,
             stage,
             options = eyes4s.studio.viz.trial
-              .TrialSceneOptions(points = p.overlays.points, order = p.overlays.order),
+              .TrialSceneOptions(
+                points = p.overlays.points,
+                order = p.overlays.order,
+                captionBand = false,
+                windowOutline = false
+              ),
             remembered = remembered
           )
         )

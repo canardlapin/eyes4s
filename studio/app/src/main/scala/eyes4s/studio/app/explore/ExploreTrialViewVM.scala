@@ -25,7 +25,7 @@ import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.assets.{Display, DisplayKind, TrialDisplay}
 import eyes4s.studio.core.backend.{AdmittedFixation, ScreenRegion, TrialKey, TrialPreview}
-import eyes4s.studio.core.document.{ScreenSize, StageAppearance}
+import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.selection.FixationIndex
 
 /** A toolbar toggle: its label, state and whether it can act. */
@@ -125,11 +125,7 @@ object ExploreTrialViewVM:
     val theme = model.theme match
       case eyes4s.studio.core.document.Theme.Light => Theme.Light
       case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
-    val stage = model.document.presentation.stage match
-      case StageAppearance.Dark  => StageVariant.Dark
-      case StageAppearance.Mid   => StageVariant.Mid
-      case StageAppearance.Light => StageVariant.Light
-    (theme, stage)
+    (theme, StageVariant.of(model.document.presentation.stage, theme))
 
   /** Every admitted fixation as a mark, retaining fractional duration.
     * Mark area is proportional to duration; no integer-millisecond quantization.

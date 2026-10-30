@@ -395,6 +395,21 @@ object TrialPanels:
 
   /** The query's overlay controls and underlay toggle, while it shows a query.
     */
+  /** The pair pane's controls after its stop (overhaul v4): the header's
+    * Points, Order and Map, which act on both trials, Underlay while a query
+    * is shown, and the way back to the matched reference while it is offered.
+    */
+  def pairStops(vm: TrialPanelsVM): Vector[FocusStop] =
+    vm.query
+      .orElse(vm.reference)
+      .toVector
+      .flatMap(_ =>
+        Vector(PanelTextId.Points, PanelTextId.Order, PanelTextId.Map)
+          .map(id => FocusStop(A11yRole.CheckBox, PanelText(id)))
+      ) ++ vm.query.toVector.map(_ =>
+      FocusStop(A11yRole.CheckBox, PanelText(PanelTextId.Underlay))
+    ) ++ vm.extras.flatMap(_.back).toVector.map((label, _) => FocusStop(A11yRole.Button, label))
+
   def queryStops(vm: TrialPanelsVM): Vector[FocusStop] =
     vm.query.toVector.flatMap(_ =>
       overlayStops(PanelTextId.Query) :+ FocusStop(

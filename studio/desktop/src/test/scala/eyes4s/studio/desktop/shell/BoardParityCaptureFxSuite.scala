@@ -51,7 +51,14 @@ class BoardParityCaptureFxSuite extends StoryCaptureFixture:
   private val boards = Vector(
     Board(
       "Main",
-      StoryModels.t2Compare,
+      // The v4 golden's stage follows the theme (a new project's default).
+      at(
+        StoryModels.t2Compare,
+        Intent.Dispatch(
+          eyes4s.studio.core.command.Command
+            .SetStage(eyes4s.studio.core.document.StageAppearance.Theme)
+        )
+      ),
       StoryMoment.T2,
       StudioTheme.Light,
       Some(RestingFocus.Board.Main)

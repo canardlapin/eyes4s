@@ -60,6 +60,12 @@ enum Theme derives CanEqual, Codec.AsObject:
 enum StageAppearance derives CanEqual, Codec.AsObject:
   case Dark, Mid, Light
 
+  /** The stage follows the theme (overhaul v4, the golden's surround): light
+    * in the light theme, dark in the dark. A new project's choice; a stored
+    * document keeps the stage it was saved with.
+    */
+  case Theme
+
 /** Map opacity in [0, 1]; the default is 0.6 (DESIGN_SPEC section 12). */
 sealed abstract case class MapOpacity private (value: Double) derives CanEqual
 

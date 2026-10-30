@@ -9,19 +9,16 @@ button: ret_07 · beach-042
 button: pair ret_07 × enc_03 · matched, current location
 list: Queries
 text-field: Filter participant or item
-plot: Query trial
-toggle-button: Query trial: Points
-toggle-button: Query trial: Order
-toggle-button: Query trial: Map
-toggle-button: Underlay remembered image
-plot: Reference trial
-toggle-button: Reference trial: Points
-toggle-button: Reference trial: Order
-toggle-button: Reference trial: Map
-plot: Contrast
+plot: Pair
+check-box: Points
+check-box: Order
+check-box: Map
+check-box: Underlay remembered image
+list: Matched and 19 controls
+plot: Across scales
 region: Scale ladder of P17 · ret_07 contrast: matched, controls, control mean and D at 4 scales. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection. 57 of 88 rows are not drawn; the Table tab lists every row.
-button: Next →, next reference
 region: Inspector
+button: Next →, next reference
 button: Edit in Analysis ⌘3
 radio-button: Stage: Dark
 radio-button: Colour limits: Shared

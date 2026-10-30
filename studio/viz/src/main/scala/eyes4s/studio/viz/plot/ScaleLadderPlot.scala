@@ -148,7 +148,16 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       (drawn, unplotted) = planned
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
         .map(PlotBuildError.Scene(kind, _))
-      built <- scene(theme, levels, drawn).left
+      // The golden's columns beside the ladder: M, B and the backend's D.
+      values = drawn.collect {
+        case d @ ScaleLadderPlot.Drawn(rows, at, _, _, _, ScaleLadderPlot.Shape.Bar(b, m)) =>
+          at.y.toInt -> (
+            m,
+            b,
+            rows.headOption.flatMap(r => source.number(r.row, columns.d)).getOrElse(m - b)
+          )
+      }.toMap
+      built <- scene(theme, levels, drawn, values).left
         .map(PlotBuildError.Graphics(kind, "the scale ladder", _))
       (grobs, viewport, names) = built
       marks <- drawn
@@ -339,7 +348,8 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
   private def scene(
       theme: Theme,
       levels: Vector[String],
-      drawn: Vector[ScaleLadderPlot.Drawn]
+      drawn: Vector[ScaleLadderPlot.Drawn],
+      values: Map[Int, (Double, Double, Double)]
   ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[GraphicsName])] =
     import ScaleLadderPlot.*
     def colour(token: ThemedToken): Rgba = IntaglioColours.themed(theme, token)
@@ -371,12 +381,25 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
       xScale   <- Interval(x0, x1)
       yScale   <- Interval(-0.5, rowsN - 0.5)
       origin   <- Point.npc(0.1, 0.04)
-      size     <- Size.npc(0.87, 0.84)
+      size     <- Size.npc(ScaleLadderPlot.DataWidth, 0.84)
       viewport <- Viewport.checked(origin, size, xScale, yScale, Clip.On, 0.0, YDirection.Down)
       frameVp  <- Viewport.checked(origin, size, xScale, yScale, Clip.Off, 0.0, YDirection.Down)
-      whole    <- Size.npc(1.0, 1.0)
-      centre   <- Point.npc(0.5, 0.5)
-      surface  <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Surface)))
+      // The rows across the whole width: the rules, the focused band and
+      // the M, B and D columns (the golden's).
+      rowsAt    <- Point.npc(0.0, 0.04)
+      rowsSize  <- Size.npc(1.0, 0.84)
+      columnsVp <- Viewport.checked(
+        rowsAt,
+        rowsSize,
+        xScale,
+        yScale,
+        Clip.Off,
+        0.0,
+        YDirection.Down
+      )
+      whole   <- Size.npc(1.0, 1.0)
+      centre  <- Point.npc(0.5, 0.5)
+      surface <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Surface)))
       background <- Grob.rect(centre, whole, gp = surface)
       bandGp <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Surface2)))
       lineGp <- GraphicParams.checked(
@@ -485,19 +508,51 @@ final case class ScaleLadderPlot(columns: LadderColumns, focus: Option[String] =
             Grob.text(label, Point(gutter, y), Anchor(HJust.Right, VJust.Center), gp = scaleGp)
           )
       }
-      axisAt    <- Point.npc(0.97, 0.99)
+      axisAt    <- Point.npc(0.1 + ScaleLadderPlot.DataWidth, 0.99)
       axisTitle <- Grob.text(
         LadderText(LadderTextId.CosineAxis),
         axisAt,
         Anchor(HJust.Right, VJust.Top),
         gp = labelGp
       )
+      valueGp <- GraphicParams.checked(
+        stroke = None,
+        fill = Some(colour(ThemedToken.Ink)),
+        fontFamily = Some(FontFace.SansRegular.javaFxFamily),
+        fontSize = labelSize
+      )
+      // The heads above the first row, in the rows' own scale.
+      headY <- LengthExpr.native(-0.5)
+      heads <- traverse(ScaleLadderPlot.ValueColumns.zip(ScaleLadderPlot.ValueHeads)) {
+        (x, h) =>
+          LengthExpr
+            .npc(x)
+            .flatMap(nx =>
+              Grob.text(h, Point(nx, headY), Anchor(HJust.Right, VJust.Bottom), gp = labelGp)
+            )
+      }
+      cells <- traverse(values.toVector.sortBy(_._1)) { case (level, (m, b, d)) =>
+        LengthExpr.native(level.toDouble).flatMap { y =>
+          traverse(
+            ScaleLadderPlot.ValueColumns.zip(
+              Vector(Format.decimal(m, 2), Format.decimal(b, 2), Format.signed(d, 2))
+            )
+          ) { (x, text) =>
+            LengthExpr
+              .npc(x)
+              .flatMap(nx =>
+                Grob.text(text, Point(nx, y), Anchor(HJust.Right, VJust.Center), gp = valueGp)
+              )
+          }
+        }
+      }
     yield (
       Vector(
         background,
-        Grob.group(band ++ rules.flatten, viewport = Some(frameVp)),
+        Grob.group(band ++ rules.flatten, viewport = Some(columnsVp)),
         Grob.group(marked.map(_._1), viewport = Some(viewport)),
         Grob.group(scaleLabels, viewport = Some(frameVp)),
+        Grob.group(cells.flatten ++ heads, viewport = Some(columnsVp)),
         axisTitle
       ),
       viewport,
@@ -520,20 +575,22 @@ object ScaleLadderPlot:
   /** Controls closer than this fraction of the cosine axis are spread. */
   val DodgeFraction: Double = 0.014
 
-  /** A control dot's radius and edge, in logical pixels (9 px across). */
-  val DotRadiusPx: Double = 4.5
-  val DotEdgePx: Double   = 1.5
+  /** A control dot's radius and edge, in logical pixels (5.5 px across,
+    * the v4 golden's light swarm).
+    */
+  val DotRadiusPx: Double = 2.75
+  val DotEdgePx: Double   = 1.2
 
   /** M's diamond: its point radius and its surface-coloured edge. */
-  val DiamondRadiusPx: Double = 6.0
-  val DiamondEdgePx: Double   = 2.0
+  val DiamondRadiusPx: Double = 5.0
+  val DiamondEdgePx: Double   = 1.5
 
-  /** B's tick: 3 px wide, 28 px tall. */
-  val TickHalfWidthPx: Double = 1.5
-  val TickHalfPx: Double      = 14.0
+  /** B's tick: 2 px wide, 18 px tall (the golden's). */
+  val TickHalfWidthPx: Double = 1.0
+  val TickHalfPx: Double      = 9.0
 
-  /** D's bar: 4 px thick. */
-  val BarHalfPx: Double = 2.0
+  /** D's bar: a 1.5 px line (the golden's). */
+  val BarHalfPx: Double = 0.75
 
   /** The tallest histogram bar of a scale, in logical pixels. */
   val BarMaxPx: Double = 18.0
@@ -622,6 +679,13 @@ object ScaleLadderPlot:
       ._1
 
   /** How a mark is drawn. */
+  /** The ladder's share of the width; M, B and D take the rest (the golden's). */
+  val DataWidth: Double = 0.62
+
+  /** The right edges of the M, B and D columns, and their heads. */
+  private[plot] val ValueColumns: Vector[Double] = Vector(0.8, 0.88, 0.98)
+  private[plot] val ValueHeads: Vector[String]   = Vector("◆ M", "| B", "D = M − B")
+
   private[plot] enum Shape derives CanEqual:
     case Dot, Diamond, Tick
     case Bar(b: Double, m: Double)

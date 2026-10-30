@@ -312,7 +312,7 @@ class S45bPlotFxSuite extends StudioFxSuite:
       assert(
         near(
           image,
-          DevicePoint(tick.x, tick.y - 10.0),
+          DevicePoint(tick.x, tick.y - 6.0),
           Tokens.themed(Theme.Light, ThemedToken.Control),
           40
         ),

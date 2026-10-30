@@ -375,3 +375,189 @@
   -fx-background-insets: 0, 1;
   -fx-text-fill: -es-ink-2;
 }
+
+/* ---- Results' pair (overhaul v4, the golden's Pair pane) ------------------------- */
+
+.pair-pane {
+  -fx-background-color: -es-surface;
+}
+
+.pair-stages {
+  -fx-spacing: 18;
+  -fx-padding: 0 14 0 14;
+}
+
+.pair-caption {
+  -fx-padding: 0 0 6 0;
+  -fx-min-height: 26px;
+}
+
+/* The role's name: 600 in ink, beside its glyph (no pill). */
+.pair-caption .panel-pill {
+  -fx-padding: 0;
+  -fx-background-color: transparent;
+  -fx-text-fill: -es-ink;
+  -fx-font-size: 12px;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.pair-caption .panel-title {
+  -fx-text-fill: -es-ink-2;
+  -fx-font-size: 12px;
+}
+
+/* The role glyphs: the query's dot, the matched reference's diamond, a
+ * control's ring (DESIGN_SPEC section 5). */
+.pair-glyph {
+  -fx-min-width: 9px;
+  -fx-pref-width: 9px;
+  -fx-max-width: 9px;
+  -fx-min-height: 9px;
+  -fx-pref-height: 9px;
+  -fx-max-height: 9px;
+}
+
+.pair-glyph.pill-query {
+  -fx-background-color: -es-query;
+  -fx-background-radius: 5;
+}
+
+.pair-glyph.pill-matched {
+  -fx-background-color: -es-match;
+  -fx-shape: "M5 0 10 5 5 10 0 5z";
+}
+
+.pair-glyph.pill-control {
+  -fx-background-color: -es-control, -es-surface;
+  -fx-background-insets: 0, 1.6;
+  -fx-background-radius: 5, 4;
+}
+
+.pair-glyph.pair-outside {
+  -fx-border-color: -es-ink-3;
+  -fx-border-style: segments(2, 2);
+  -fx-border-radius: 5;
+}
+
+.pair-glyph.pair-order {
+  -fx-min-width: 16px;
+  -fx-pref-width: 16px;
+  -fx-max-width: 16px;
+  -fx-min-height: 2px;
+  -fx-pref-height: 2px;
+  -fx-max-height: 2px;
+  -fx-background-color: -es-hairline-strong;
+}
+
+.pair-legend {
+  -fx-alignment: center-left;
+  -fx-spacing: 18;
+  -fx-padding: 8 14 10 14;
+  -fx-border-color: transparent transparent -es-hairline transparent;
+  -fx-border-width: 0 0 1 0;
+}
+
+.pair-legend-item .pair-glyph.pill-matched {
+  -fx-translate-x: -2;
+}
+
+.pair-legend-label {
+  -fx-text-fill: -es-ink-3;
+}
+
+/* The pane header's toggles: the golden's .tog, a 12 px box with its check. */
+.pane-tog {
+  -fx-font-size: 12px;
+  -fx-text-fill: -es-ink-2;
+  -fx-label-padding: 0 0 0 4;
+}
+
+.pane-tog:selected {
+  -fx-text-fill: -es-ink;
+}
+
+.pane-tog > .box {
+  -fx-padding: 1;
+  -fx-background-color: -es-hairline-strong, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 3, 2;
+}
+
+.pane-tog:selected > .box {
+  -fx-background-color: -es-ink-2;
+  -fx-background-insets: 0;
+  -fx-background-radius: 3;
+}
+
+.pane-tog > .box > .mark {
+  -fx-padding: 4;
+  -fx-shape: "M1 5 4 8 9 2 8 1 4 6 2 4z";
+  -fx-background-color: transparent;
+}
+
+.pane-tog:selected > .box > .mark {
+  -fx-background-color: -es-surface;
+}
+
+/* ---- the pair's control strip (decision 7; the golden's) ----------------------- */
+
+.pair-strip {
+  -fx-padding: 10 14 12 14;
+}
+
+.strip-title {
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-text-fill: -es-ink;
+}
+
+.strip-note {
+  -fx-text-fill: -es-ink-3;
+}
+
+.strip-score {
+  -fx-text-fill: -es-ink-2;
+}
+
+.strip-score.strip-matched {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.strip-tile {
+  -fx-padding: 1;
+}
+
+.strip-tile.strip-cursor {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
+  -fx-padding: -1;
+}
+
+.strip-empty {
+  -fx-background-color: -es-surface-3;
+}
+
+.strip-b-cell {
+  -fx-min-width: 48px;
+  -fx-pref-width: 48px;
+}
+
+.strip-b-bar {
+  -fx-min-width: 3px;
+  -fx-pref-width: 3px;
+  -fx-max-width: 3px;
+  -fx-min-height: 36px;
+  -fx-pref-height: 36px;
+  -fx-max-height: 36px;
+  -fx-background-color: -es-control;
+}
+
+.strip-b {
+  -fx-text-fill: -es-control-text;
+}
+
+.pair-strip:focus-visible {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
+  -fx-border-insets: 0;
+}

@@ -328,7 +328,7 @@ class KeymapFxSuite extends ShellFxSuite:
   ) { fx =>
     val w      = boot(fx, StoryModels.t2Compare)
     val studio =
-      runOnFx(w.shell.tabMenu(w.host.dockId(pane("compare.query-trial")), Vector.empty))
+      runOnFx(w.shell.tabMenu(w.host.dockId(pane("compare.pair")), Vector.empty))
     assertEquals(
       runOnFx(studio.map(i => Option(i.getText).getOrElse("—"))),
       Vector("—", "Show table", "Reset perspective")
@@ -336,8 +336,8 @@ class KeymapFxSuite extends ShellFxSuite:
     assert(studio.head.isInstanceOf[SeparatorMenuItem])
     // The hook is installed: a context-menu request on the tab shows it.
     val tab = runOnFx(
-      w.root.lookupAll(".dock-tab").asScala.find(_.getAccessibleText == "Query trial")
-    ).getOrElse(fail("no Query trial tab"))
+      w.root.lookupAll(".dock-tab").asScala.find(_.getAccessibleText == "Pair")
+    ).getOrElse(fail("no Pair tab"))
     runOnFx {
       val b = tab.getLayoutBounds
       val p = tab.localToScene(b.getCenterX, b.getCenterY)
@@ -371,10 +371,10 @@ class KeymapFxSuite extends ShellFxSuite:
     runOnFx(items.find(_.getText == "Show table").get.fire())
     runOnFx(menu.hide())
     fx.awaitLayout()
-    assertEquals(model(w).focusedPane.value, "compare.query-trial.table")
+    assertEquals(model(w).focusedPane.value, "compare.pair.table")
     assertEquals(
       runOnFx(w.host.dock.state.focused.map(_.value)),
-      Some("compare.query-trial.table")
+      Some("compare.pair.table")
     )
   }
 

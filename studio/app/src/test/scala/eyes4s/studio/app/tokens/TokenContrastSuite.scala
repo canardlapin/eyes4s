@@ -385,12 +385,12 @@ class TokenContrastSuite extends munit.FunSuite:
 
   test("a density level whose fill reads on its ground is not cased there") {
     // Dark 1-3 on the stage (4.14), Mid >=64 on the stage (3.22), Light 1-3
-    // and >=64 on the stage (3.75, 13.07), 16-63 on the screen (3.55).
+    // and >=64 on the golden's light stage (3.31, 11.53), 16-63 on the screen (3.55).
     List(
       (StageVariant.Dark, DensityGround.Stage, 1, 4.14),
       (StageVariant.Mid, DensityGround.Stage, 4, 3.22),
-      (StageVariant.Light, DensityGround.Stage, 1, 3.75),
-      (StageVariant.Light, DensityGround.Stage, 4, 13.07),
+      (StageVariant.Light, DensityGround.Stage, 1, 3.31),
+      (StageVariant.Light, DensityGround.Stage, 4, 11.53),
       (StageVariant.Light, DensityGround.Screen, 3, 3.55)
     ).foreach { (stage, ground, level, expected) =>
       assertEquals(DensityCasing.band(level, stage, ground), None, s"${stage.cssName} $level")
@@ -403,13 +403,13 @@ class TokenContrastSuite extends munit.FunSuite:
   }
 
   test("a density band's contrast against its ground is pinned") {
-    // Halo on the stages: 17.40 (Dark), 4.54 (Mid), 14.92 (Light); on the
+    // Halo on the stages: 17.40 (Dark), 4.54 (Mid), 13.16 (Light); on the
     // screen, the inner casing 5.07 (Dark, Mid) beats white --halo 2.82, and
     // ink --halo 5.92 (Light) beats the white inner casing 2.15.
     List(
       (StageVariant.Dark, DensityGround.Stage, DensityBand.Halo, 17.40),
       (StageVariant.Mid, DensityGround.Stage, DensityBand.Halo, 4.54),
-      (StageVariant.Light, DensityGround.Stage, DensityBand.Halo, 14.92),
+      (StageVariant.Light, DensityGround.Stage, DensityBand.Halo, 13.16),
       (StageVariant.Dark, DensityGround.Screen, DensityBand.InnerCasing, 5.07),
       (StageVariant.Dark, DensityGround.Screen, DensityBand.Halo, 2.82),
       (StageVariant.Mid, DensityGround.Screen, DensityBand.InnerCasing, 5.07),

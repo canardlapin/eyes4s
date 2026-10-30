@@ -224,7 +224,7 @@ object FigurePanels:
     val said = levels.map(Format.percent)
     if said.size <= 1 then said.mkString else said.init.mkString(", ") + " and " + said.last
 
-  private def tileMap(
+  private[app] def tileMap(
       run: RunId,
       scale: ScaleIndex,
       trial: TrialKey,

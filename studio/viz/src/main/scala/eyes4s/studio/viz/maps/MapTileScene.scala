@@ -84,11 +84,12 @@ object MapTileScene:
       grid: MapGrid,
       style: MapStyle,
       region: ScreenRegion,
-      stage: StageVariant
+      stage: StageVariant,
+      glance: Boolean = false
   ): Either[PlotSceneError, PlotScene] =
     for
       sceneId <- SceneId(id)
-      built   <- layers(grid, style, region, stage).left.map(
+      built   <- layers(grid, style, region, stage, glance).left.map(
         PlotSceneError.Graphics(sceneId.value, "the map tile", _)
       )
       (grobs, viewport) = built
@@ -100,7 +101,8 @@ object MapTileScene:
       grid: MapGrid,
       style: MapStyle,
       region: ScreenRegion,
-      stage: StageVariant
+      stage: StageVariant,
+      glance: Boolean
   ): Either[GraphicsError, (Vector[Grob], Viewport)] =
     // Cell for cell and without the global opacity: a figure tile is the map
     // alone, not an overlay. A tile is drawn without an app theme, so its
@@ -115,7 +117,12 @@ object MapTileScene:
       centre  <- Point.npc(0.5, 0.5)
       stageGp <- GraphicParams.checked(
         stroke = None,
-        fill = Some(IntaglioColours.staged(stage, StageToken.Stage))
+        // A glance (the pair's strip, the golden's 48 px tiles) is the blank
+        // screen under its smoothed map, without isolines.
+        fill = Some(
+          if glance then IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.Screen))
+          else IntaglioColours.staged(stage, StageToken.Stage)
+        )
       )
       stageName <- name(StageName)
       field     <- Grob.rect(centre, whole, gp = stageGp, name = Some(stageName))
@@ -126,7 +133,8 @@ object MapTileScene:
         image,
         centre,
         whole,
-        interpolation = RasterInterpolation.Nearest,
+        interpolation =
+          if glance then RasterInterpolation.Smooth else RasterInterpolation.Nearest,
         name = Some(mapName)
       )
       hatch   <- MissingAssetHatch.paper(MissingAssetHatch.Trial)
@@ -140,7 +148,7 @@ object MapTileScene:
         hatch,
         unName
       )
-      lines <- isolines(grid, region)
+      lines <- if glance then Right(Vector.empty) else isolines(grid, region)
     yield (
       Vector(Grob.group(Vector(field, map) ++ missing ++ lines, viewport = Some(vp))),
       vp

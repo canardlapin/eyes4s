@@ -744,7 +744,18 @@ object AppModel:
         Vector.empty,
         Vector.empty,
         Vector.empty,
-        PresentationState.default,
+        // A new project's stage follows the theme (overhaul v4).
+        PresentationState
+          .of(
+            PresentationState.default.perspective,
+            PresentationState.default.theme,
+            eyes4s.studio.core.document.StageAppearance.Theme,
+            PresentationState.default.mapOpacity,
+            PresentationState.default.underlay,
+            None,
+            Vector.empty
+          )
+          .getOrElse(PresentationState.default),
         Vector.empty
       )
       .map(open(_, None))

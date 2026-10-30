@@ -30,6 +30,22 @@ enum StageVariant(val cssName: String) derives CanEqual:
   case Mid   extends StageVariant("mid")
   case Light extends StageVariant("light")
 
+object StageVariant:
+
+  /** The surround a document's stage choice draws in `theme`: the theme's
+    * own (light or dark) when it follows the theme (overhaul v4).
+    */
+  def of(stage: eyes4s.studio.core.document.StageAppearance, theme: Theme): StageVariant =
+    import eyes4s.studio.core.document.StageAppearance
+    stage match
+      case StageAppearance.Dark  => Dark
+      case StageAppearance.Mid   => Mid
+      case StageAppearance.Light => Light
+      case StageAppearance.Theme =>
+        theme match
+          case Theme.Light => Light
+          case Theme.Dark  => Dark
+
 /** A colour token whose value depends on the chrome [[Theme]]. `cssName` is
   * the CSS custom property without its leading `--`.
   */
@@ -213,7 +229,7 @@ object Tokens:
       case (StageVariant.Mid, StageToken.Stage)     => Colour.srgb(0x767676)
       case (StageVariant.Mid, StageToken.OnStage)   => Colour.srgb(0xffffff)
       case (StageVariant.Mid, StageToken.Halo)      => Colour.srgb(0xffffff)
-      case (StageVariant.Light, StageToken.Stage)   => Colour.srgb(0xf2f2f2)
+      case (StageVariant.Light, StageToken.Stage)   => Colour.srgb(0xe7e4dd)
       case (StageVariant.Light, StageToken.OnStage) => Colour.srgb(0x1c1e21)
       case (StageVariant.Light, StageToken.Halo)    => Colour.srgb(0x1c1e21)
 

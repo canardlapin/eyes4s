@@ -61,7 +61,7 @@ enum WhyTextId derives CanEqual:
   case FilterKeep, FilterOutside, Summary, ParticipantMeans, PooledQueries
 
   // --- Appearance ------------------------------------------------------------------------
-  case AppearanceTitle, ViewOnly, Stage, StageDark, StageMid, StageLight
+  case AppearanceTitle, ViewOnly, Stage, StageDark, StageMid, StageLight, StageTheme
   case Limits, LimitsShared, LimitsPerPanel, Opacity, OpacityValue, Retry
 
 object WhyText:
@@ -190,6 +190,7 @@ object WhyText:
     case StageDark       => "Dark"
     case StageMid        => "Mid"
     case StageLight      => "Light"
+    case StageTheme      => "Theme"
     case Limits          => "Colour limits"
     case LimitsShared    => "Shared"
     case LimitsPerPanel  => "Per panel"

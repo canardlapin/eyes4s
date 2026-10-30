@@ -57,7 +57,11 @@ final class CompareInspectorHost(
     app: Intent => Unit,
     source: LedgerSource,
     inputs: () => InspectorInputs,
-    limitsChanged: LimitsScope => Unit = _ => ()
+    limitsChanged: LimitsScope => Unit = _ => (),
+    /** What the inspector leads with (overhaul v4: the contrast readout, the
+      * golden's hero D with M and B), and its stops, before its own.
+      */
+    lead: Option[(javafx.scene.Node, () => Vector[FocusStop])] = None
 ):
   private var state    = WhyReference.empty
   private var disposed = false
@@ -139,7 +143,9 @@ final class CompareInspectorHost(
   retry.setOnAction(_ => dispatch(WhyIntent.Retry))
 
   private val content = VBox(
-    VBox(8.0, title, status, explanation, why, retry),
+    (lead.map(_._1).toVector ++ Vector(VBox(8.0, title, status, explanation, why, retry)))*
+  )
+  content.getChildren.addAll(
     section(head(analysisTitle, analysisKind), analysis, edit),
     section(head(reportingTitle, reportingKind), reporting),
     section(
@@ -148,7 +154,7 @@ final class CompareInspectorHost(
       row(limitsLabel, limits.node),
       row(opacityLabel, opacity, opacityValue)
     )
-  )
+  ): Unit
   content.setPadding(javafx.geometry.Insets(12, 14, 12, 14))
   content.setSpacing(10.0)
 
@@ -164,7 +170,8 @@ final class CompareInspectorHost(
   def vm: CompareInspectorVM = WhyReference.vm(state, model().document, inputs())
 
   /** The controls inside the pane's own stop, in Tab order. */
-  def focusStops: Vector[FocusStop] = WhyReference.focusStops(vm)
+  def focusStops: Vector[FocusStop] =
+    lead.fold(Vector.empty[FocusStop])(_._2()) ++ WhyReference.focusStops(vm)
 
   /** The explanation as shown, and the facts of each section, as text. */
   def explanationText: String         = explanation.getText

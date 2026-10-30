@@ -51,8 +51,8 @@ object RestingFocus:
   /** A board with a resting focus ring on the desktop. */
   enum Board(val stop: Stop):
 
-    /** Main.dc.html (t2, Compare query): the Reference trial pane. */
-    case Main extends Board(Stop.named(AccessibleRole.IMAGE_VIEW, "Reference trial"))
+    /** Main.dc.html (t2, Results pair): the Pair pane. */
+    case Main extends Board(Stop.named(AccessibleRole.IMAGE_VIEW, "Pair"))
 
     /** Explore.dc.html (t2 Explore): the trial canvas, its cursor on
       * fixation 6.
