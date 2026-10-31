@@ -101,14 +101,11 @@ class LayoutSpecSuite extends munit.FunSuite:
       "Results.dc.html",
       compareSummary,
       Vector(
-        "Participants"                 -> "compare.participants",
-        "Participants · D by response" -> "compare.participant-plot",
-        "Table"                        -> "compare.participant-plot.table",
-        "Scale profile"                -> "compare.scale-profile",
-        "Table"                        -> "compare.scale-profile.table",
-        "Participant table · σ 2°"     -> "compare.participant-table",
-        "Query table"                  -> "compare.query-table",
-        "Reporting"                    -> "compare.reporting"
+        "Participants"            -> "compare.participants",
+        "Remembered vs Forgotten" -> "compare.participant-plot",
+        "Table"                   -> "compare.participant-plot.table",
+        "Participants"            -> "compare.participant-table",
+        "Reporting"               -> "compare.reporting"
       )
     ),
     (

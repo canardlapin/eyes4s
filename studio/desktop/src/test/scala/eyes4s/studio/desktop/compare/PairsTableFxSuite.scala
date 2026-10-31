@@ -93,9 +93,8 @@ class PairsTableFxSuite extends ShellFxSuite:
           StimulusSource.directory(GoldenTrials.stimuli)
         )
       )
-      eventually(fx, "pair rows and focused-query profile") {
-        w.summary.pairsTable.source.exists(_.rows.size == 8969) &&
-        w.summary.scaleProfile.table.source.exists(_.rows.size == 4)
+      eventually(fx, "pair rows") {
+        w.summary.pairsTable.source.exists(_.rows.size == 8969)
       }
       val pane = PaneId.of(id).fold(e => fail(e.toString), identity)
       dispatch(fx, w, Intent.FocusPane(pane))
@@ -112,20 +111,6 @@ class PairsTableFxSuite extends ShellFxSuite:
       assertEqualsDouble(runOnFx(w.shell.statusBar.node.getHeight), 26.0, 1.0)
       fx.snapshot(StudioTheme.Light): Unit
     }
-  }
-
-  fxStage.test("the scale profile tab shows the focused query's D at every scale") { fx =>
-    val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
-    eventually(fx, "the query's profile") {
-      w.summary.scaleProfile.table.source.exists(s =>
-        s.rows.size == 4 && s.rows.forall(_.ref.toString.contains("ret_07"))
-      )
-    }
-    val src = runOnFx(w.summary.scaleProfile.table.source).get
-    assertEquals(
-      src.rows.indices.flatMap(src.cells(_)).map(_(3)).toVector,
-      Vector("+0.42", "+0.69", "+0.62", "+0.34")
-    )
   }
 
   private val buildRoot: Path = Paths.get(

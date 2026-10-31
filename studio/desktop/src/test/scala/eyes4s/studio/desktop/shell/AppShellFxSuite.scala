@@ -211,20 +211,21 @@ class AppShellFxSuite extends ShellFxSuite:
     first.foreach { (id, n) =>
       assert(runOnFx(panes.node(id)).exists(m => n.exists(_ eq m)), s"$id changed identity")
     }
-    assert(node("compare.scale-profile").isDefined)
+    assert(node("compare.participant-plot").isDefined)
   }
 
   fxStage.test(
     "Results shows the summary layout at the Summary crumb and the pair layout below it"
   ) { fx =>
     val w       = boot(fx, StoryModels.t2Compare)
-    val profile = StudioPaneId.of("compare.scale-profile").fold(e => fail(e.message), identity)
+    val profile =
+      StudioPaneId.of("compare.participant-plot").fold(e => fail(e.message), identity)
     assertEquals(runOnFx(w.host.active), Some("compare.query"))
     assert(runOnFx(w.host.dock.state.findPane(w.host.dockId(profile))).isEmpty)
     val crumbs = runOnFx(w.shell.contextStrip.crumbs)
     fx.robot.click(crumbs.head)
     assertEquals(runOnFx(w.host.active), Some("compare.summary"))
-    // The scale profile is the summary's (overhaul v4).
+    // The slopegraphs are the summary's (overhaul v4).
     assert(runOnFx(w.host.dock.state.findPane(w.host.dockId(profile))).isDefined)
     // Deeper than the Summary crumb: the query layout again.
     dispatch(

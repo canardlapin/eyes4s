@@ -53,4 +53,4 @@ object PlotBrushing:
         HalfOpenSpan
           .between(value(from), value(to))
           .map(span => Brushed(span, PlotBrush.rows(plot.source, rule, span)))
-      case Axis.Category(_, _) => None
+      case Axis.Category(_, _) | Axis.Panels(_, _, _, _, _, _) => None

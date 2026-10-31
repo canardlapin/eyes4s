@@ -130,6 +130,14 @@ object StudioLayouts:
   /** The pane that hosts Compare's scale ladder and contrast readout (S8.3). */
   val contrast: PaneId = PaneId("compare.contrast")
 
+  /** The Results summary's panes: the Δ strip, the slopegraphs and the
+    * participant table.
+    */
+  val participants: PaneId     = PaneId("compare.participants")
+  val participantPlot: PaneId  = PaneId("compare.participant-plot")
+  val participantTable: PaneId = PaneId("compare.participant-table")
+  val reporting: PaneId        = PaneId("compare.reporting")
+
   /** The pane that hosts Compare's why-this-reference inspector (S8.4). */
   val compareInspector: PaneId = PaneId("compare.inspector")
 
@@ -272,27 +280,21 @@ object StudioLayouts:
 
   // --- Compare ------------------------------------------------------------------
 
-  /** Shared by both Compare layouts: one live view. */
-  private val scaleProfile = pane("compare.scale-profile", "Scale profile", Plot)
-
   /** Results.dc.html: study → participants. */
   val compareSummary: PerspectiveLayout = layout(
     "compare.summary",
     Perspective.Results,
     columns(
       navigator(pane("compare.participants", "Participants", Navigator)) -> 232.0,
-      // The golden's heights: the plot 412, the participant table 379.
+      // The golden's heights: the plot 412, the participant table 379. The
+      // slopegraphs carry Δ by σ, so the summary has no scale profile; a
+      // participant's queries are the drill's (overhaul v4).
       stack(
         group(
           dynamic("compare.participant-plot", "Participant plot", Plot),
-          table("compare.participant-plot"),
-          scaleProfile,
-          table("compare.scale-profile")
-        ) -> 412.0,
-        group(
-          dynamic("compare.participant-table", "Participant table", Table),
-          pane("compare.query-table", "Query table", Table)
-        ) -> 379.0
+          table("compare.participant-plot")
+        )                                                                  -> 412.0,
+        group(dynamic("compare.participant-table", "Participants", Table)) -> 379.0
       ),
       // The inspector is closed by default here (overhaul decision 5).
       rail(pane("compare.reporting", "Reporting", Inspector)) -> InspectorPx

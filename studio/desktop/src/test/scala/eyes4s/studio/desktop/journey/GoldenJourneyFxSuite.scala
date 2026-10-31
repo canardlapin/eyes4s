@@ -30,15 +30,7 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.platform.TempDirs
 import javafx.scene.Node
-import javafx.scene.control.{
-  Button,
-  Labeled,
-  Menu,
-  MenuButton,
-  MenuItem,
-  RadioButton,
-  ToggleButton
-}
+import javafx.scene.control.{Button, Labeled, Menu, MenuButton, MenuItem, RadioButton}
 
 import java.nio.file.Files
 import scala.concurrent.duration.*
@@ -279,10 +271,14 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       eventually(fx, "the 2° summary report")(
         w.summary.vm.scales.exists(c => c.scale == sigma2 && c.available)
       )
-      val twoDegrees = control(fx, w, "σ 2°") {
-        case b: ToggleButton if b.getText == "σ 2°" => b
-      }
-      runOnFx(twoDegrees.fire())
+      runOnFx(
+        w.summary.chrome.reporting.getItems.asScala
+          .collectFirst {
+            case i: javafx.scene.control.RadioMenuItem if i.getText == "Report at σ 2°" => i
+          }
+          .getOrElse(fail("no 2° choice"))
+          .fire()
+      )
       eventually(fx, "the summary")(shown(w).exists(_.contains("+0.38")))
 
       // Rev 5 adds σ 8° (StartDraft: a named bypass until S7.3); Review

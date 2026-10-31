@@ -17,6 +17,8 @@
 package eyes4s.studio.viz.plot
 
 import eyes4s.studio.app.plot.{
+  SlopeColumns,
+  Slopegraphs,
   GroupGrandMean,
   ParticipantCell,
   ParticipantColumns,
@@ -77,6 +79,30 @@ object ParticipantSamples:
         }
       }
     )
+
+  val slopeColumns: SlopeColumns =
+    SlopeColumns.standard.fold(e => throw new AssertionError(e.message), identity)
+
+  /** The same means at another σ: every ref names `at`, the label `label`. */
+  def atScale(m: ParticipantMeans, at: ScaleIndex, label: String): ParticipantMeans =
+    def moved(ref: StudioRef): StudioRef = ref match
+      case StudioRef.GroupCell(r, rep, _, g)             => StudioRef.GroupCell(r, rep, at, g)
+      case StudioRef.ParticipantSummary(r, rep, _, g, p) =>
+        StudioRef.ParticipantSummary(r, rep, at, g, p)
+      case other => other
+    m.copy(
+      scale = at,
+      scaleLabel = label,
+      groups = m.groups.map(g => g.copy(ref = moved(g.ref))),
+      cells = m.cells.map(c => c.copy(ref = moved(c.ref)))
+    )
+
+  /** The slopegraphs' source of `m` at 2° and again at 0.5°. */
+  def slopes(m: ParticipantMeans): PlotSource =
+    val half = ScaleIndex.of(0).fold(e => throw new AssertionError(e), identity)
+    Slopegraphs
+      .source(Vector(atScale(m, half, "0.5°"), m), slopeColumns)
+      .fold(e => throw new AssertionError(e.message), identity)
 
   def source(means: ParticipantMeans): PlotSource =
     ParticipantMeans

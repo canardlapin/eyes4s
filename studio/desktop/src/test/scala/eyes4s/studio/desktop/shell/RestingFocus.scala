@@ -83,7 +83,7 @@ object RestingFocus:
     case Results
         extends Board(
           Stop
-            .named(AccessibleRole.PARENT, "Participant plot of Participant D")
+            .named(AccessibleRole.PARENT, "Slopegraphs of Participant D")
             .withCursor(
               w =>
                 (

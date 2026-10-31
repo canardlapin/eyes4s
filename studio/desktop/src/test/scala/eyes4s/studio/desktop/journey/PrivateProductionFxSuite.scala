@@ -41,8 +41,7 @@ import eyes4s.studio.desktop.trial.TrialViewStatus
 import eyes4s.studio.core.importing.{ColumnChoice, GeometryField}
 import io.circe.{Json, parser}
 import io.circe.syntax.*
-import javafx.scene.AccessibleAttribute
-import javafx.scene.control.{Button, Label, Menu, MenuItem}
+import javafx.scene.control.{Button, Menu, MenuItem}
 import java.nio.file.{Files, Path}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
@@ -392,7 +391,8 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           dispatch(
             fx,
             w,
-            Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("compare.query-table")))
+            Intent
+              .FocusPane(get(eyes4s.studio.app.layout.PaneId.of("compare.participant-table")))
           )
           until(fx, "complete query table served") {
             w.summary.summary.queries.exists {
@@ -402,7 +402,7 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           }
           capture(fx, root, if reopen then "reopen-plot-requested" else "plot-requested")
           var plotPoll = 0
-          until(fx, "participant and scale-profile plots are drawn", 60.seconds) {
+          until(fx, "the slopegraphs are drawn", 60.seconds) {
             plotPoll += 1
             if plotPoll % 100 == 1 then
               val vm = w.summary.vm
@@ -410,7 +410,7 @@ class PrivateProductionFxSuite extends ShellFxSuite:
                 s"[private-production/plots] participant=${vm.participantPlot.map(_.fold(identity, p => s"served(${p.rows.size})"))}; profile=${vm.profile.map(_.fold(identity, p => s"served(${p.rows.size})"))}; layout=${w.runtime.model.layout}"
               )
 
-            Vector(w.summary.participantPlot, w.summary.scaleProfile).forall { twin =>
+            Vector(w.summary.participantPlot).forall { twin =>
               twin.status.get match
                 case eyes4s.studio.desktop.plot.PlotTwinStatus.Shown(_)          => true
                 case eyes4s.studio.desktop.plot.PlotTwinStatus.Refused(_, error) =>
@@ -423,54 +423,10 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           until(fx, "query table view model rendered") {
             w.summary.vm.queries.exists(_.isRight)
           }
-          until(fx, "query table is visible and drawing rows") { w.summary.queryTable.onScreen }
+          // The summary has no query table since the overhaul (v4): its rows
+          // are the view-model's, checked against the archive above.
           val table = get(runOnFx(w.summary.vm.queries).get)
           assertEquals(table.rows.size, found.size)
-          val expectedCells = table.rows.map(table.cellsOf)
-          assertEquals(runOnFx(w.summary.queryTable.modelRowTexts), expectedCells)
-          val tableTop = runOnFx(w.summary.queryTable.topRow).getOrElse(0)
-          def drawnRow(index: Int): Option[Vector[String]] =
-            w.summary.queryTable.rowNode(index).map { row =>
-              assertEquals(row.getItem.intValue, index)
-              assertEquals(
-                row.queryAccessibleAttribute(AccessibleAttribute.INDEX),
-                Integer.valueOf(index)
-              )
-              row
-                .lookupAll(".table-twin-cell")
-                .asScala
-                .toVector
-                .collect { case cell: Label =>
-                  val column = cell
-                    .queryAccessibleAttribute(AccessibleAttribute.COLUMN_INDEX)
-                    .asInstanceOf[Integer]
-                    .intValue
-                  column -> cell.getText
-                }
-                .sortBy(_._1)
-                .map(_._2)
-            }
-          // Read actual cell nodes by index across layout pulses. Require every
-          // row and every cell; the table's model is never a rendering substitute.
-          var drawnCells = runOnFx {
-            expectedCells.indices.flatMap(i => drawnRow(i).map(i -> _)).toMap
-          }
-          fx.awaitLayout()
-          expectedCells.indices
-            .filter(i => drawnCells.get(i) != Some(expectedCells(i)))
-            .foreach { index =>
-              until(fx, s"query-table row $index is drawn with the expected cells", 2.minutes) {
-                drawnRow(index).exists { cells =>
-                  drawnCells = drawnCells.updated(index, cells)
-                  cells == expectedCells(index)
-                }
-              }
-            }
-          assertEquals(drawnCells.size, expectedCells.size)
-          assertEquals(expectedCells.indices.map(drawnCells).toVector, expectedCells)
-          runOnFx(w.summary.queryTable.rowNode(tableTop))
-          fx.awaitLayout()
-          println(s"[private-production] all ${drawnCells.size} query-table rows drawn exactly")
           assertEquals(archive(w), expectedDigest)
           write(
             root.resolve(if reopen then "reopened-queries.json" else "ui-queries.json"),

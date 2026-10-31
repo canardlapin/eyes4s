@@ -18,7 +18,7 @@ package eyes4s.studio.desktop.plot
 
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.layout.{CompareLayout, StudioLayouts}
-import eyes4s.studio.app.nav.{Location, Place}
+import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.core.backend.{Response, ReportRole}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -35,12 +35,9 @@ import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
-import eyes4s.studio.app.plot.ParticipantNotes
-import eyes4s.studio.viz.plot.{Annotations, DataPoint, ParticipantPlot, RowMarking}
-import javafx.scene.control.{Label, ToggleButton}
-import javafx.geometry.Point2D
-import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
-import javafx.scene.layout.{HBox, Region}
+import eyes4s.studio.viz.plot.{DataPoint, RowMarking, SlopegraphPlot}
+import javafx.scene.control.{Label, RadioMenuItem}
+import javafx.scene.layout.HBox
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
@@ -90,6 +87,15 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     "P24 | 20 | 19 | 0 | 0 | 1 | 0.77 | 0.38 | +0.39 | +0.46 (13) | +0.25 (6)"
   ).map(_.split('|').toVector.map(_.trim))
 
+  // The overhaul's columns (results.html): participant, contributing queries,
+  // and each group's D with its n; the Δ columns follow (app suites check them).
+  private val fixtureLeading: Vector[Vector[String]] = fixtureTable.map { r =>
+    def split(cell: String) =
+      val (d, n) = cell.span(_ != ' ')
+      Vector(d, n.trim.stripPrefix("(").stripSuffix(")"))
+    Vector(r(0), r(2)) ++ split(r(9)) ++ split(r(10))
+  }
+
   private def ascii(s: String): String = s.replace(Format.Minus, "-")
 
   // The summary's tables sit in tabs not shown here: their rows are read
@@ -97,83 +103,73 @@ class CompareSummaryFxSuite extends ShellFxSuite:
   private def rows(t: TableTwinView): Vector[Vector[String]] =
     runOnFx(t.modelRowTexts.map(_.map(ascii)))
 
-  private def labels(w: StudioWindow): Vector[String] =
-    runOnFx(
-      w.summary.participantNode
-        .lookupAll(".label")
-        .asScala
-        .toVector
-        .collect { case l: Label => l.getText }
-    )
+  /** Report at `σ`: the reporting menu's choice in the plot's header. */
+  private def reportAt(w: StudioWindow, sigma: String): Unit = runOnFx {
+    w.summary.chrome.reporting.getItems.asScala
+      .collectFirst { case i: RadioMenuItem if i.getText == s"Report at $sigma" => i }
+      .getOrElse(fail(s"no $sigma choice"))
+      .fire()
+  }
 
   private def loaded(fx: FxStage, w: StudioWindow): Unit =
     eventually(fx, "the 2° report is available")(
       w.summary.vm.scales.exists(c => c.scale == StoryModels.sigma2 && c.available)
     )
-    runOnFx {
-      val two = w.summary.participantNode
-        .lookupAll(".toggle-button")
-        .asScala
-        .collectFirst {
-          case b: ToggleButton if b.getText == "σ 2°" => b
-        }
-        .getOrElse(fail("no 2° control"))
-      two.fire()
-    }
+    reportAt(w, "σ 2°")
     eventually(fx, "the summary and its queries are read") {
       val vm = w.summary.vm
       vm.participants.exists(_.isRight) && vm.queries.exists(_.isRight) &&
       vm.scales.nonEmpty && vm.scales.forall(_.available) &&
-      w.summary.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
-      w.summary.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
-      w.summary.queryTable.rowCount > 0
+      w.summary.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown]
     }
 
   fxStage.test("participant table and plot match the stored query values") { fx =>
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     loaded(fx, w)
-    assertEquals(rows(w.summary.participantTable), fixtureTable)
-    // The plot: 24 participants in each group and both grand means, each
-    // saying its group's n.
+    assertEquals(rows(w.summary.participantTable).map(_.take(6)), fixtureLeading)
+    // The slopegraphs: 24 participants' lines and the mean line at each σ.
     val plot = runOnFx(w.summary.participantPlot.plot).getOrElse(fail("no plot"))
-    assertEquals(plot.marks.size, 50)
-    val grand =
-      plot.marks.filter(_.ref.isInstanceOf[StudioRef.ReportCell]).flatMap(plot.readout)
-    assertEquals(
-      grand,
-      Vector(
-        "Group Remembered, Mean of all participants, D +0.43, n 24 participants",
-        "Group Forgotten, Mean of all participants, D +0.24, n 24 participants"
-      )
+    assertEquals(plot.marks.size, 4 * 25)
+    val grand = plot.marks.filter(_.ref.isInstanceOf[StudioRef.ReportCell])
+    assertEquals(grand.size, 4)
+    val at2 = grand
+      .find(_.ref match
+        case StudioRef.ReportCell(_, _, scale, _, _) => scale == StoryModels.sigma2
+        case _                                       => false)
+      .getOrElse(fail("no 2° mean line"))
+    val di = plot.source.columns.indexWhere(_.id.value == "d")
+    assertEquals(at2.rows.flatMap(r => plot.source.text(r.row, di)), Vector("+0.43", "+0.24"))
+    // The facts under the table and the newer run's freshness.
+    val board = runOnFx(w.summary.board)
+    assert(
+      board.footer.contains(
+        "454 of 480 queries contribute (14 not admitted, 9 no match, 3 failed)"
+      ),
+      board.footer
     )
-    // The notes, the newer run's freshness and the σ selector.
-    val shown = labels(w)
-    Vector(
-      "Means: equal participant weight",
-      "Per-group n: 2–17 queries per participant",
-      "Rev 5 · run 8 running · 48%"
-    ).foreach(t => assert(shown.contains(t), s"'$t' not shown in $shown"))
-    // t3's spec declares Remembered − Forgotten (design review ticket 27):
-    // the paired n note and the paired headline.
-    assert(shown.contains("Paired n = 24 participants"), shown)
+    assertEquals(runOnFx(w.summary.vm.freshness), Some("Rev 5 · run 8 running · 48%"))
     eventually(fx, "the paired headline is shown")(w.summary.headline.isVisible)
-    val toggles = runOnFx(
-      w.summary.participantNode.lookupAll(".toggle-button").asScala.toVector.collect {
-        case b: ToggleButton => (b.getText, b.isDisable, b.isSelected)
+    // The σ choices in the reporting menu, 2° reported.
+    val choices = runOnFx(
+      w.summary.chrome.reporting.getItems.asScala.toVector.collect {
+        case i: RadioMenuItem if i.getText.startsWith("Report at") =>
+          (i.getText, i.isDisable, i.isSelected)
       }
     )
     assertEquals(
-      toggles,
+      choices,
       Vector(
-        ("σ 0.5°", false, false),
-        ("σ 1°", false, false),
-        ("σ 2°", false, true),
-        ("σ 4°", false, false)
+        ("Report at σ 0.5°", false, false),
+        ("Report at σ 1°", false, false),
+        ("Report at σ 2°", false, true),
+        ("Report at σ 4°", false, false)
       )
     )
-    // The scale profile at the four protocol scales.
-    val profile = runOnFx(w.summary.scaleProfile.plot).getOrElse(fail("no profile"))
-    assertEquals(profile.source.rows.size, (1 + 24) * 4)
+    // Δ by σ at the four protocol scales.
+    assertEquals(
+      runOnFx(w.summary.vm.slopes.deltas.map(_.scale)),
+      Vector("0.5°", "1°", "2°", "4°")
+    )
     fx.snapshot(StudioTheme.Light)
   }
 
@@ -192,11 +188,10 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     assertEquals(
       texts,
       Vector(
-        "Δ Remembered − Forgotten · paired n 24",
         "+0.18",
-        "higher in 24 of 24",
-        "Range +0.04 P15 to +0.34 P11 · computed before rounding participant means · " +
-          "Descriptive only, no intervals or tests"
+        "Δ D, Remembered − Forgotten at σ 2°",
+        "Higher for Remembered in 24 of 24 participants · range +0.04 (P15) to +0.34 (P11) · " +
+          "descriptive, no tests"
       )
     )
     assert(inScene, "the headline sits over the participant plot in the window")
@@ -204,106 +199,35 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     fx.snapshot(StudioTheme.Light)
   }
 
-  fxStage.test("the participant plot's annotation column: P17 selected and P05's failures") {
-    fx =>
-      assumeFullStage(fx)
-      val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-      loaded(fx, w)
-      eventually(fx, "the plot is drawn with its notes")(
-        runOnFx(w.summary.participantPlot.plot).exists(_.description.contains("Annotations:"))
+  fxStage.test("the legend names P17 and the thin lines; the facts name P05's failures") { fx =>
+    val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    loaded(fx, w)
+    val board = runOnFx(w.summary.board)
+    assertEquals(
+      board.legend.map {
+        case eyes4s.studio.app.compare.SlopeKey.Mean(t)        => t
+        case eyes4s.studio.app.compare.SlopeKey.Participant(t) => t
+        case eyes4s.studio.app.compare.SlopeKey.Selected(t)    => t
+        case eyes4s.studio.app.compare.SlopeKey.Thin(t)        => t
+        case eyes4s.studio.app.compare.SlopeKey.Note(t)        => t
+      },
+      Vector(
+        "mean of 24",
+        "one participant",
+        "P17, selected",
+        "n<3 in a group",
+        "σ in degrees, declared 35 px/° (not calibrated)"
       )
-      val (plot, spoken) = runOnFx(
-        (
-          w.summary.participantPlot.plot.getOrElse(fail("no plot")),
-          w.summary.participantPlot.plotHost.getAccessibleText
-        )
+    )
+    assertEquals(
+      board.footer.drop(1),
+      Vector(
+        "P05: ret_04 (Forgotten), ret_11, ret_16 (Remembered) failed",
+        "P17, P21: 2 Forgotten queries"
       )
-      def all(g: intaglio.Grob): Vector[intaglio.Grob] = g +: g.children.flatMap(all)
-      val drawn = plot.plot.scene.grobs.flatMap(all).collect { case t: intaglio.Grob.Text =>
-        t.label
-      }
-      // The board's ten lines, the group means as served.
-      val notes = Vector(
-        "P17 · selected",
-        "19 of 20 contributing",
-        "Rem +0.40 (n 17)",
-        "Forg +0.22 (n 2)",
-        "P05 · 17 of 20 contributing",
-        "Rem +0.39 (n 13)",
-        "Forg +0.22 (n 4)",
-        "3 failed queries:",
-        "2 Remembered, 1 Forgotten",
-        "no value, not zero"
-      )
-      assertEquals(drawn.filter(notes.contains), notes)
-      // The marks are unchanged by the column: 24 participants twice, two grand means.
-      assertEquals(plot.marks.size, 50)
-      val said =
-        "Annotations: P17 · selected, 19 of 20 contributing, Remembered +0.40, n 17, " +
-          "Forgotten +0.22, n 2; P05 · 17 of 20 contributing, Remembered +0.39, n 13, " +
-          "Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero"
-      assert(plot.description.contains(said), plot.description)
-      assert(Option(spoken).exists(_.contains(said)), s"accessible text: $spoken")
-      fx.snapshot(StudioTheme.Light)
-  }
-
-  fxStage.test("a short participant plot writes only the notes its frame holds; taller, more") {
-    fx =>
-      assumeFullStage(fx)
-      val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-      val twin = w.summary.participantPlot
-      loaded(fx, w)
-      val p17 = Vector(
-        "P17 · selected",
-        "19 of 20 contributing",
-        "Rem +0.40 (n 17)",
-        "Forg +0.22 (n 2)"
-      )
-      val p05 = Vector(
-        "P05 · 17 of 20 contributing",
-        "Rem +0.39 (n 13)",
-        "Forg +0.22 (n 4)",
-        "3 failed queries:",
-        "2 Remembered, 1 Forgotten",
-        "no value, not zero"
-      )
-      val written                                      = (p17 ++ p05 :+ "+1 more").toSet
-      def all(g: intaglio.Grob): Vector[intaglio.Grob] = g +: g.children.flatMap(all)
-      // The note lines the plot now draws, and its host's height.
-      def drawn(): (Vector[String], Double) = runOnFx(
-        (
-          twin.plot.toVector
-            .flatMap(_.plot.scene.grobs.flatMap(all))
-            .collect { case t: intaglio.Grob.Text if written(t.label) => t.label },
-          twin.plotHost.getHeight
-        )
-      )
-      // Both blocks and the gap between them take 11 slots.
-      val both = p17.size + ParticipantNotes.BlockGapSlots + p05.size
-      // A pane 120 px tall: its frame holds 6 slots, fewer than both blocks,
-      // so the board's constant 15 slots would have written below it.
-      val short = 120.0
-      runOnFx(twin.plotNode.setMaxHeight(short))
-      eventually(fx, "the short plot draws P17 and what is left")(
-        drawn()._1 == (p17 :+ "+1 more")
-      )
-      val (_, height) = drawn()
-      val frame       = ParticipantPlot.frameHeightPx(height)
-      // The canvas sits inside the pane's padding.
-      assert(height > 0.0 && height <= short, s"$height px")
-      assert(both * Annotations.SlotPx > frame, s"$both slots fit a $frame px frame")
-      assert((p17.size + 1) * Annotations.SlotPx <= frame, s"$frame px frame")
-      assertEquals(runOnFx(w.summary.vm.plotNotes.omitted), 1)
-      val said = runOnFx(twin.plot.map(_.description)).getOrElse(fail("no plot"))
-      assert(said.contains("1 more participant not annotated"), said)
-      assert(!said.contains("P05 · 17 of 20 contributing"), said)
-      fx.snapshot(StudioTheme.Light)
-      // Taller again: the column has room for both blocks.
-      runOnFx(twin.plotNode.setMaxHeight(Region.USE_COMPUTED_SIZE))
-      eventually(fx, "the taller plot draws both blocks")(drawn()._1 == p17 ++ p05)
-      val (_, tall) = drawn()
-      assert(both * Annotations.SlotPx <= ParticipantPlot.frameHeightPx(tall), s"$tall px")
-      assertEquals(runOnFx(w.summary.vm.plotNotes.omitted), 0)
+    )
+    assertEquals(runOnFx(w.summary.vm.slopes.thin), Set("P17", "P21"))
+    fx.snapshot(StudioTheme.Light)
   }
 
   fxStage.test("Explain P17 carries the spec and the group into the query layout") { fx =>
@@ -324,8 +248,10 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       StoryModels.select(runOnFx(w.runtime.model), "compare.participant-plot", p17)
     )
     eventually(fx, "Explain is offered")(w.summary.vm.explain.isDefined)
-    val shown = labels(w)
-    assert(shown.contains("keeps: by retrieval response › Remembered › P17"), shown)
+    assertEquals(
+      runOnFx(w.summary.vm.explain.map(_.keeps)),
+      Some("keeps: by retrieval response › Remembered › P17")
+    )
     runOnFx(w.summary.explainNow())
     fx.awaitLayout()
     val trail = runOnFx(w.runtime.model.location.trail)
@@ -344,45 +270,41 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     fx =>
       val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
       loaded(fx, w)
-      val failed = rows(w.summary.queryTable).filter(_.lift(3).contains("failed"))
+      val failed = runOnFx(w.summary.vm.queries.flatMap(_.toOption)).toVector
+        .flatMap(q => q.rows.map(q.cellsOf).filter(_.lift(3).contains("failed")))
       assertEquals(failed.size, 3)
       failed.foreach { r =>
         assert(r.head.startsWith("P05"), r)
         assertEquals(r.drop(4), Vector.fill(3)("—"))
       }
-      // In the participant table P05's three failed queries are counted, not scored.
-      assertEquals(rows(w.summary.participantTable)(4).take(4), Vector("P05", "20", "17", "3"))
-      // In the plot P05's two means are placed at their values, never at zero,
-      // and no participant mean is missing in the fixture.
-      val plot            = runOnFx(w.summary.participantPlot.plot).getOrElse(fail("no plot"))
-      def at(g: Response) =
-        plot
-          .markOf(
-            StudioRef.ReportParticipant(
-              StoryMoments.run7,
-              StoryModels.reporting,
-              StoryModels.sigma2,
-              ReportGroup.Level(g),
-              ReportRole.Difference,
-              "P05"
-            )
-          )
-          .map(_.rows.map(_.marking))
+      // In the participant table P05 counts its 17 contributing queries.
+      assertEquals(rows(w.summary.participantTable)(4).take(2), Vector("P05", "17"))
+      // In the 2° panel P05's two means are placed at their values, never at
+      // zero, and no participant mean is missing in the fixture.
+      val plot = runOnFx(w.summary.participantPlot.plot).getOrElse(fail("no plot"))
       def position(group: Response): DataPoint =
-        at(group)
-          .flatMap(_.headOption)
-          .collect { case RowMarking.Placed(point) =>
-            point
-          }
+        val ref = StudioRef.ReportParticipant(
+          StoryMoments.run7,
+          StoryModels.reporting,
+          StoryModels.sigma2,
+          ReportGroup.Level(group),
+          ReportRole.Difference,
+          "P05"
+        )
+        plot.marks
+          .flatMap(_.rows)
+          .find(_.ref == ref)
+          .map(_.marking)
+          .collect { case RowMarking.Placed(point) => point }
           .getOrElse(fail(s"No placed P05 mean for ${group.label}"))
       val ReportMeanTolerance = 1e-14
       val remembered          = position(Response.Remembered)
       val forgotten           = position(Response.Forgotten)
-      assertEquals(remembered.x, 0.0)
-      assertEquals(forgotten.x, 1.0)
+      assertEquals(remembered.x, 2 * SlopegraphPlot.Pitch)
+      assertEquals(forgotten.x, 2 * SlopegraphPlot.Pitch + 1.0)
       assertEqualsDouble(remembered.y, 5.033771 / 13, ReportMeanTolerance)
       assertEqualsDouble(forgotten.y, 0.863573 / 4, ReportMeanTolerance)
-      assert(!plot.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless])))
+      assertEquals(plot.unplotted, Vector.empty)
   }
 
   // --- Another run ------------------------------------------------------------------
@@ -435,12 +357,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     val host    =
       runOnFx(CompareSummaryHost(() => runtime.model, i => runtime.dispatch(i), inputs))
     val box = runOnFx {
-      val b = HBox(
-        host.participantPlot.plotNode,
-        host.scaleProfile.plotNode,
-        host.participantNode,
-        host.queryTable
-      )
+      val b = HBox(host.participantPlot.plotNode, host.participantNode)
       b.getStyleClass.add("es")
       b.getStylesheets.setAll(StudioStyles.stylesheets(Theme.Light).toOption.get*)
       b
@@ -464,8 +381,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     }
     eventually(fx, "run 7 is drawn") {
       host.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
-      host.participantTable.rowCount == 24 && host.queryTable.rowCount > 0 &&
-      host.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown]
+      host.participantTable.rowCount == 24
     }
     // A theme change redraws the plots in the new theme, from the same sources.
     val previousSource       = runOnFx(host.vm.participants.get.toOption.get)
@@ -483,7 +399,6 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       sceneOf(host.participantPlot).exists(_.endsWith(".dark")),
       sceneOf(host.participantPlot)
     )
-    assert(sceneOf(host.scaleProfile).exists(_.endsWith(".dark")), sceneOf(host.scaleProfile))
     assert(runOnFx(host.vm.participants.get.toOption.get eq previousSource))
     runOnFx(
       runtime.dispatch(
@@ -499,9 +414,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     runOnFx(runtime.dispatch(Intent.Dispatch(Command.ShowRun(Some(StoryMoments.run5)))))
     def cleared(): Unit = runOnFx {
       assertEquals(host.participantPlot.status.get, PlotTwinStatus.Empty)
-      assertEquals(host.scaleProfile.status.get, PlotTwinStatus.Empty)
       assertEquals(host.participantTable.rowCount, 0)
-      assertEquals(host.queryTable.rowCount, 0)
     }
     cleared()
     assertEquals(runOnFx(host.vm.status), Some("Reading run 5…"))
@@ -544,132 +457,29 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     "saved ungrouped" -> (() => savedUngroupedSummary)
   ).foreach { (context, initial) =>
     fxStage.test(
-      s"the Results grand mean keeps exact cell, line, table and navigation context on return ($context)"
+      s"a whole participant keeps its exact spec through Explain ($context)"
     ) { fx =>
       val w = boot(fx, initial(), StoryMoment.T3)
       loaded(fx, w)
-      // The scale profile shares the participant plot's group (overhaul v4).
-      runOnFx(
-        w.host.dock.update(
-          scaladock.edit.activate(_, scaladock.PaneId("compare.scale-profile"))
-        )
-      )
-      fx.awaitLayout()
-      val twin = w.summary.scaleProfile
-      val plot = runOnFx(twin.plot).getOrElse(fail("no profile plot"))
-      val cell = plot.source.rows
-        .take(4)
-        .map(_.ref)
-        .collectFirst {
-          case ref @ StudioRef.ReportCell(_, _, scale, ReportGroup.Whole, ReportRole.Difference)
-              if scale == StoryModels.sigma2 =>
-            ref
-        }
-        .getOrElse(fail("no whole-report 2° cell"))
-      val expected = eyes4s.studio.app.compare.CompareSummary
-        .reportingSpec(runOnFx(w.runtime.model.document), cell.reporting)
-        .getOrElse(fail("the curve's reporting identity must resolve"))
-      assert(expected.groupBy.isEmpty)
-      def targets = runOnFx {
-        twin.plotHost.status.get match
-          case PlotHostStatus.Drawn(frame) if frame.plan.scene eq plot.plot.scene =>
-            twin.input.targets
-          case _ => None
-      }
-      eventually(fx, "the grand mean's actual canvas is drawn")(
-        targets.exists(_.target(cell).isDefined)
-      )
-      val target = targets.get
-      val at     = target.transform.deviceToCanvas(target.target(cell).get.anchor)
-      val scene  = runOnFx(twin.plotHost.localToScene(Point2D(at.x, at.y)))
-      runOnFx {
-        Vector(MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED, MouseEvent.MOUSE_CLICKED)
-          .foreach { kind =>
-            eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
-              twin.plotHost,
-              MouseEvent(
-                kind,
-                scene.getX,
-                scene.getY,
-                scene.getX,
-                scene.getY,
-                MouseButton.PRIMARY,
-                1,
-                false,
-                false,
-                false,
-                false,
-                kind == MouseEvent.MOUSE_PRESSED,
-                false,
-                false,
-                true,
-                false,
-                true,
-                PickResult(twin.plotHost, scene.getX, scene.getY)
-              )
-            )
-          }
-      }
-      eventually(fx, "exact grand-mean cell selected")(
-        w.runtime.model.selection.selected == Vector(cell)
-      )
-      val selected = runOnFx(w.runtime.model)
-      val label    = eyes4s.studio.app.vm
-        .Labels(selected, eyes4s.studio.app.text.Messages.english)
-        .place(Place.At(cell), current = true)
-      assert(label.contains("All queries") && label.contains("D"), label)
-      dispatch(fx, w, Intent.Explain(Place.At(cell)))
-      val location = runOnFx(w.runtime.model.location)
-      assert(location.trail.contains(Place.Summary(expected.id)), location)
-      assert(location.trail.contains(Place.At(cell)), location)
-      dispatch(
-        fx,
-        w,
-        Intent.Navigate(
-          Location(
-            eyes4s.studio.core.document.Perspective.Results,
-            Vector(Place.At(StudioRef.Participant("P17")))
-          )
-        )
-      )
-      dispatch(fx, w, Intent.Navigate(location))
-      loaded(fx, w)
-      val returned = runOnFx(w.runtime.model)
-      assertEquals(
-        eyes4s.studio.app.compare.CompareSummary.reporting(returned),
-        Some(expected.id)
-      )
-      assertEquals(
-        eyes4s.studio.app.compare.CompareSummary.reportingSpec(returned.document, expected.id),
-        Some(expected)
-      )
-      val source =
-        runOnFx(w.summary.scaleProfile.plot).getOrElse(fail("no returned profile")).source
-      assert(source.rows.take(4).exists(_.ref == cell), source.rows.take(4).map(_.ref))
-      assert(
-        source.rows
-          .take(4)
-          .forall(_.ref match
-            case StudioRef.ReportCell(_, id, _, ReportGroup.Whole, ReportRole.Difference) =>
-              id == expected.id
-            case _ => false)
-      )
-      assertEquals(returned.location, location)
       val table = runOnFx(w.summary.participantTable.source)
         .getOrElse(fail("no returned participant table"))
-      val lineRefs = source.rows.map(_.ref).collect {
-        case ref @ StudioRef.ReportParticipant(
+      val person = table.rows.head.ref
+      // The whole participant's own spec: the saved one, or its derived overall.
+      val expected = person match
+        case StudioRef.ReportParticipant(
               _,
+              id,
               _,
-              scale,
               ReportGroup.Whole,
               ReportRole.Difference,
               _
-            ) if scale == StoryModels.sigma2 =>
-          ref
-      }
-      assertEquals(table.rows.map(_.ref).toSet, lineRefs.toSet)
-      val person = table.rows.head.ref
+            ) =>
+          eyes4s.studio.app.compare.CompareSummary
+            .reportingSpec(runOnFx(w.runtime.model.document), id)
+            .getOrElse(fail(s"$id must resolve"))
+        case other => fail(s"not a whole participant: $other")
+      assert(expected.groupBy.isEmpty)
+      val root = eyes4s.studio.app.compare.CompareSummary.reporting(runOnFx(w.runtime.model))
       dispatch(
         fx,
         w,
@@ -682,10 +492,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       val explained = runOnFx(w.runtime.model)
       assertEquals(explained.selection.selected, Vector(person))
       assert(explained.location.trail.contains(Place.At(person)), explained.location)
-      assertEquals(
-        eyes4s.studio.app.compare.CompareSummary.reporting(explained),
-        Some(expected.id)
-      )
+      // The trail keeps the summary's own spec; the person's ref keeps its own.
+      assertEquals(eyes4s.studio.app.compare.CompareSummary.reporting(explained), root)
       assertEquals(
         eyes4s.studio.app.compare.CompareSummary.reportingSpec(explained.document, expected.id),
         Some(expected)

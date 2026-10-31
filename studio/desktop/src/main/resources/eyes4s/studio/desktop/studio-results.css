@@ -38,3 +38,121 @@
 .paired-higher, .paired-note {
   -fx-text-fill: -es-ink-2;
 }
+
+/* The overhaul's summary (docs/studio/overhaul/mockups/results.html): the
+ * headline's 30 px figure, its key and line, the caveat, the reporting menu,
+ * the legend under the slopegraphs and the facts under the table. */
+
+.summary-headline {
+  -fx-padding: 2 16 4 16;
+}
+
+/* The golden's figure is 30 px; the type scale's hero (t28) sets it. */
+.summary-value {
+  -fx-text-fill: -es-ink;
+}
+
+.summary-key {
+  -fx-text-fill: -es-ink-3;
+}
+
+.summary-line {
+  -fx-text-fill: -es-ink-2;
+}
+
+.summary-caveat {
+  -fx-fill: -es-ink-2;
+}
+
+.summary-caveat-flow {
+  -fx-padding: 0 0 2 0;
+}
+
+.summary-more {
+  -fx-text-fill: -es-accent;
+  -fx-padding: 0;
+  -fx-border-width: 0;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.summary-menu {
+  -fx-pref-height: 24px;
+  -fx-min-height: 24px;
+  -fx-max-height: 24px;
+  -fx-padding: 0 6 0 8;
+  -fx-background-color: -es-hairline-strong, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 6, 5;
+  -fx-text-fill: -es-ink;
+}
+
+.summary-menu > .label {
+  -fx-text-fill: -es-ink;
+  -fx-padding: 0;
+}
+
+.summary-menu > .arrow-button {
+  -fx-padding: 0 0 0 6;
+  -fx-background-color: transparent;
+}
+
+.summary-menu > .arrow-button > .arrow {
+  -fx-background-color: -es-ink-3;
+}
+
+.summary-legend {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-padding: 0 16 0 16;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.summary-key-item {
+  -fx-text-fill: -es-ink-3;
+}
+
+.summary-key-line {
+  -fx-stroke: -es-ink-3;
+  -fx-stroke-width: 1;
+  -fx-stroke-line-cap: butt;
+}
+
+.summary-key-mean {
+  -fx-stroke: -es-ink;
+  -fx-stroke-width: 2.5;
+}
+
+.summary-key-participant {
+  -fx-opacity: 0.5;
+}
+
+.summary-key-selected {
+  -fx-stroke: -es-ink;
+  -fx-stroke-width: 1.4;
+  -fx-opacity: 0.85;
+}
+
+.summary-footer {
+  -fx-min-height: 30px;
+  -fx-pref-height: 30px;
+  -fx-max-height: 30px;
+  -fx-padding: 0 14 0 14;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.summary-fact {
+  -fx-text-fill: -es-ink-2;
+}
+
+.summary-status {
+  -fx-text-fill: -es-ink-2;
+  -fx-padding: 4 14 0 14;
+}
+
+.summary-menu:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}

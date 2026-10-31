@@ -104,12 +104,13 @@ object PairedDescriptiveVM:
   /** The decimals the board prints a mean D and its range at. */
   val Decimals: Int = 2
 
-  def of(paired: PairedDescriptive): PairedDescriptiveVM =
+  /** The block at `scale`, the σ as the summary names it ("σ 2°"). */
+  def of(paired: PairedDescriptive, scale: String): PairedDescriptiveVM =
     import PairedTextId.*
     def signed(v: Double)     = Format.signed(v, Decimals)
     val (minuend, subtrahend) = (paired.minuend.label, paired.subtrahend.label)
     val n                     = paired.pairedN.toString
-    val heading               = PairedText(Heading, minuend, subtrahend, n)
+    val heading               = PairedText(Heading, minuend, subtrahend, scale)
     val unpaired              =
       Option.when(paired.unpaired.nonEmpty)(PairedText.unpaired(paired.unpaired.size))
     def spoken(sentence: String) =
@@ -130,14 +131,14 @@ object PairedDescriptiveVM:
           spoken(PairedText(SpokenNonePaired, minuend, subtrahend))
         )
       case Some((mean, lo, hi)) =>
-        val higher = PairedText(Higher, paired.higher.toString, n)
+        val higher = PairedText(Higher, minuend, paired.higher.toString, n)
         val range  =
           PairedText(Range, signed(lo.d), lo.participant, signed(hi.d), hi.participant)
         PairedDescriptiveVM(
           heading,
           Some(signed(mean)),
           Some(higher),
-          (Vector(range, PairedText(Rounding), PairedText(DescriptiveOnly)) ++ unpaired)
+          (Vector(range, PairedText(DescriptiveOnly)) ++ unpaired)
             .mkString(PairedText(Separator)),
           spoken(
             PairedText(

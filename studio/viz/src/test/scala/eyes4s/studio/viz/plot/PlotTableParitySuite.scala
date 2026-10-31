@@ -170,6 +170,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     val participants = ParticipantSamples.genMeans.map(m =>
       (ParticipantSamples.source(m), ParticipantPlot(ParticipantSamples.columns))
     )
+    // The slopegraphs (overhaul v4) on the participant means at two σ.
+    val slopes = ParticipantSamples.genMeans.map(m =>
+      (ParticipantSamples.slopes(m), SlopegraphPlot(ParticipantSamples.slopeColumns))
+    )
     // The scale profile (S4.5d) on its own sources.
     val profiles = ProfileSamples.genProfile.map(p =>
       (ProfileSamples.source(p), ScaleProfilePlot(ProfileSamples.columns))
@@ -183,6 +187,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         4 -> generic,
         1 -> ladder,
         1 -> participants,
+        1 -> slopes,
         1 -> profiles,
         1 -> timelines
       )
@@ -274,6 +279,8 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       case Axis.Category(_, levels) =>
         assertEquals(v, math.rint(v))
         assertEquals(levels.lift(v.toInt), Some(cell))
+      case Axis.Panels(_, panels, _, _, _, _) =>
+        assert(panels.contains(cell), s"$cell is not a panel")
 
   property("every row is accounted for once, and placed rows sit at the table's values") {
     Prop.forAll(genBuilt) { (source, builder, plot) =>

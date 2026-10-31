@@ -608,10 +608,7 @@ object StudioWindow:
       "compare.participants"           -> summary.participants.node,
       "compare.participant-plot"       -> summary.participantPlotNode,
       "compare.participant-plot.table" -> summary.participantPlot.tableNode,
-      "compare.scale-profile"          -> summary.scaleProfile.plotNode,
-      "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
       "compare.participant-table"      -> summary.participantNode,
-      "compare.query-table"            -> summary.queryTable,
       "compare.queries"                -> summary.queries.node,
       "compare.pair"                   -> summary.panels.pairNode,
       "compare.contrast"               -> summary.contrastNode,
@@ -620,9 +617,15 @@ object StudioWindow:
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     host.controls(StudioLayouts.pair, summary.panels.headerControls*)
+    host.controls(StudioLayouts.participantPlot, summary.chrome.reporting)
     summary.onRendered { () =>
       host.describe(StudioLayouts.pair, summary.pairSubtitle)
       host.describe(StudioLayouts.contrast, summary.acrossSubtitle)
+      val board = summary.board
+      board.plotTitle.foreach(host.retitle(StudioLayouts.participantPlot, _))
+      host.describe(StudioLayouts.participantPlot, board.plotSubtitle)
+      host.describe(StudioLayouts.participantTable, board.tableSubtitle)
+      host.describe(StudioLayouts.participants, summary.participants.subtitle)
     }
     summary.onRendered(() => summary.focusPlans.foreach((id, plan) => host.focus(id, plan)))
     // Compare's inspector (S8.4): why this reference, beside the panels.

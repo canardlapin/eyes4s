@@ -157,17 +157,18 @@ class ParticipantNotesSuite extends munit.FunSuite:
         table.rows.map(table.cellsOf).find(_.headOption.contains(p)).getOrElse(fail(p))
       vm.plotNotes.blocks.foreach { b =>
         val cells = row(b.participant)
-        // participant, requested, contributing, failed, ..., Rem D (n), Forg D (n)
-        val (req, con, failed) = (cells(1), cells(2), cells(3))
-        val said               = b.lines.map(_.text)
-        assert(said.exists(_.contains(s"$con of $req contributing")), said)
-        val rem  = cells(cells.size - 2)
-        val forg = cells(cells.size - 1)
-        // "+0.40 (17)" in the table is "Rem +0.40 (n 17)" in the notes.
-        def note(short: String, cell: String) =
-          s"$short ${cell.replace(" (", " (n ")}"
-        assert(said.contains(note("Rem", rem)), s"$said vs $rem")
-        assert(said.contains(note("Forg", forg)), s"$said vs $forg")
+        // participant, queries (contributing), Rem D, n Rem, Forg D, n Forg, Δ…
+        val con  = cells(1)
+        val said = b.lines.map(_.text)
+        assert(said.exists(_.contains(s"$con of ")), said)
+        // "+0.40" and "17" in the table are "Rem +0.40 (n 17)" in the notes.
+        def note(short: String, d: String, n: String) = s"$short $d (n $n)"
+        assert(said.contains(note("Rem", cells(2), cells(3))), s"$said vs ${cells.take(4)}")
+        assert(said.contains(note("Forg", cells(4), cells(5))), s"$said vs ${cells.take(6)}")
+        val failed = said
+          .find(_.endsWith("failed queries:"))
+          .map(_.takeWhile(_ != ' '))
+          .getOrElse("0")
         if failed != "0" then assert(said.contains(s"$failed failed queries:"), said)
       }
     }

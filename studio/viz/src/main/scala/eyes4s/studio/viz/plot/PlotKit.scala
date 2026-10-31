@@ -191,12 +191,26 @@ enum Axis derives CanEqual:
     */
   case Category(column: ColumnId, levels: Vector[String])
 
+  /** Small multiples: the index in `panels` of the `panel` cell, `pitch`
+    * apart, plus the index in `levels` of the `level` cell, `step` apart, as
+    * Remembered and Forgotten in each σ's slopegraph on the Results summary.
+    */
+  case Panels(
+      panel: ColumnId,
+      panels: Vector[String],
+      level: ColumnId,
+      levels: Vector[String],
+      pitch: Double,
+      step: Double
+  )
+
 object Axis:
 
   /** The column `axis` reads. */
   def columnOf(axis: Axis): ColumnId = axis match
-    case Numeric(c, _)  => c
-    case Category(c, _) => c
+    case Numeric(c, _)            => c
+    case Category(c, _)           => c
+    case Panels(c, _, _, _, _, _) => c
 
   /** The data coordinate `axis` gives the row at `row`, if its cell has one. */
   def position(axis: Axis, source: PlotSource, row: Int): Option[Double] =
@@ -211,6 +225,13 @@ object Axis:
           .map(levels.indexOf(_))
           .filter(_ >= 0)
           .map(_.toDouble)
+      case Panels(p, panels, l, levels, pitch, step) =>
+        def index(c: ColumnId, of: Vector[String]) =
+          source.indexOf(c).flatMap(source.text(row, _)).map(of.indexOf(_)).filter(_ >= 0)
+        for
+          i <- index(p, panels)
+          j <- index(l, levels)
+        yield i * pitch + j * step
 
 /** Where a plot places a row: its x and y axes. A [[RowMarking.Placed]] row
   * sits exactly where both put its cells, and [[BuiltPlot.apply]] refuses
@@ -639,6 +660,15 @@ object BuiltPlot:
               kind,
               c,
               levels.diff(levels.distinct).take(1).mkString
+            )
+          case Axis.Panels(c, panels, l, levels, _, _)
+              if panels.distinct.size != panels.size || levels.distinct.size != levels.size =>
+            val (column, named) =
+              if panels.distinct.size != panels.size then (c, panels) else (l, levels)
+            PlotBuildError.DuplicateLevel(
+              kind,
+              column,
+              named.diff(named.distinct).take(1).mkString
             )
         }
         .toLeft(())

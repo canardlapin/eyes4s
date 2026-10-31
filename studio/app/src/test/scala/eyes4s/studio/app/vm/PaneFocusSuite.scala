@@ -17,19 +17,12 @@
 package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.StoryModels
-import eyes4s.studio.app.compare.{
-  CompareSummary,
-  CompareSummaryVM,
-  ExplainVM,
-  ParticipantsNavigatorVM,
-  ScaleChoice
-}
+import eyes4s.studio.app.compare.ParticipantsNavigatorVM
 import munit.FunSuite
 
 class PaneFocusSuite extends FunSuite:
   private val model            = StoryModels.t3Summary
   private def pane(id: String) = model.layout.panes.find(_.id.value == id).get
-  private val summary          = CompareSummaryVM.of(CompareSummary.empty, model)
   private val nav              = ParticipantsNavigatorVM("", "", None, Vector.empty)
 
   test(
@@ -45,45 +38,17 @@ class PaneFocusSuite extends FunSuite:
     assertEquals(PaneFocus.served(decl, Vector.empty).stops, Vector(A11y.pane(decl)))
   }
 
-  test("participant table keeps the available selected scale, Explain and its served table") {
+  test("the participant table is its served table alone; σ is the plot header's") {
     val decl  = pane("compare.participant-table")
     val table = FocusStop(A11yRole.Table, "Participant summary: served rows")
-    val vm    = summary.copy(
-      scales = Vector(ScaleChoice(StoryModels.sigma2, "sigma two", true, true, None)),
-      explain = Some(ExplainVM("Explain participant", "keeps the grouping", Vector.empty))
-    )
-    val plan = ResultsFocus.pane(decl, vm, nav, Vector(table))
+    val plan  = ResultsFocus.pane(decl, nav, Vector(table))
     assertEquals(plan.container, None)
-    assertEquals(
-      plan.stops,
-      Vector(
-        FocusStop(A11yRole.ToggleButton, "sigma two"),
-        FocusStop(A11yRole.Button, "Explain participant keeps the grouping"),
-        table
-      )
-    )
-    val pending = vm.copy(scales = vm.scales.map(_.copy(available = false)), explain = None)
-    assertEquals(ResultsFocus.pane(decl, pending, nav, Vector(table)).stops, Vector(table))
-    val recovery = pending.copy(scales =
-      pending.scales :+
-        ScaleChoice(
-          eyes4s.studio.core.selection.ScaleIndex.of(0).toOption.get,
-          "sigma half",
-          true,
-          false,
-          None
-        )
-    )
-    assertEquals(
-      ResultsFocus.pane(decl, recovery, nav, Vector(table)).stops,
-      Vector(FocusStop(A11yRole.ToggleButton, "sigma half"), table)
-    )
-    assert(recovery.scales.head.chosen) // focus entry never changes the shown report
+    assertEquals(plan.stops, Vector(table))
   }
 
   test("the navigator retains exactly one composite stop while its values are pending") {
     val decl = pane("compare.participants")
-    val plan = ResultsFocus.pane(decl, summary, nav, Vector.empty)
+    val plan = ResultsFocus.pane(decl, nav, Vector.empty)
     assertEquals(plan.stops, Vector(FocusStop(A11yRole.List, decl.accessibleName)))
     assert(plan.container.nonEmpty)
   }

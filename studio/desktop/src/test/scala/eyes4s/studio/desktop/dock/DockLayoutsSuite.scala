@@ -51,12 +51,12 @@ class DockLayoutsSuite extends munit.FunSuite:
   }
 
   test(
-    "one perspective name per layout; the scale profile is Results' summary's alone"
+    "one perspective name per layout; the slopegraphs are Results' summary's alone"
   ) {
     val names = DockLayouts.states(spec).map(_._1)
     assertEquals(names, spec.all.map(_.id.value))
     assertEquals(names.distinct, names)
-    val profile = "compare.scale-profile"
+    val profile = "compare.participant-plot"
     assert(
       DockLayouts.state(StudioLayouts.compareQuery).findPane(scaladock.PaneId(profile)).isEmpty
     )

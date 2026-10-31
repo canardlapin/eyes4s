@@ -50,7 +50,7 @@ final class StudioPanes(spec: LayoutSpec):
     refresh()
 
   /** Redraw every header from the dock: its group's panes and which shows. */
-  def refresh(): Unit = views.values.foreach(_.header(chrome, declared))
+  def refresh(): Unit = views.values.foreach(_.header(chrome, declared, titles.get))
 
   /** A pane's subtitle, beside its title (the golden's grey `.sub`). */
   def describe(pane: PaneId, subtitle: String): Unit =
@@ -58,6 +58,16 @@ final class StudioPanes(spec: LayoutSpec):
     views.get(pane).foreach(_.subtitle(subtitle))
 
   private val subtitles = mutable.Map.empty[PaneId, String]
+
+  /** A dynamic pane's title as its content names it ("Remembered vs
+    * Forgotten"); its accessible name stays the declared one.
+    */
+  def retitle(pane: PaneId, title: String): Unit =
+    if !titles.get(pane).contains(title) then
+      titles.update(pane, title)
+      refresh()
+
+  private val titles = mutable.Map.empty[PaneId, String]
 
   /** A pane's own header controls, at its right (toggles, segmented bars). */
   def controls(pane: PaneId, nodes: javafx.scene.Node*): Unit =
@@ -106,7 +116,7 @@ final class StudioPanes(spec: LayoutSpec):
       hosted.get(id).foreach(view.show)
       subtitles.get(id).foreach(view.subtitle)
       extras.get(id).foreach(view.controls)
-      view.header(chrome, declared)
+      view.header(chrome, declared, titles.get)
       focusPlans.get(id).foreach(view.focus)
       created += id
       views.update(id, view)
@@ -244,10 +254,14 @@ object StudioPanes:
       b
 
     /** Draw the header from the dock's view of this pane's group. */
-    def header(chrome: Option[Chrome], declared: Map[String, PaneDecl]): Unit =
+    def header(
+        chrome: Option[Chrome],
+        declared: Map[String, PaneDecl],
+        titled: PaneId => Option[String] = _ => None
+    ): Unit =
       import eyes4s.studio.app.layout.{PaneKind, StudioLayouts}
       def decl(p: PaneId)    = declared.get(p.value)
-      def titleOf(p: PaneId) = decl(p).fold(p.value)(_.title.text)
+      def titleOf(p: PaneId) = titled(p).getOrElse(decl(p).fold(p.value)(_.title.text))
       val group              = chrome.flatMap(_.group(id))
       val panes              = group.fold(Vector(id))(_._1)
       val ids                = panes.map(_.value).toSet

@@ -43,7 +43,7 @@ class TableTwinSuite extends munit.FunSuite:
     yield (layout, decl)
 
   test("every plot pane has a Table twin in its own group") {
-    assert(plots.size >= 8, plots.map(_._2.id.value))
+    assert(plots.size >= 7, plots.map(_._2.id.value))
     val missing = plots.collect {
       case (layout, decl)
           if StudioLayouts.twin(layout, decl.id).isEmpty && !excepted(layout, decl) =>

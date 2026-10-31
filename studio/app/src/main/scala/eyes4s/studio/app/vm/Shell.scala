@@ -833,7 +833,17 @@ object Shell:
       val layout  = m.layout
       val hint    = pendingDataset match
         case Some(d) if layout.hint == HintDataVerify => messages(HintDataPending, d.id.label)
-        case _                                        => messages(layout.hint)
+        case _                                        =>
+          // The summary names the participant Enter would open.
+          import eyes4s.studio.core.selection.StudioRef
+          val participant = refs.reverseIterator.collectFirst {
+            case StudioRef.ReportParticipant(_, _, _, _, _, p) => p
+            case StudioRef.ParticipantSummary(_, _, _, _, p)   => p
+            case StudioRef.Participant(p)                      => p
+          }
+          participant
+            .filter(_ => layout.hint == HintCompareSummary)
+            .fold(messages(layout.hint))(p => messages(HintCompareParticipant, p))
       StatusBarVM(
         messages(SelectedLabel),
         subject.orElse(selected),

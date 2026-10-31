@@ -21,6 +21,11 @@ enum ParticipantsNavTextId derives CanEqual:
   case Heading, Accounting, Row, Mean, Spoken, Reading, NoRun, Empty, Invalid, MissingCounts,
     MissingValue
 
+  /** The Δ strip (overhaul v4): the pane's subtitle, a row's tags, and a
+    * row's Δ as spoken.
+    */
+  case StripHeading, FailedTag, ThinTag, SpokenDelta
+
 /** Results navigator text; overall means and run accounting are named separately. */
 object ParticipantsNavText:
   def english(id: ParticipantsNavTextId): String =
@@ -40,5 +45,9 @@ object ParticipantsNavText:
         "{0}, reporting {1}, scale {2}: the served participant context is inconsistent."
       case MissingCounts => "{0}: no query accounting was served for participant {1}."
       case MissingValue  => "no value"
+      case StripHeading  => "Δ D at σ {0}"
+      case FailedTag     => "{0} failed"
+      case ThinTag       => "n<3"
+      case SpokenDelta   => "{0}; Δ {1}"
   def apply(id: ParticipantsNavTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

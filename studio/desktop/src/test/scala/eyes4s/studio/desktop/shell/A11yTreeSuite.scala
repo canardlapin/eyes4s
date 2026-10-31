@@ -187,7 +187,7 @@ class A11yTreeSuite extends ShellFxSuite:
         if name.startsWith("compare-results") then
           eventually(fx, "Results plots, participant rows and all scale reports are served") {
             w.summary.participants.rows.nonEmpty &&
-            w.summary.participantPlot.plot.isDefined && w.summary.scaleProfile.plot.isDefined &&
+            w.summary.participantPlot.plot.isDefined &&
             w.summary.participantTable.source.isDefined &&
             w.summary.vm.scales.forall(_.available)
           }

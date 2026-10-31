@@ -34,14 +34,24 @@ final case class ParticipantNavRow(
     spoken: String,
     selected: Boolean,
     cursor: Boolean,
-    open: Intent
+    open: Intent,
+    /** The participant's paired difference at the shown σ, as the
+      * paired descriptive computes it; none when it is not paired.
+      */
+    delta: Option[Double] = None,
+    /** "3 failed", or "n<3" for fewer than three queries in a group. */
+    tag: Option[String] = None
 ) derives CanEqual
 
 final case class ParticipantsNavigatorVM(
     heading: String,
     accounting: String,
     status: Option[String],
-    rows: Vector[ParticipantNavRow]
+    rows: Vector[ParticipantNavRow],
+    /** The Δ strip's subtitle ("Δ D at σ 2°"), its axis and the mean Δ. */
+    subtitle: String = "",
+    axis: (Double, Double) = (0.0, ParticipantsNavigator.AxisStep * 4),
+    mean: Option[Double] = None
 ) derives CanEqual:
   def cursorText: Option[String] = rows.find(_.cursor).map(_.spoken)
 
@@ -53,6 +63,16 @@ final case class ParticipantsNavigator(
 
 object ParticipantsNavigator:
   val empty: ParticipantsNavigator = ParticipantsNavigator(None, None)
+
+  /** The Δ strip's axis runs from zero (or below it) to at least +0.4, in
+    * steps of 0.1.
+    */
+  val AxisStep: Double = 0.1
+
+  def axisOf(deltas: Vector[Double]): (Double, Double) =
+    val lo = math.floor((deltas :+ 0.0).min / AxisStep + 1e-9) * AxisStep
+    val hi = math.ceil((deltas :+ AxisStep * 4).max / AxisStep - 1e-9) * AxisStep
+    (lo, hi)
 
   def follow(nav: ParticipantsNavigator, s: CompareSummary): ParticipantsNavigator =
     val context = for r <- s.run; p <- s.spec; k <- s.shown yield (r, p, k)
@@ -100,6 +120,20 @@ object ParticipantsNavigator:
                 .filter(ref => cells.exists(_.ref == ref))
                 .orElse(cells.find(p => selected.contains(p.ref)).map(_.ref))
                 .orElse(cells.headOption.map(_.ref))
+              val grouped = s.reports.get((scale, false)).collect {
+                case ReportAnswer.Answered(view) => view
+              }
+              val paired = grouped.flatMap(PairedDescriptive.of)
+              val deltas = paired.fold(Map.empty[String, Double])(
+                _.differences.map(d => d.participant -> d.d).toMap
+              )
+              val thin = grouped.fold(Set.empty[String])(
+                _.participants
+                  .filter(p => p.role == ReportRole.Difference && p.group.nonEmpty)
+                  .filter(_.queries < eyes4s.studio.app.plot.Slopegraphs.ThinQueries)
+                  .map(_.participant)
+                  .toSet
+              )
               val rows = cells.traverse { p =>
                 summary.participants
                   .find(_.participant == p.participant)
@@ -111,21 +145,30 @@ object ParticipantsNavigator:
                     val contributing = Format.count(counts.contributing.toLong)
                     val requested    = Format.count(counts.requested.toLong)
                     val failed       = Format.count(counts.failed.toLong)
+                    val delta        = deltas.get(p.participant)
+                    val plain        = ParticipantsNavText(
+                      Spoken,
+                      p.participant,
+                      value,
+                      n,
+                      contributing,
+                      requested,
+                      failed
+                    )
+                    def spoken(d: Option[Double]) =
+                      d.fold(plain)(v =>
+                        ParticipantsNavText(SpokenDelta, plain, Format.signed(v, 2))
+                      )
+                    val tag =
+                      if counts.failed > 0 then Some(ParticipantsNavText(FailedTag, failed))
+                      else Option.when(thin(p.participant))(ParticipantsNavText(ThinTag))
                     ParticipantNavRow(
                       p.ref,
                       p.participant,
                       value,
                       n,
                       ParticipantsNavText(Row, contributing, requested, failed),
-                      ParticipantsNavText(
-                        Spoken,
-                        p.participant,
-                        value,
-                        n,
-                        contributing,
-                        requested,
-                        failed
-                      ),
+                      spoken(delta),
                       participant.contains(p.participant),
                       home.contains(p.ref),
                       Intent.Navigate(
@@ -133,7 +176,9 @@ object ParticipantsNavigator:
                           Perspective.Results,
                           Vector(Place.Summary(spec.id), Place.At(p.ref))
                         )
-                      )
+                      ),
+                      delta,
+                      tag
                     )
                   }
               }
@@ -144,7 +189,10 @@ object ParticipantsNavigator:
                     ParticipantsNavText(Heading, label),
                     ParticipantsNavText(Accounting),
                     Option.when(rs.isEmpty)(ParticipantsNavText(Empty, run.label)),
-                    rs
+                    rs,
+                    ParticipantsNavText(StripHeading, label),
+                    axisOf(rs.flatMap(_.delta)),
+                    paired.flatMap(_.mean)
                   )
               )
           case Some(ReportAnswer.Refused(e))  => result(e.message)

@@ -471,20 +471,6 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                     get(e.get[Vector[String]]("controls")).sorted
                   )
                 }
-                dispatch(
-                  fx,
-                  w,
-                  Intent.FocusPane(
-                    get(
-                      eyes4s.studio.app.layout.PaneId.of("compare.query-table")
-                    )
-                  )
-                )
-                fx.awaitLayout()
-                assertEquals(
-                  runOnFx(w.summary.queryTable.rowTexts),
-                  view.rows.map(view.cellsOf)
-                )
                 write(root.resolve(s"phase-${index + 1}-ui-rows.json"), rows.asJson)
                 fx.snapshot(StudioTheme.Light, List(SnapshotScale.X1))
                   .foreach(p => Files.copy(p, root.resolve(s"phase-${index + 1}-results.png")))

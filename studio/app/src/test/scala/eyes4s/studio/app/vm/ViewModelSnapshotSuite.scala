@@ -130,7 +130,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
           |app.state.progress: 48%
           |context.nav: [Back (⌘[)] | [Forward (⌘])]
           |context.trail: *Summary · by retrieval response*
-          |status: Enter on a participant opens its queries · F6 next pane | Saved 10:24""".stripMargin
+          |status: Enter opens P17's queries | Saved 10:24""".stripMargin
     )
   }
 

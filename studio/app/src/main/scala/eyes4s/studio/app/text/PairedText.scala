@@ -23,7 +23,7 @@ package eyes4s.studio.app.text
   * [[Messages]] does.
   */
 enum PairedTextId derives CanEqual:
-  /** The block's key: the contrast and its paired n. */
+  /** The block's key: the contrast and the σ it is at. */
   case Heading
 
   /** How many paired participants are strictly higher in the minuend. */
@@ -57,11 +57,11 @@ object PairedText:
   def english(id: PairedTextId): String =
     import PairedTextId.*
     id match
-      case Heading         => "Δ {0} − {1} · paired n {2}"
-      case Higher          => "higher in {0} of {1}"
-      case Range           => "Range {0} {1} to {2} {3}"
+      case Heading         => "Δ D, {0} − {1} at {2}"
+      case Higher          => "Higher for {0} in {1} of {2} participants"
+      case Range           => "range {0} ({1}) to {2} ({3})"
       case Rounding        => "computed before rounding participant means"
-      case DescriptiveOnly => "Descriptive only, no intervals or tests"
+      case DescriptiveOnly => "descriptive, no tests"
       case Unpaired        => "{0} participants with means in one group only are not paired"
       case OneUnpaired     => "1 participant with means in one group only is not paired"
       case NonePaired      => "No participant has means in both {0} and {1}; nothing is paired"

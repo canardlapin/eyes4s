@@ -267,6 +267,10 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
   def describe(pane: StudioPaneId, subtitle: String): Unit =
     panes.describe(DockLayouts.paneId(pane), subtitle)
 
+  /** A dynamic studio pane's title (see [[StudioPanes.retitle]]). */
+  def retitle(pane: StudioPaneId, title: String): Unit =
+    panes.retitle(DockLayouts.paneId(pane), title)
+
   /** A studio pane's own header controls (see [[StudioPanes.controls]]). */
   def controls(pane: StudioPaneId, nodes: javafx.scene.Node*): Unit =
     panes.controls(DockLayouts.paneId(pane), nodes*)

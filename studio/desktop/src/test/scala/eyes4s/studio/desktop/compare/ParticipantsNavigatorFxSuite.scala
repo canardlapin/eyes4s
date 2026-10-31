@@ -22,7 +22,7 @@ import eyes4s.studio.app.compare.{ReportAnswer, SummaryIntent}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
-import eyes4s.studio.desktop.shell.{CompositeFocus, DisabledReason, KeyboardFocus, ShellFxSuite}
+import eyes4s.studio.desktop.shell.{CompositeFocus, KeyboardFocus, ShellFxSuite}
 import javafx.scene.{Node, Parent}
 import javafx.scene.input.KeyCode
 import scala.jdk.CollectionConverters.*
@@ -54,47 +54,36 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
     }
     val choice = runOnFx(w.summary.vm.scales.find(_.available).get)
     assert(runOnFx(w.summary.vm.scales.exists(c => c.chosen && !c.available)))
-    runOnFx {
-      val refused = w.summary.vm.scales.find(c => c.chosen && !c.available).get
-      val button  = descendants(w.summary.participantNode).collectFirst {
-        case b: javafx.scene.control.ToggleButton if b.isSelected && b.isDisabled => b
-      }.get
-      val reasons = DisabledReason.reasons(button)
-      assert(reasons.nonEmpty)
-      assert(reasons.forall(r => r.getScene != null && r.isVisible && r.isManaged))
-      assert(DisabledReason.text(reasons).exists(_.contains(refused.unavailable.get)))
-    }
+    // The reporting menu keeps the refused σ chosen but unavailable, and the
+    // others available (overhaul v4: σ is a reporting choice).
+    def items = runOnFx(
+      w.summary.chrome.reporting.getItems.asScala.toVector.collect {
+        case i: javafx.scene.control.RadioMenuItem if i.getText.startsWith("Report at") => i
+      }
+    )
+    assert(runOnFx(items.exists(i => i.isSelected && i.isDisable)))
+    // The menu is a keyboard stop in the live Tab order.
     val first = w.shell.appBar.project
     runOnFx(first.requestFocus())
     fx.awaitLayout()
-    var entry   = Option.empty[Node]
+    val menu    = runOnFx(w.summary.chrome.reporting)
     val visited = Vector.newBuilder[(javafx.scene.AccessibleRole, String)]
+    var reached = false
     var count   = 0
     while count == 0 || !runOnFx(fx.scene.getFocusOwner eq first) do
       assert(count < 80, "failed-report traversal did not return")
       val node = runOnFx(fx.scene.getFocusOwner)
       visited += runOnFx((node.getAccessibleRole, node.getAccessibleText))
-      if runOnFx(node.getAccessibleText == choice.label) then entry = Some(node)
+      if node eq menu then reached = true
       fx.robot.press(KeyCode.TAB)
       count += 1
-    assert(
-      entry.nonEmpty,
-      s"available scale ${choice.label} was unreachable: ${visited.result()}"
-    )
+    assert(reached, s"the reporting menu was unreachable: ${visited.result()}")
     val expected = runOnFx(
       eyes4s.studio.app.vm.A11y
         .tabOrder(w.runtime.model, inside = w.paneStops, focus = w.paneFocus)
     ).map(s => (eyes4s.studio.desktop.dock.StudioPanes.accessibleRole(s.role), s.name))
     assertEquals(visited.result(), expected)
-    // Navigation may rerender the toolbar. Return through the live Tab order
-    // instead of retaining a node from the previous traversal.
-    count = 0
-    while !runOnFx(Option(fx.scene.getFocusOwner).exists(_.getAccessibleText == choice.label))
-    do
-      assert(count < 80, "the available scale disappeared on the second traversal")
-      fx.robot.press(KeyCode.TAB)
-      count += 1
-    fx.robot.press(KeyCode.SPACE)
+    runOnFx(items.find(_.getText == s"Report at ${choice.label}").get.fire())
     eventually(fx, "the available scale is chosen and its plot returns") {
       w.summary.vm.scales.exists(c => c.scale == choice.scale && c.chosen && c.available) &&
       w.summary.participantPlot.plot.isDefined
@@ -121,9 +110,9 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
       )
       runOnFx {
         node.applyCss()
-        assertEquals(node.getPadding.getLeft, 4.0)
+        assertEquals(node.getPadding.getLeft, 0.0)
         val first = node.lookup(".participants-row").asInstanceOf[javafx.scene.layout.Region]
-        assertEquals(first.getPadding.getLeft, 6.0)
+        assertEquals(first.getPadding.getLeft, 14.0)
       }
       fx.snapshot(StudioTheme.Light)
       runOnFx {
@@ -133,7 +122,7 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
         assert(cells.nonEmpty)
         assertEquals(
           cells.map(c => (c.getHeight, c.prefHeight(-1))).distinct,
-          Vector((45.0, 45.0))
+          Vector((26.0, 26.0))
         )
       }
       val picked = rows.find(_.participant == "P05").get

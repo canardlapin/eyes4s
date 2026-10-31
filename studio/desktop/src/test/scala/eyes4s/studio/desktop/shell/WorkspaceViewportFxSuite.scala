@@ -206,7 +206,7 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
         val w = boot(fx, model, StoryMoment.T3, clock = () => None)
         eventually(fx, "the participant plot is drawn") {
           w.summary.participantPlot.plotHost.status.get.isInstanceOf[PlotHostStatus.Drawn] &&
-          w.summary.scaleProfile.plot.isDefined && w.summary.participantTable.source.isDefined &&
+          w.summary.participantTable.source.isDefined &&
           w.summary.vm.scales.forall(_.available)
         }
         val height = runOnFx(w.summary.participantPlot.plotHost.getHeight)

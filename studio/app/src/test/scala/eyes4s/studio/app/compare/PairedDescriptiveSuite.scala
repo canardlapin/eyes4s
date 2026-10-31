@@ -117,14 +117,13 @@ class PairedDescriptiveSuite extends munit.FunSuite:
       assertEquals(paired.highest.map(_.participant), Some("P11"))
       assertEquals((paired.higher, paired.pairedN), (24, 24))
 
-      val vm = PairedDescriptiveVM.of(paired)
-      assertEquals(vm.heading, "Δ Remembered − Forgotten · paired n 24")
+      val vm = PairedDescriptiveVM.of(paired, "σ 2°")
+      assertEquals(vm.heading, "Δ D, Remembered − Forgotten at σ 2°")
       assertEquals(vm.value, Some("+0.18"))
-      assertEquals(vm.higher, Some("higher in 24 of 24"))
+      assertEquals(vm.higher, Some("Higher for Remembered in 24 of 24 participants"))
       assertEquals(
         vm.note,
-        "Range +0.04 P15 to +0.34 P11 · computed before rounding participant means · " +
-          "Descriptive only, no intervals or tests"
+        "range +0.04 (P15) to +0.34 (P11) · descriptive, no tests"
       )
       assert(vm.spoken.contains("mean difference +0.18"), vm.spoken)
       assert(vm.spoken.contains("range +0.04 P15 to +0.34 P11"), vm.spoken)
@@ -143,7 +142,7 @@ class PairedDescriptiveSuite extends munit.FunSuite:
       // Rounded first, the 24 differences are of 2-place means: their mean is
       // 0.1825, which still reads +0.18 at the board's two places.
       assertEqualsDouble(rounded.flatMap(_.mean).get, 0.1825, ArithmeticTolerance)
-      assertEquals(PairedDescriptiveVM.of(paired).value, Some("+0.18"))
+      assertEquals(PairedDescriptiveVM.of(paired, "σ 2°").value, Some("+0.18"))
     }
   }
 
@@ -213,7 +212,8 @@ class PairedDescriptiveSuite extends munit.FunSuite:
     // rounded means 0.30 and 0.15 would differ by 0.15.
     val vm =
       PairedDescriptiveVM.of(
-        PairedDescriptive.of(synthetic(("A", Some(0.304), Some(0.145)))).get
+        PairedDescriptive.of(synthetic(("A", Some(0.304), Some(0.145)))).get,
+        "σ 2°"
       )
     assertEquals(vm.value, Some("+0.16"))
     assertEquals(
@@ -238,14 +238,15 @@ class PairedDescriptiveSuite extends munit.FunSuite:
       .get
     assertEquals(paired.differences.map(_.participant), Vector("A", "D"))
     assertEquals(paired.unpaired, Vector("B", "C"))
-    val vm = PairedDescriptiveVM.of(paired)
-    assertEquals(vm.heading, "Δ Remembered − Forgotten · paired n 2")
+    val vm = PairedDescriptiveVM.of(paired, "σ 2°")
+    assertEquals(vm.heading, "Δ D, Remembered − Forgotten at σ 2°")
     assertEquals(vm.value, Some("+0.20"))
-    assertEquals(vm.higher, Some("higher in 2 of 2"))
+    assertEquals(vm.higher, Some("Higher for Remembered in 2 of 2 participants"))
     assert(vm.note.endsWith(" · " + PairedText.unpaired(2)), vm.note)
     assert(vm.spoken.endsWith(PairedText.unpaired(2) + "."), vm.spoken)
     val one = PairedDescriptiveVM.of(
-      PairedDescriptive.of(synthetic(("A", Some(0.4), Some(0.1)), ("B", Some(0.5), None))).get
+      PairedDescriptive.of(synthetic(("A", Some(0.4), Some(0.1)), ("B", Some(0.5), None))).get,
+      "σ 2°"
     )
     assert(one.note.endsWith(PairedText(PairedTextId.OneUnpaired)), one.note)
   }
@@ -261,9 +262,9 @@ class PairedDescriptiveSuite extends munit.FunSuite:
       )
       .get
     assertEquals(paired.higher, 1)
-    val vm = PairedDescriptiveVM.of(paired)
-    assertEquals(vm.higher, Some("higher in 1 of 3"))
-    assert(vm.note.startsWith(s"Range ${Format.Minus}0.20 B to +0.30 C"), vm.note)
+    val vm = PairedDescriptiveVM.of(paired, "σ 2°")
+    assertEquals(vm.higher, Some("Higher for Remembered in 1 of 3 participants"))
+    assert(vm.note.startsWith(s"range ${Format.Minus}0.20 (B) to +0.30 (C)"), vm.note)
   }
 
   test("no paired participant: no value, and the note says nothing is paired") {
@@ -271,8 +272,8 @@ class PairedDescriptiveSuite extends munit.FunSuite:
       .of(synthetic(("A", Some(0.4), None), ("B", None, Some(0.1))))
       .get
     assertEquals((paired.pairedN, paired.mean), (0, None))
-    val vm = PairedDescriptiveVM.of(paired)
-    assertEquals(vm.heading, "Δ Remembered − Forgotten · paired n 0")
+    val vm = PairedDescriptiveVM.of(paired, "σ 2°")
+    assertEquals(vm.heading, "Δ D, Remembered − Forgotten at σ 2°")
     assertEquals((vm.value, vm.higher), (None, None))
     assertEquals(
       vm.note,
@@ -280,7 +281,7 @@ class PairedDescriptiveSuite extends munit.FunSuite:
         PairedText.unpaired(2)
     )
     assertEquals(
-      PairedDescriptiveVM.of(PairedDescriptive.of(synthetic()).get).note,
+      PairedDescriptiveVM.of(PairedDescriptive.of(synthetic()).get, "σ 2°").note,
       "No participant has means in both Remembered and Forgotten; nothing is paired"
     )
   }

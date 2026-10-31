@@ -26,7 +26,6 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import javafx.scene.input.KeyCode
-import javafx.scene.control.ToggleButton
 import scala.jdk.CollectionConverters.*
 
 import scala.concurrent.duration.Duration
@@ -46,13 +45,11 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
       w.summary.vm.scales.exists(c => c.scale == StoryModels.sigma2 && c.available)
     )
     runOnFx {
-      w.summary.participantNode
-        .lookupAll(".toggle-button")
-        .asScala
+      w.summary.chrome.reporting.getItems.asScala
         .collectFirst {
-          case b: ToggleButton if b.getText == "σ 2°" => b
+          case i: javafx.scene.control.RadioMenuItem if i.getText == "Report at σ 2°" => i
         }
-        .getOrElse(fail("no 2° control"))
+        .getOrElse(fail("no 2° choice"))
         .fire()
     }
     // Participant headers use the separate overall evaluation, not the

@@ -14,13 +14,41 @@
  * limitations under the License.
  */
 
-.participants-navigator { -fx-padding: 4; }
+.participants-navigator { -fx-padding: 0; }
 .participants-navigator .scroll-pane { -fx-background-color: transparent; -fx-padding: 0; }
 .participants-navigator .viewport { -fx-background-color: -es-surface; }
-.participants-row { -fx-padding: 2 6; -fx-border-width: 2; -fx-border-color: transparent; }
-.participants-selected { -fx-background-color: -es-sel-fill; }
-.pane-composite:focus-visible .participants-cursor { -fx-border-color: -es-accent; }
+.participants-row {
+  -fx-padding: 0 8 0 14;
+  -fx-border-width: 0 0 0 2;
+  -fx-border-color: transparent;
+}
+.participants-selected {
+  -fx-background-color: -es-sel-fill;
+  -fx-border-color: -es-accent;
+}
+.pane-composite:focus-visible .participants-cursor {
+  -fx-border-width: 2;
+  -fx-border-color: -es-accent;
+}
+
+/* The Δ strip (overhaul v4, results.html): its axis, rule, zero and mean
+ * ticks, the participant's dot and its tag. */
+.participants-axis { -fx-min-height: 22px; -fx-pref-height: 22px; -fx-padding: 0 12 0 16; -fx-alignment: center-left; }
+.participants-axis-label { -fx-text-fill: -es-ink-3; }
+.participants-name { -fx-text-fill: -es-ink; -fx-font-family: "IBM Plex Sans Medm"; }
+.participants-strip-rule { -fx-stroke: -es-plot-grid; -fx-stroke-width: 1; }
+.participants-strip-zero, .participants-strip-mean { -fx-stroke: -es-ink-3; -fx-stroke-width: 1; -fx-stroke-line-cap: butt; }
+.participants-strip-dot { -fx-fill: -es-ink; }
+.participants-tag {
+  -fx-min-height: 20px;
+  -fx-pref-height: 20px;
+  -fx-padding: 0 7;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 4;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
 
 /* The list only realizes rows; selection and focus belong to the composite pane. */
 .participants-list { -fx-background-color: transparent; -fx-padding: 0; }
-.participants-list .list-cell { -fx-background-color: transparent; -fx-padding: 0 0 2 0; }
+.participants-list .list-cell { -fx-background-color: transparent; -fx-padding: 0; }

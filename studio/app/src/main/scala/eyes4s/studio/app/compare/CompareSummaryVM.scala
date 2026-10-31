@@ -21,7 +21,6 @@ import cats.syntax.all.*
 import eyes4s.studio.app.plot.{
   ColumnFormat,
   ColumnId,
-  ParticipantColumns,
   ParticipantMeans,
   ParticipantNotes,
   PlotColumn,
@@ -29,9 +28,13 @@ import eyes4s.studio.app.plot.{
   PlotSource,
   PlotValue,
   ProfileColumns,
-  ScaleProfile
+  ScaleProfile,
+  SlopeColumns,
+  SlopeDelta,
+  SlopeFrame,
+  Slopegraphs
 }
-import eyes4s.studio.app.text.{Format, Messages, SummaryText, SummaryTextId}
+import eyes4s.studio.app.text.{Messages, SummaryText, SummaryTextId}
 import eyes4s.studio.app.vm.{Labels, Shell}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.Place
@@ -71,6 +74,8 @@ final case class ExplainVM(label: String, keeps: String, intents: Vector[Intent]
 final case class CompareSummaryVM(
     status: Option[String],
     participantPlot: Option[Either[String, PlotSource]],
+    /** What the slopegraphs draw beyond their source (overhaul v4). */
+    slopes: SlopeFrame,
     /** The participant plot's annotation column: the selected participant
       * and every participant with failed queries (review ticket 26).
       */
@@ -128,6 +133,7 @@ object CompareSummaryVM:
     CompareSummaryVM(
       status,
       None,
+      SlopeFrame.empty,
       ParticipantNotes.empty,
       None,
       None,
@@ -174,22 +180,40 @@ object CompareSummaryVM:
     def displayed(scale: ScaleIndex) = s.reports.get((scale, false)).collect {
       case ReportAnswer.Answered(view) => view
     }
-    val reporting = s.reporting
-    val means     = for
+    val reporting                = s.reporting
+    def label(scale: ScaleIndex) =
+      r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString)
+    val means = for
       scale <- shown
       view  <- displayed(scale)
-    yield ParticipantMeans
-      .of(view, r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString))
-      .left
-      .map(_.message)
+    yield ParticipantMeans.of(view, label(scale)).left.map(_.message)
+    // Every σ the report has answered at, for the slopegraphs and Δ by σ.
+    val everyMeans = available
+      .flatMap(scale => displayed(scale).map(view => ParticipantMeans.of(view, label(scale))))
+      .traverse(_.left.map(_.message))
     val participantPlot = means.map(
-      _.flatMap(means =>
-        ParticipantColumns.standard
-          .flatMap(ParticipantMeans.source(means, _))
-          .left
-          .map(_.message)
+      _.flatMap(_ =>
+        everyMeans.flatMap(ms =>
+          SlopeColumns.standard.flatMap(Slopegraphs.source(ms, _)).left.map(_.message)
+        )
       )
     )
+    val slopes = everyMeans.toOption.fold(SlopeFrame.empty) { ms =>
+      SlopeFrame(
+        shown.map(scale => SummaryText(SummaryTextId.Scale, label(scale))),
+        ParticipantNotes.selectedParticipant(m.selection.selected, run),
+        Slopegraphs.thin(ms),
+        ms.headOption.fold(Vector.empty[String]) { first =>
+          val names = ParticipantNotes.shortNames(first.groups.map(_.group))
+          first.groups.map(g => names.getOrElse(g.group, g.group.label))
+        },
+        available.flatMap { scale =>
+          displayed(scale)
+            .flatMap(PairedDescriptive.of)
+            .map(p => SlopeDelta(label(scale), p.mean, p.higher, p.pairedN))
+        }
+      )
+    }
     val plotNotes = means.flatMap(_.toOption).fold(ParticipantNotes.empty) { ms =>
       ParticipantNotes.of(
         ms,
@@ -203,7 +227,7 @@ object CompareSummaryVM:
       scale <- shown
       view  <- displayed(scale)
       p     <- PairedDescriptive.of(view)
-    yield PairedDescriptiveVM.of(p)
+    yield PairedDescriptiveVM.of(p, SummaryText(SummaryTextId.Scale, label(scale)))
     val profile = reporting.map { _ =>
       m.document
         .run(run)
@@ -224,7 +248,15 @@ object CompareSummaryVM:
       scale   <- shown
       grouped <- displayed(scale)
       overall <- wholeReport(s, scale)
-    yield participantTable(run, rep, scale, r, grouped, overall)
+    yield participantTable(
+      run,
+      rep,
+      scale,
+      r,
+      grouped,
+      overall,
+      available.map(k => (label(k), displayed(k).flatMap(PairedDescriptive.of)))
+    )
     val queries = for
       scale <- shown
       q     <- s.queries
@@ -248,6 +280,7 @@ object CompareSummaryVM:
     CompareSummaryVM(
       None,
       participantPlot,
+      slopes,
       plotNotes,
       paired,
       profile,
@@ -259,9 +292,10 @@ object CompareSummaryVM:
       explain(s, m, run, reporting, messages)
     )
 
-  /** The participant table (Results board; FIXTURE.md's table): one row per
-    * participant, its counts, its means over all queries and its mean in
-    * each group with that mean's n.
+  /** The participant table (overhaul v4, `results.html`): one row per
+    * participant, its contributing queries, its mean D and n in each group
+    * at the shown σ, then its paired Δ at every σ. Every value is served or
+    * computed by the paired descriptive; a cell without one is missing.
     */
   def participantTable(
       run: RunId,
@@ -269,39 +303,37 @@ object CompareSummaryVM:
       scale: ScaleIndex,
       r: ResultSummary,
       grouped: eyes4s.studio.core.backend.ReportView,
-      overall: eyes4s.studio.core.backend.ReportView
+      overall: eyes4s.studio.core.backend.ReportView,
+      deltas: Vector[(String, Option[PairedDescriptive])] = Vector.empty
   ): Either[String, PlotSource] =
-    import SummaryTextId.*
+    import SummaryBoardTextId.*
     def column(id: String, header: String, format: ColumnFormat) =
       ColumnId.of(id).map(PlotColumn(_, header, format))
-    val label = r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString)
-    val fixed = Vector(
-      ("participant", Participant, ColumnFormat.Label),
-      ("requested", Requested, ColumnFormat.Count),
-      ("contributing", Contributing, ColumnFormat.Count),
-      ("failed", Failed, ColumnFormat.Count),
-      ("no-match", NoMatch, ColumnFormat.Count),
-      ("not-admitted", NotAdmitted, ColumnFormat.Count),
-      ("mean-m", MeanM, ColumnFormat.Decimal(2)),
-      ("mean-b", MeanB, ColumnFormat.Decimal(2)),
-      ("mean-d", MeanD, ColumnFormat.Signed(2))
-    )
+    val label  = r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString)
     val groups = grouped.cells.collect {
       case c if c.role == ReportRole.Difference && c.group.nonEmpty => c.group.get
     }.distinct
-    val groupColumns = groups.zipWithIndex.map((g, k) =>
-      column(s"group-$k", SummaryText(GroupHeader, g.label), ColumnFormat.Label)
-    )
-    val columns = fixed.map((id, h, f) => column(id, SummaryText(h), f)) ++ groupColumns
-    val ids     = overall.participants.collect {
+    val shorts  = ParticipantNotes.shortNames(groups)
+    val columns =
+      Vector(
+        column("participant", SummaryText(SummaryTextId.Participant), ColumnFormat.Label),
+        column("queries", SummaryBoardText(QueriesHeader), ColumnFormat.Count)
+      ) ++ groups.zipWithIndex.flatMap((g, k) =>
+        Vector(
+          column(s"group-$k", SummaryBoardText(GroupD, g.label), ColumnFormat.Signed(2)),
+          column(
+            s"group-$k-n",
+            SummaryBoardText(GroupN, shorts.getOrElse(g, g.label)),
+            ColumnFormat.Count
+          )
+        )
+      ) ++ deltas.zipWithIndex.map((d, k) =>
+        column(s"delta-$k", SummaryBoardText(DeltaAt, d._1), ColumnFormat.Signed(2))
+      )
+    val ids = overall.participants.collect {
       case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
     }.distinct
     val rows = ids.traverse { id =>
-      def value(role: ReportRole) =
-        overall
-          .participant(None, role, id)
-          .flatMap(_.value)
-          .fold(PlotValue.Missing)(PlotValue.Number(_))
       for
         accounting <- r.participants
           .find(_.participant == id)
@@ -313,28 +345,19 @@ object CompareSummaryVM:
           )
       yield PlotRow(
         participant.ref,
-        Vector(PlotValue.Text(id)) ++
-          Vector(
-            accounting.requested,
-            accounting.contributing,
-            accounting.failed,
-            accounting.noMatch,
-            accounting.notAdmitted
-          ).map(n => PlotValue.Number(n.toDouble)) ++
-          Vector(
-            value(ReportRole.Matched),
-            value(ReportRole.Control),
-            value(ReportRole.Difference)
-          ) ++
-          groups.map { g =>
-            grouped
-              .participant(Some(g), ReportRole.Difference, id)
-              .flatMap(p =>
-                p.value
-                  .map(v => SummaryText(GroupCell, Format.signed(v, 2), p.queries.toString))
-              )
-              .fold(PlotValue.Missing)(PlotValue.Text(_))
-          }
+        Vector(PlotValue.Text(id), PlotValue.Number(accounting.contributing.toDouble)) ++
+          groups.flatMap { g =>
+            val cell = grouped.participant(Some(g), ReportRole.Difference, id)
+            Vector(
+              cell.flatMap(_.value).fold(PlotValue.Missing)(PlotValue.Number(_)),
+              cell.fold(PlotValue.Missing)(c => PlotValue.Number(c.queries.toDouble))
+            )
+          } ++
+          deltas.map((_, paired) =>
+            paired
+              .flatMap(_.differences.find(_.participant == id))
+              .fold(PlotValue.Missing)(d => PlotValue.Number(d.d))
+          )
       )
     }
     val context = for
@@ -363,7 +386,11 @@ object CompareSummaryVM:
         )
         .flatMap(cs =>
           rows.flatMap(rs =>
-            PlotSource(SummaryText(ParticipantCaption, label, run.number.toString), cs, rs).left
+            PlotSource(
+              SummaryText(SummaryTextId.ParticipantCaption, label, run.number.toString),
+              cs,
+              rs
+            ).left
               .map(_.message)
           )
         )

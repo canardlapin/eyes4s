@@ -220,11 +220,15 @@ class CompareSummarySuite extends munit.FunSuite:
 
   test("the participant table takes every M/B/D and group cell from its served reports") {
     loaded(t3Summary).map { s =>
-      val vm    = CompareSummaryVM.of(s, t3Summary)
-      val table = right(vm.participants.getOrElse(fail("no participant table")))
-      val shown = report(s)
-      val all   = report(s, overall = true)
-      assertEquals(table.columns.size, 11)
+      val vm     = CompareSummaryVM.of(s, t3Summary)
+      val table  = right(vm.participants.getOrElse(fail("no participant table")))
+      val shown  = report(s)
+      val all    = report(s, overall = true)
+      val groups = shown.cells.collect {
+        case c if c.role == ReportRole.Difference && c.group.nonEmpty => c.group.get
+      }.distinct
+      val scales = s.available
+      assertEquals(table.columns.size, 2 + 2 * groups.size + scales.size)
       val ids = all.participants.collect {
         case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
       }.distinct
@@ -233,40 +237,25 @@ class CompareSummarySuite extends munit.FunSuite:
         ids.map(id => all.participant(None, ReportRole.Difference, id).get.ref)
       )
       ids.zipWithIndex.foreach { (id, row) =>
-        Vector(ReportRole.Matched, ReportRole.Control, ReportRole.Difference)
-          .zip(Vector(6, 7, 8))
-          .foreach { (role, column) =>
-            assertEquals(
-              table.value(row, table.columns(column).id),
-              all.participant(None, role, id).flatMap(_.value).map(PlotValue.Number(_))
-            )
-          }
-        shown.cells
-          .collect {
-            case c if c.role == ReportRole.Difference && c.group.nonEmpty => c.group.get
-          }
-          .distinct
-          .zipWithIndex
-          .foreach { (group, i) =>
-            val served =
-              shown.participant(Some(group), ReportRole.Difference, id).flatMap(_.value)
-            assertEquals(
-              table.value(row, table.columns(9 + i).id),
-              served.map(v =>
-                PlotValue.Text(
-                  SummaryText(
-                    SummaryTextId.GroupCell,
-                    Format.signed(v, 2),
-                    shown
-                      .participant(Some(group), ReportRole.Difference, id)
-                      .get
-                      .queries
-                      .toString
-                  )
-                )
-              )
-            )
-          }
+        groups.zipWithIndex.foreach { (group, i) =>
+          val served = shown.participant(Some(group), ReportRole.Difference, id)
+          assertEquals(
+            table.value(row, table.columns(2 + 2 * i).id),
+            served.flatMap(_.value).map(PlotValue.Number(_))
+          )
+          assertEquals(
+            table.value(row, table.columns(3 + 2 * i).id),
+            served.map(p => PlotValue.Number(p.queries.toDouble))
+          )
+        }
+        scales.zipWithIndex.foreach { (scale, k) =>
+          val at = s.reports.get((scale, false)).collect { case ReportAnswer.Answered(v) => v }
+          val d  = at
+            .flatMap(PairedDescriptive.of)
+            .flatMap(_.differences.find(_.participant == id))
+            .map(x => PlotValue.Number(x.d))
+          assertEquals(table.value(row, table.columns(2 + 2 * groups.size + k).id), d)
+        }
       }
     }
   }
@@ -281,10 +270,10 @@ class CompareSummarySuite extends munit.FunSuite:
       val grand  = served.cells.filter(c =>
         c.role == ReportRole.Difference && c.group.nonEmpty && c.estimate.nonEmpty
       )
-      assertEquals(
-        plot.rows.filter(_.ref.isInstanceOf[StudioRef.ReportCell]).map(_.ref).toSet,
-        grand.map(_.ref).toSet
-      )
+      // The slopegraphs hold every σ's grand means, the shown σ's among them.
+      val cells = plot.rows.filter(_.ref.isInstanceOf[StudioRef.ReportCell]).map(_.ref).toSet
+      assert(grand.map(_.ref).toSet.subsetOf(cells), cells)
+      assertEquals(cells.size, grand.size * vm.scales.size)
       grand.foreach(c =>
         assert(
           plot.rows.exists(r =>
@@ -300,8 +289,11 @@ class CompareSummarySuite extends munit.FunSuite:
       assert(vm.notes.contains(SummaryText(SummaryTextId.PairedN, "24")), vm.notes)
       // The headline's paired block at the shown σ (+0.16 at 2°:
       // PairedDescriptiveSuite).
-      assertEquals(vm.paired, PairedDescriptive.of(served).map(PairedDescriptiveVM.of))
-      assertEquals(vm.paired.map(_.heading), Some("Δ Remembered − Forgotten · paired n 24"))
+      assertEquals(
+        vm.paired,
+        PairedDescriptive.of(served).map(PairedDescriptiveVM.of(_, "σ 2°"))
+      )
+      assertEquals(vm.paired.map(_.heading), Some("Δ D, Remembered − Forgotten at σ 2°"))
       assertEquals(
         vm.notes.last,
         SummaryText(SummaryTextId.GroupRange, range.fewest.toString, range.most.toString)

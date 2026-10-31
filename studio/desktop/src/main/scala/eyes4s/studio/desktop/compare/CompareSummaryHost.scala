@@ -18,15 +18,7 @@ package eyes4s.studio.desktop.compare
 
 import cats.effect.IO
 import eyes4s.studio.app.compare.*
-import eyes4s.studio.app.plot.{
-  LadderColumns,
-  ParticipantColumns,
-  ParticipantNotes,
-  PlotSource,
-  ProfileColumns,
-  ScaleLadder,
-  ScaleProfile
-}
+import eyes4s.studio.app.plot.{LadderColumns, SlopeColumns, SlopeFrame, PlotSource, ScaleLadder}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{
@@ -44,13 +36,11 @@ import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.desktop.tokens.TokenFiles
-import eyes4s.studio.viz.plot.{Annotations, ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
+import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleLadderPlot, SlopegraphPlot}
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
-import javafx.geometry.Pos
-import javafx.scene.input.{KeyCode, KeyEvent}
-import javafx.scene.control.{Button, Label, ToggleButton}
-import javafx.scene.layout.{HBox, Priority, Region, VBox}
+import javafx.scene.control.{Button, Label}
+import javafx.scene.layout.{HBox, Priority, VBox}
 
 /** Where the summary layout asks for a run's summary and queries. `done`
   * may be called on any thread.
@@ -194,16 +184,16 @@ final class CompareSummaryHost(
   private var contrast          = ContrastPane.empty
   private var pairsState        = PairsTable.empty
 
-  private val participantColumns: ParticipantColumns =
-    ParticipantColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
+  private val slopeColumns: SlopeColumns =
+    SlopeColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
 
-  // The notes the participant plot was last built with (review ticket 26).
-  private var plotNotes: ParticipantNotes = ParticipantNotes.empty
+  // What the slopegraphs were last built with beyond their source.
+  private var slopes: SlopeFrame = SlopeFrame.empty
 
-  /** The participant plot and its table. */
+  /** The slopegraphs at every σ with Δ by σ (overhaul v4), and their table. */
   val participantPlot: PlotTwin = PlotTwin
     .attach(
-      ParticipantPlot(participantColumns),
+      SlopegraphPlot(slopeColumns),
       view("compare.participant-plot"),
       view("compare.participant-plot.table"),
       selection,
@@ -221,84 +211,57 @@ final class CompareSummaryHost(
       render(model())
   participantPlot.plotHost.heightProperty.addListener(plotResized)
 
-  // The headline's paired descriptive (design review ticket 27): the key,
-  // the rounded mean difference with how many are higher, then the note.
-  private val pairedHeading = Label()
-  private val pairedValue   = Label()
-  private val pairedHigher  = Label()
-  private val pairedNote    = Label()
-  pairedHeading.getStyleClass.addAll("paired-heading", "t11")
-  pairedValue.getStyleClass.addAll("paired-value", "mono", "t28")
-  pairedHigher.getStyleClass.addAll("paired-higher", "t11")
-  pairedNote.getStyleClass.addAll("paired-note", "t11")
-  // A narrow pane wraps the note rather than cutting "Descriptive only".
-  pairedNote.setWrapText(true)
-  private val pairedRow = HBox(8.0, pairedValue, pairedHigher)
-  pairedRow.setAlignment(Pos.BASELINE_LEFT)
+  /** The summary's chrome: headline, reporting menu, legend and facts. */
+  val chrome: SummaryChrome = SummaryChrome(
+    app,
+    scale => dispatch(SummaryIntent.ChooseScale(scale)),
+    () => app(Intent.FocusPane(eyes4s.studio.app.layout.StudioLayouts.reporting))
+  )
 
-  /** The Results headline above the participant plot (Results.dc.html
-    * `.hl`): the paired descriptive of the shown σ, hidden when the shown
-    * report declares no contrast.
+  /** The Results headline over the slopegraphs, hidden when the shown report
+    * declares no contrast.
     */
-  val headline: VBox = VBox(2.0, VBox(pairedHeading, pairedRow), pairedNote)
-  headline.getStyleClass.add("results-headline")
+  val headline: javafx.scene.layout.HBox = chrome.headline
   Option(getClass.getClassLoader.getResource(CompareSummaryHost.stylesheetResource))
     .foreach(url => headline.getStylesheets.add(url.toExternalForm))
   headline.setVisible(false)
   headline.setManaged(false)
 
-  /** The participant plot's pane: the headline over the plot. */
-  val participantPlotNode: VBox = VBox(headline, participantPlot.plotNode)
+  /** The slopegraphs' pane: the headline, the plot at its natural height,
+    * then its legend.
+    */
+  val participantPlotNode: VBox = VBox(headline, participantPlot.plotNode, chrome.legend)
+  participantPlot.plotNode.setMinHeight(SlopegraphPlot.HeightPx)
+  participantPlot.plotNode.setPrefHeight(SlopegraphPlot.HeightPx)
   VBox.setVgrow(participantPlot.plotNode, Priority.ALWAYS)
+  Option(getClass.getClassLoader.getResource(CompareSummaryHost.stylesheetResource))
+    .foreach(url => participantPlotNode.getStylesheets.add(url.toExternalForm))
 
-  /** The scale profile and its table. */
-  val scaleProfile: PlotTwin = PlotTwin
-    .attach(
-      ScaleProfilePlot(
-        ProfileColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
-      ),
-      view("compare.scale-profile"),
-      view("compare.scale-profile.table"),
-      selection,
-      app
-    )
-    .fold(e => throw IllegalStateException(e.message), identity)
-
-  /** The participant table and the query table. */
+  /** The participant table. */
   // The Results board pins the selected participant's row at the top
   // ("pinned · selected"; bead bd-01M44PD9XEHG6QWPCJATAJZ15W).
   val participantTable: TableTwinView =
     TableTwinView.attach(view("compare.participant-table"), selection, app, pinsSelected = true)
-  val queryTable: TableTwinView =
-    TableTwinView.attach(view("compare.query-table"), selection, app)
 
-  private val status    = Label()
-  private val freshness = Label()
-  private val scales    = HBox(4.0)
-  private val notes     = VBox(2.0)
-  private val explain   = Button()
-  private val keeps     = Label()
+  private val status = Label()
   status.getStyleClass.addAll("summary-status", "t12")
-  freshness.getStyleClass.addAll("summary-freshness", "t11")
-  notes.getStyleClass.add("summary-notes")
-  keeps.getStyleClass.addAll("summary-keeps", "t11")
-  explain.getStyleClass.add("summary-explain")
-  explain.setOnAction(_ => explainNow())
-
-  private val spacer = Region()
-  HBox.setHgrow(spacer, Priority.ALWAYS)
-  private val toolbar = HBox(8.0, scales, spacer, freshness)
-  toolbar.setAlignment(Pos.CENTER_LEFT)
-  toolbar.getStyleClass.add("summary-toolbar")
-  private val explainRow = HBox(8.0, explain, keeps)
-  explainRow.setAlignment(Pos.CENTER_LEFT)
   VBox.setVgrow(participantTable, Priority.ALWAYS)
 
-  /** The participant table pane: σ selector and freshness, the notes and
-    * Explain above the table.
+  /** The participant table pane: why a part could not be drawn, the table,
+    * then the facts under it.
     */
-  val participantNode: VBox = VBox(4.0, toolbar, status, notes, explainRow, participantTable)
+  val participantNode: VBox = VBox(status, participantTable, chrome.footer)
   participantNode.getStyleClass.add("compare-summary")
+  Option(getClass.getClassLoader.getResource(CompareSummaryHost.stylesheetResource))
+    .foreach { url =>
+      participantNode.getStylesheets.add(url.toExternalForm)
+      chrome.reporting.getStylesheets.add(url.toExternalForm)
+    }
+
+  private var boardVM: SummaryBoardVM = SummaryBoard.empty
+
+  /** The summary chrome's words as last rendered. */
+  def board: SummaryBoardVM = boardVM
 
   /** Compare's Queries and Items navigators (S8.1), on the same run's answers. */
   val queries: QueriesNavigatorView =
@@ -517,22 +480,24 @@ final class CompareSummaryHost(
     */
   def focusPlans: Map[eyes4s.studio.app.layout.PaneId, eyes4s.studio.app.vm.PaneFocus] =
     val contents = Map(
-      "compare.participants"           -> Vector.empty[eyes4s.studio.app.vm.FocusStop],
-      "compare.participant-plot"       -> participantPlot.focusStops,
+      "compare.participants" -> Vector.empty[eyes4s.studio.app.vm.FocusStop],
+      // The reporting menu in the plot's header, then the plot's own stop.
+      "compare.participant-plot" -> (Option
+        .when(boardVM.reporting.nonEmpty)(
+          eyes4s.studio.app.vm
+            .FocusStop(eyes4s.studio.app.vm.A11yRole.MenuButton, boardVM.reporting)
+        )
+        .toVector ++ participantPlot.focusStops),
       "compare.participant-plot.table" -> participantPlot.table.focusStops,
-      "compare.scale-profile"          -> scaleProfile.focusStops,
-      "compare.scale-profile.table"    -> scaleProfile.table.focusStops,
-      "compare.participant-table"      -> participantTable.focusStops,
-      "compare.query-table"            -> queryTable.focusStops
+      "compare.participant-table"      -> participantTable.focusStops
     )
-    val nav         = ParticipantsNavigator.vm(participantsState, state, model())
-    val summaryView = vm
+    val nav = ParticipantsNavigator.vm(participantsState, state, model())
     eyes4s.studio.app.layout.StudioLayouts.spec.all
       .flatMap(_.panes)
       .distinct
       .flatMap(decl =>
         contents.get(decl.id.value).map { stops =>
-          decl.id -> eyes4s.studio.app.vm.ResultsFocus.pane(decl, summaryView, nav, stops)
+          decl.id -> eyes4s.studio.app.vm.ResultsFocus.pane(decl, nav, stops)
         }
       )
       .toMap
@@ -618,24 +583,6 @@ final class CompareSummaryHost(
     }
 
   /** The focused query's scale profile, while Compare shows the query layout. */
-  private def queryProfile(m: AppModel): Option[Either[String, PlotSource]] =
-    for
-      f <- panelState.focus
-      if m.layout == eyes4s.studio.app.layout.StudioLayouts.compareQuery
-      row <- rows.find(_.query == f.query)
-      rep <- state.reporting
-      rev <- m.document.run(f.run).flatMap(r => m.document.analysis(r.analysis))
-    yield ScaleProfile
-      .ofQuery(f.run, rep, row, state.answered.fold(Vector.empty)(_.scales), rev.recipe.scales)
-      .left
-      .map(_.message)
-      .flatMap(
-        ScaleProfile.source(_, profileColumns).left.map(_.message)
-      )
-
-  private val profileColumns: ProfileColumns =
-    ProfileColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
-
   /** The panels' view-model now. */
   def panelsVM: TrialPanelsVM = TrialPanels.vm(panelState, shownRun, scaleLabels)
 
@@ -721,11 +668,9 @@ final class CompareSummaryHost(
     perform(effects)
     syncPanels(m)
     participantPlot.project(m.selection)
-    scaleProfile.project(m.selection)
     ladder.project(m.selection)
     pairsTable.project(m.selection)
     participantTable.project(m.selection)
-    queryTable.project(m.selection)
     queryTrialTable.project(m.selection)
     referenceTrialTable.project(m.selection)
     render(m)
@@ -785,93 +730,15 @@ final class CompareSummaryHost(
       status.setText(said.mkString("\n"))
       status.setVisible(said.nonEmpty)
       status.setManaged(said.nonEmpty)
-      freshness.setText(v.freshness.getOrElse(""))
-      notes.getChildren.setAll(v.notes.map { n =>
-        val l = Label(n); l.getStyleClass.add("t11"); l
-      }*)
-      val focusedScale = (0 until scales.getChildren.size).iterator
-        .map(scales.getChildren.get)
-        .collectFirst { case b: ToggleButton if b.isFocused => b.getText }
-      val scaleEntry = eyes4s.studio.app.vm.ResultsFocus.scaleEntry(v).map(_.scale)
-      scales.getChildren.setAll(v.scales.map { c =>
-        val b = ToggleButton(c.label)
-        // A σ that cannot be chosen says why, to the pointer and to a reader.
-        val why = c.unavailable.fold(c.label)(r => s"${c.label}: $r")
-        b.setAccessibleText(why)
-        c.unavailable.foreach(_ => eyes4s.studio.desktop.shell.DisabledReason.attach(b, status))
-        b.setSelected(c.chosen)
-        b.setDisable(!c.available)
-        // Selection follows the shown report; the keyboard entry can differ
-        // while that report is unavailable. A ToggleGroup would make every
-        // available choice unreachable when its selected member is disabled.
-        b.setFocusTraversable(scaleEntry.contains(c.scale))
-        b.setOnAction(_ => dispatch(SummaryIntent.ChooseScale(c.scale)))
-        b.addEventFilter(
-          KeyEvent.KEY_PRESSED,
-          event =>
-            val step = event.getCode match
-              case KeyCode.LEFT  => -1
-              case KeyCode.RIGHT => 1
-              case _             => 0
-            if step != 0 && !event.isAltDown && !event.isControlDown && !event.isMetaDown && !event.isShiftDown
-            then
-              val choices = v.scales.filter(_.available)
-              val at      = choices.indexWhere(_.scale == c.scale)
-              if at >= 0 then
-                val next = choices(Math.floorMod(at + step, choices.size))
-                event.consume()
-                dispatch(SummaryIntent.ChooseScale(next.scale))
-                (0 until scales.getChildren.size).iterator
-                  .map(scales.getChildren.get)
-                  .collectFirst {
-                    case nextButton: ToggleButton if nextButton.getText == next.label =>
-                      nextButton
-                  }
-                  .foreach(_.requestFocus())
-        )
-        b
-      }*)
-      focusedScale.foreach { label =>
-        (0 until scales.getChildren.size).iterator
-          .map(scales.getChildren.get)
-          .collectFirst { case b: ToggleButton if b.getText == label && !b.isDisabled => b }
-          .orElse(
-            (0 until scales.getChildren.size).iterator
-              .map(scales.getChildren.get)
-              .collectFirst {
-                case b: ToggleButton if b.isFocusTraversable && !b.isDisabled => b
-              }
-          )
-          .foreach(_.requestFocus())
-      }
-      v.explain match
-        case Some(e) =>
-          explain.setText(e.label); keeps.setText(e.keeps)
-          explain.setAccessibleText(s"${e.label} ${e.keeps}")
-          explain.setVisible(true); keeps.setVisible(true)
-        case None =>
-          explain.setVisible(false); keeps.setVisible(false)
-      renderPaired(v.paired)
-      // New notes rebuild the plot with its annotation column; the notes
-      // come from the same served means as the plot's source, in the lines
-      // its frame has room for now.
-      if v.plotNotes != plotNotes then
-        plotNotes = v.plotNotes
-        participantPlot.rebuild(
-          ParticipantPlot(
-            participantColumns,
-            annotations = Annotations.from(plotNotes).getOrElse(Annotations.empty)
-          )
-        )
+      boardVM = SummaryBoard.vm(state, m, v)
+      chrome.render(boardVM, v.paired)
+      // A new reported σ, selection or Δ rebuilds the slopegraphs.
+      if v.slopes != slopes then
+        slopes = v.slopes
+        participantPlot.rebuild(SlopegraphPlot(slopeColumns, slopes))
       show("participant-plot", v.participantPlot, theme)(
         participantPlot.show(_, theme),
         participantPlot.clear()
-      )
-      // The shared scale profile pane: the summary's groups, or in the
-      // query layout the focused query's own D at every scale (S8.5).
-      show("scale-profile", queryProfile(m).orElse(v.profile), theme)(
-        scaleProfile.show(_, theme),
-        scaleProfile.clear()
       )
       val pairs = pairsVM
       pairsStatus.setText(pairs.status.getOrElse(""))
@@ -889,7 +756,6 @@ final class CompareSummaryHost(
         participantTable.show,
         participantTable.clear()
       )
-      show("query-table", v.queries, theme)(queryTable.show, queryTable.clear())
       val cv = contrastVM
       readout.render(cv)
       if ladderFocus != cv.focusScale then
@@ -960,18 +826,6 @@ final class CompareSummaryHost(
           stage
         )
 
-  private def renderPaired(paired: Option[PairedDescriptiveVM]): Unit =
-    headline.setVisible(paired.isDefined)
-    headline.setManaged(paired.isDefined)
-    pairedHeading.setText(paired.fold("")(_.heading))
-    pairedValue.setText(paired.flatMap(_.value).getOrElse(""))
-    pairedHigher.setText(paired.flatMap(_.higher).getOrElse(""))
-    // Nothing paired: no value row, only the note that says so.
-    val valued = paired.exists(_.value.isDefined)
-    pairedRow.setVisible(valued); pairedRow.setManaged(valued)
-    pairedNote.setText(paired.fold("")(_.note))
-    headline.setAccessibleText(paired.map(_.spoken).orNull)
-
   // Draws a part when its source or the theme changes. A part with no source
   // (the run is still being read) or one that could not be built is cleared,
   // so no earlier run's values stay under the new run's status.
@@ -990,9 +844,7 @@ final class CompareSummaryHost(
       disposed = true
       participantPlot.plotHost.heightProperty.removeListener(plotResized)
       participantPlot.dispose()
-      scaleProfile.dispose()
       participantTable.dispose()
-      queryTable.dispose()
       ladder.dispose()
       participants.dispose()
       queries.dispose()

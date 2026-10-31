@@ -66,6 +66,13 @@ enum ParticipantTextId derives CanEqual:
     */
   case AnnotatedSummary
 
+  /** The slopegraphs (overhaul v4, Results › summary): the source's caption,
+    * the σ column's header, the accessible summary, "reported" beside the
+    * reported σ, the Δ panel's title and caption, and a Δ point's count of
+    * participants above zero.
+    */
+  case SlopeCaption, ScaleHeader, SlopeSummary, Reported, DeltaTitle, DeltaCaption, DeltaAbove
+
 /** The participant plot's strings in the boards' wording. */
 object ParticipantText:
 
@@ -110,6 +117,15 @@ object ParticipantText:
       case NoteSeparator       => ", "
       case NoteBlockSeparator  => "; "
       case AnnotatedSummary    => "{0}. Annotations: {1}"
+      case SlopeCaption        => "Participant D at every σ"
+      case ScaleHeader         => "σ"
+      case SlopeSummary        =>
+        "Slopegraphs of {0} at {1} scales: each participant's mean D in {2} groups joined by a " +
+          "line, the mean of the participants drawn heavy; Δ by σ: {3}"
+      case Reported     => "reported"
+      case DeltaTitle   => "Δ by σ"
+      case DeltaCaption => "σ on log₂ spacing · n/{0} = Δ above 0"
+      case DeltaAbove   => "{0}/{1}"
 
   /** "2 queries": the n of a participant's mean in a group. */
   def queries(n: Int): String =

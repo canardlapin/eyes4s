@@ -394,9 +394,12 @@ class KeyboardJourneySuite extends GoldenWindow:
       eventually(fx, "the 2° report is available")(
         w.summary.vm.scales.exists(c => c.scale == sigma2 && c.available)
       )
-      tabToNamed(fx, "σ ")
-      fx.robot.press(KeyCode.RIGHT)
-      fx.robot.press(KeyCode.RIGHT)
+      // The reporting menu in the plot's header: its σ choices follow the
+      // saved specification and a separator (overhaul v4).
+      tabToNamed(fx, "By retrieval response")
+      space(fx)
+      Vector.fill(4)(KeyCode.DOWN).foreach(fx.robot.press(_))
+      fx.robot.press(KeyCode.ENTER)
       eventually(fx, "2° is selected from the keyboard")(
         w.summary.vm.scales.exists(c => c.scale == sigma2 && c.chosen)
       )
@@ -407,8 +410,10 @@ class KeyboardJourneySuite extends GoldenWindow:
       eventually(fx, "P17 is selected")(
         w.runtime.model.selection.selected.exists(_.toString.contains("P17"))
       )
-      tabToNamed(fx, "Explain P17")
-      space(fx)
+      // Enter on P17 in the Δ strip opens its queries (the golden's hint).
+      val strip = tabToNamed(fx, "Participants")
+      cursorTo(fx, strip, "P17")(_.contains("P17"))
+      fx.robot.press(KeyCode.ENTER)
       // The queries navigator's row cursor: P17, → to open it, ret_07, Enter.
       val queries = tabToNamed(fx, "Queries")
       cursorTo(fx, queries, "P17")(_.contains("Queries, P17:"))
