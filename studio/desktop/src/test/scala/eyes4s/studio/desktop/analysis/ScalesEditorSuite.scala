@@ -61,13 +61,15 @@ class ScalesEditorSuite extends StudioFxSuite:
         case l: javafx.scene.control.Label => l.getText
       }
       assert(labels.exists(_.contains("cell 0.46° × 0.46°")))
-      assert(labels.exists(t => t.contains("σ 0.5°") && t.contains("σ 8°")))
+      // One warning per scale, each at its own line (overhaul v4).
+      assert(labels.contains("0.5° is 1.1 cells wide: grid-limited"), labels)
+      assert(labels.exists(_.startsWith("8° radius is")), labels)
     }
     fx.show(root)
     fx.awaitLayout()
     runOnFx {
       assertEquals(chips.bar.segmentNodes.count(_.isFocusTraversable), 1)
-      assertEquals(chips.bar.segmentNodes.last.getText, "8° · new")
+      assertEquals(chips.bar.segmentNodes.last.getText, "8° new")
       KeyboardFocus.byKeyboard(chips.bar.segmentNodes.last)
     }
     fx.robot.press(KeyCode.DELETE)

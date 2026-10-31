@@ -289,18 +289,18 @@ object StudioLayouts:
         group(
           dynamic(recipe.value, "Recipe", Form),
           dynamic(recipeDiff.value, "Diff", Text),
-          pane(recipeDescription.value, "Description", Form)
+          pane(recipeDescription.value, "Notes", Form)
         ) -> 459.0,
+        // The golden's rail is Preflight alone (overhaul v4): a run's
+        // diagnostics sit beside the resolved design.
         group(
           // A region (the board's section) holding the table's own focus stop.
           PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Form),
-          table("analysis.resolved-design")
+          table("analysis.resolved-design"),
+          PaneDecl(diagnostics, PaneTitle.Fixed("Diagnostics"), Table)
         ) -> 332.0
       ),
-      group(
-        pane("analysis.preflight", "Preflight", Inspector),
-        PaneDecl(diagnostics, PaneTitle.Fixed("Diagnostics"), Table)
-      ) -> InspectorPx
+      group(pane("analysis.preflight", "Preflight", Inspector)) -> InspectorPx
     ),
     MessageId.HintAnalysis
   )

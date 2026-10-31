@@ -332,7 +332,7 @@
 }
 
 .preflight-title {
-  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-font-family: "IBM Plex Sans Medm";
 }
 
 .pill-warning {
@@ -349,11 +349,56 @@
   -fx-background-radius: 4;
 }
 
-/* Save & run is the pane's primary action. */
+/* The overhaul's rail (analysis.html): the checks above, Run below a
+ * hairline, a warning as a warn-soft card. */
+.preflight-checks {
+  -fx-padding: 4 14 14 14;
+}
+
+.preflight-run-section {
+  -fx-padding: 12 14 14 14;
+  -fx-border-color: -es-hairline transparent transparent transparent;
+  -fx-border-width: 1 0 0 0;
+}
+
+.preflight-finding {
+  -fx-padding: 10 12 10 12;
+  -fx-background-radius: 6;
+  -fx-spacing: 6;
+}
+
+.preflight-finding-warning {
+  -fx-background-color: -es-warn-soft;
+}
+
+.preflight-finding-warning .preflight-title {
+  -fx-text-fill: -es-warn-text;
+}
+
+.preflight-finding-blocker {
+  -fx-background-color: -es-fail-soft;
+}
+
+.preflight-finding-blocker .preflight-title {
+  -fx-text-fill: -es-fail;
+}
+
+.preflight-readiness.preflight-ready {
+  -fx-text-fill: -es-accent;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.preflight-readiness.preflight-blocked {
+  -fx-text-fill: -es-ink-3;
+}
+
+/* Save and run is the pane's primary action. */
 .preflight-run {
   -fx-background-color: -es-accent;
   -fx-background-insets: 0;
-  -fx-background-radius: 4;
+  -fx-background-radius: 6;
+  -fx-min-height: 32px;
+  -fx-pref-height: 32px;
   -fx-text-fill: -es-on-accent;
   -fx-font-family: "IBM Plex Sans Medm";
 }

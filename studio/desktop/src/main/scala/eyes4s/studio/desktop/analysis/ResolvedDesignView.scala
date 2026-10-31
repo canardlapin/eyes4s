@@ -114,7 +114,27 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
 
   val empty: Label = label("design-problem", "t12")
 
-  val node: VBox = VBox(bar, problem, head, table, rowsNote, notes)
+  // --- the funnel (overhaul v4, analysis.html) -------------------------------------------
+  private val funnelBar  = FunnelBar()
+  private val funnelKeys = HBox(18.0)
+  funnelKeys.getStyleClass.addAll("design-funnel-keys", "t11")
+  private val exceptionsTitle = label("design-funnel-note", "t11")
+  private val exceptionsBar   = FunnelBar()
+  private val exceptionKeys   = HBox()
+  exceptionKeys.getStyleClass.addAll("design-funnel-keys", "t11")
+  private val funnel = VBox(
+    4.0,
+    funnelBar.node,
+    funnelKeys,
+    exceptionsTitle,
+    exceptionsBar.node,
+    exceptionKeys
+  )
+  funnel.getStyleClass.add("design-funnel")
+
+  notes.setVisible(false)
+  notes.setManaged(false)
+  val node: VBox = VBox(funnel, bar, problem, head, table, rowsNote, notes)
   node.getStyleClass.add("design-pane")
   Option(getClass.getClassLoader.getResource(stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
@@ -179,7 +199,43 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
   /** Bind `vm`. Rows are rebuilt only when the shown rows change; a cursor
     * move only moves the cursor's mark.
     */
+  private def renderFunnel(parts: Vector[FunnelVM]): Unit =
+    funnel.setVisible(parts.nonEmpty)
+    funnel.setManaged(parts.nonEmpty)
+    def key(p: FunnelVM, sized: Boolean) =
+      val swatch = Region()
+      swatch.getStyleClass.addAll("design-funnel-swatch", partClass(p.part))
+      val count = label("design-funnel-count", "t11")
+      count.setText(eyes4s.studio.app.text.Format.count(p.count))
+      val words = label("design-funnel-label", "t11")
+      words.setText(p.label)
+      val h = if sized then HBox(4.0, count, words) else HBox(6.0, swatch, count, words)
+      h.setAlignment(Pos.CENTER_LEFT)
+      h
+    funnelBar.show(parts.map(p => (p.count.toDouble, partClass(p.part))))
+    funnelKeys.getChildren.setAll(parts.map(key(_, sized = false))*)
+    val exceptions = parts.filterNot(_.part == FunnelPart.Contributing)
+    val total      = exceptions.map(_.count).sum
+    exceptionsTitle.setText(
+      eyes4s.studio.app.text.DesignText(
+        eyes4s.studio.app.text.DesignTextId.FunnelExceptions,
+        eyes4s.studio.app.text.Format.count(total)
+      )
+    )
+    exceptionsBar.show(exceptions.map(p => (p.count.toDouble, partClass(p.part))))
+    // Each exception's count sits under its own segment.
+    exceptionKeys.getChildren.setAll(exceptions.map { p =>
+      val h = key(p, sized = true)
+      h.prefWidthProperty.bind(
+        exceptionKeys.widthProperty.multiply(if total > 0 then p.count.toDouble / total
+        else 0.0)
+      )
+      h.setMinWidth(0)
+      h
+    }*): Unit
+
   def render(vm: ResolvedDesignVM): Unit =
+    renderFunnel(vm.funnel)
     rendering = true
     try
       chips.zip(vm.chips).foreach { (chip, c) =>
@@ -197,7 +253,10 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
         head.getChildren.addAll(vm.columns.zipWithIndex.map((c, i) => cell(c, i))*): Unit
       shown(problem, vm.problem.orElse(vm.empty))
       table.setAccessibleText(vm.accessible)
-      table.setAccessibleHelp(vm.accessibleHelp)
+      // How eyes4s counted is read with the table; the golden does not show it.
+      table.setAccessibleHelp(
+        (vm.accessibleHelp +: vm.notes.map(_.text)).mkString(" ")
+      )
       val unfocused = vm.rows.map(_.copy(focused = false))
       val changed   = unfocused != shownRows
       shownRows = unfocused
@@ -278,6 +337,13 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
 
 object ResolvedDesignView:
 
+  /** A funnel part's style class: its colour. */
+  def partClass(p: FunnelPart): String = p match
+    case FunnelPart.Contributing => "design-funnel-contributing"
+    case FunnelPart.Failed       => "design-funnel-failed"
+    case FunnelPart.NoMatch      => "design-funnel-no-match"
+    case FunnelPart.NotAdmitted  => "design-funnel-not-admitted"
+
   /** The fixed board row height; also the virtual scroll extent. */
   val RowHeight: Double = 22.0
 
@@ -325,3 +391,29 @@ object ResolvedDesignView:
     val r = Region()
     HBox.setHgrow(r, Priority.ALWAYS)
     r
+
+/** A 10 px bar of parts, each as wide as its share, 2 px apart. */
+final class FunnelBar:
+  private var parts = Vector.empty[Double]
+  val node: Pane    = new Pane:
+    setMinHeight(10.0); setPrefHeight(10.0); setMaxHeight(10.0)
+    override def layoutChildren(): Unit =
+      val total = parts.sum
+      var x     = 0.0
+      getChildren.toArray.toVector.zip(parts).foreach {
+        case (r: Region, n) =>
+          val w = if total > 0 then n / total * getWidth else 0.0
+          r.resizeRelocate(x, 0, math.max(w - 2.0, 0.0), 10.0)
+          x += w
+        case _ => ()
+      }
+
+  /** Draw `next`: each part's count and its style class. */
+  def show(next: Vector[(Double, String)]): Unit =
+    parts = next.map(_._1)
+    node.getChildren.setAll(next.map { (_, style) =>
+      val r = Region()
+      r.getStyleClass.addAll("design-funnel-part", style)
+      r
+    }*)
+    node.requestLayout()

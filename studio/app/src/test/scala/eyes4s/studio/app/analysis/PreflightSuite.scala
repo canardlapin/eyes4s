@@ -82,7 +82,7 @@ class PreflightSuite extends munit.FunSuite:
     val card = vm.card
     assertEquals(card.enabled, true)
     assertEquals(card.reason, None)
-    assertEquals(card.button, "Save & run rev 5 · 44,845 pairs")
+    assertEquals(card.button, "Save and run rev 5")
     assertEquals(card.run, Some(Intent.Dispatch(Command.SaveAndRun(None))))
     assertEquals(
       card.lines.head,
@@ -145,7 +145,7 @@ class PreflightSuite extends munit.FunSuite:
   test("disabled while checking, after a refusal, and for a saved revision, each saying why") {
     val (synced, _) = ResolvedDesign.sync(ResolvedDesign.empty, model)
     assertEquals(Preflight.vm(synced, model).card.reason, Some("Checking rev 5…"))
-    assertEquals(Preflight.vm(synced, model).card.button, "Save & run rev 5")
+    assertEquals(Preflight.vm(synced, model).card.button, "Save and run rev 5")
     assertEquals(Preflight.vm(synced, model).card.enabled, false)
     assert(Preflight.vm(synced, model).card.lines.forall(_.label != "Pair rows"))
     val counting = ResolvedDesign
@@ -155,7 +155,7 @@ class PreflightSuite extends munit.FunSuite:
       )
       ._1
     assert(Preflight.vm(counting, model).card.reason.exists(_.startsWith("Checking rev 5")))
-    assertEquals(Preflight.vm(counting, model).card.button, "Save & run rev 5")
+    assertEquals(Preflight.vm(counting, model).card.button, "Save and run rev 5")
     val refused = ResolvedDesign
       .update(synced, DesignIntent.PreviewRefused(synced.generation, "no backend"))
       ._1
@@ -163,7 +163,7 @@ class PreflightSuite extends munit.FunSuite:
       Preflight.vm(refused, model).card.reason,
       Some("The check of rev 5 could not be made: no backend")
     )
-    assertEquals(Preflight.vm(refused, model).card.button, "Save & run rev 5")
+    assertEquals(Preflight.vm(refused, model).card.button, "Save and run rev 5")
     // A saved revision is not the draft: Save & run does not apply to it.
     val onRev4 = AppModel
       .run(

@@ -81,17 +81,17 @@ class LayoutSpecSuite extends munit.FunSuite:
       )
     ),
     (
-      "Analysis.dc.html",
+      "analysis.html",
       analysis,
       Vector(
         "Analyses"             -> "analysis.analyses",
         "Recipe · Draft rev 5" -> "analysis.recipe",
         "Diff vs rev 4"        -> "analysis.diff",
-        "Description"          -> "analysis.description",
+        "Notes"                -> "analysis.description",
         "Resolved design"      -> "analysis.resolved-design",
         "Table"                -> "analysis.resolved-design.table",
-        "Preflight"            -> "analysis.preflight",
-        "Diagnostics"          -> "analysis.diagnostics"
+        "Diagnostics"          -> "analysis.diagnostics",
+        "Preflight"            -> "analysis.preflight"
       )
     ),
     (

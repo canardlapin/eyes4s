@@ -70,8 +70,8 @@ object RestingFocus:
             )
         )
 
-    /** Analysis.dc.html (t2 Analysis): the scale chip "8° · new". */
-    case Analysis extends Board(Stop.named(AccessibleRole.RADIO_BUTTON, "8° · new"))
+    /** Analysis.dc.html (t2 Analysis): the scale chip "8° new". */
+    case Analysis extends Board(Stop.named(AccessibleRole.RADIO_BUTTON, "8° new"))
 
     /** Figures.dc.html (t2 Figures): panel D's frame on the page. */
     case Figures

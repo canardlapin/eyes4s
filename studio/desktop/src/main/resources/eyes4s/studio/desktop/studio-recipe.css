@@ -16,15 +16,53 @@
 
 /* Recipe typography and semantic colours. Controls use studio-controls.css. */
 .recipe-sentence {
-  -fx-background-color: -es-surface-2;
-  -fx-border-color: -es-hairline;
-  -fx-border-radius: 6px;
-  -fx-background-radius: 6px;
-  -fx-padding: 8px;
+  -fx-padding: 2 0 2 0;
+  -fx-max-width: 760px;
+  -fx-line-spacing: 4px;
 }
 .recipe-sentence Text { -fx-fill: -es-ink; }
-.recipe-sentence .recipe-token-query { -fx-fill: -es-query; }
+/* Overhaul v4: the roles read in ink, set in SemiBold, not in colour. */
+.recipe-sentence .recipe-token-query,
 .recipe-sentence .recipe-token-reference,
-.recipe-sentence .recipe-token-match { -fx-fill: -es-match-text; }
-.recipe-sentence .recipe-token-control { -fx-fill: -es-control-text; }
+.recipe-sentence .recipe-token-match,
+.recipe-sentence .recipe-token-control { -fx-fill: -es-ink; -fx-font-family: "IBM Plex Sans SmBld"; }
 .recipe-warning { -fx-text-fill: -es-warn-text; }
+
+/* The recipe grid (overhaul v4, analysis.html): a 120 px label column, the
+ * scale chips as tags, quiet actions and the rings to scale. */
+.recipe-row-label { -fx-text-fill: -es-ink-2; -fx-padding: 3 0 0 0; }
+.recipe-chips {
+  -fx-background-color: transparent;
+  -fx-spacing: 6;
+  -fx-padding: 0;
+  -fx-min-height: 24px;
+  -fx-pref-height: 24px;
+}
+.recipe-chips > .segment {
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 4;
+  -fx-text-fill: -es-ink;
+  -fx-padding: 0 9 0 9;
+  -fx-min-height: 24px;
+  -fx-pref-height: 24px;
+}
+.recipe-chips > .segment:selected { -fx-background-color: -es-sel-fill; }
+.studio-button.recipe-quiet,
+.recipe-quiet {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-text-fill: -es-accent;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+.recipe-rings-ground { -fx-fill: -es-surface-3; -fx-stroke: -es-hairline; }
+.recipe-ring { -fx-fill: transparent; -fx-stroke-width: 1; }
+.recipe-ring-saved { -fx-stroke: -es-ink-2; }
+.recipe-ring-new { -fx-stroke: -es-accent; -fx-stroke-width: 1.4; }
+.recipe-ring-label { -fx-fill: -es-ink-2; -fx-font-size: 11px; }
+.recipe-ring-new-label { -fx-fill: -es-accent; }
+.recipe-rings-cell { -fx-fill: -es-ink; }
+.recipe-rings-note { -fx-text-fill: -es-ink-2; }
+.studio-button.recipe-quiet:focus-visible {
+  -fx-border-color: -es-accent;
+  -fx-border-radius: 4;
+}

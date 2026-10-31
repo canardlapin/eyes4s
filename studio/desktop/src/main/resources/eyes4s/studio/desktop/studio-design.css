@@ -194,3 +194,15 @@
   -fx-padding: 6 12 6 12;
   -fx-text-fill: -es-warn-text;
 }
+
+/* The funnel over the resolved design (overhaul v4, analysis.html): the
+ * requested queries by what becomes of them, then the exceptions alone. */
+.design-funnel { -fx-padding: 4 14 10 14; }
+.design-funnel-keys { -fx-alignment: center-left; -fx-min-height: 24px; }
+.design-funnel-swatch { -fx-min-width: 10px; -fx-pref-width: 10px; -fx-max-width: 10px; -fx-min-height: 10px; -fx-max-height: 10px; }
+.design-funnel-count { -fx-text-fill: -es-ink; -fx-font-family: "IBM Plex Sans Medm"; }
+.design-funnel-label, .design-funnel-note { -fx-text-fill: -es-ink-3; }
+.design-funnel-contributing { -fx-background-color: -es-ink-2; }
+.design-funnel-failed { -fx-background-color: -es-fail; }
+.design-funnel-no-match { -fx-background-color: -es-control; }
+.design-funnel-not-admitted { -fx-background-color: -es-hairline-strong; }

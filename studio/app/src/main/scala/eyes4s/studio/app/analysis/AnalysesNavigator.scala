@@ -26,11 +26,12 @@ import eyes4s.studio.core.document.{
   AnalysisFamilyId,
   Perspective,
   Preset,
+  RecipeChange,
   RevisionName,
   StudioDocument
 }
 import eyes4s.studio.core.preset.InitialRecipe
-import eyes4s.studio.core.freshness.RunStanding
+import eyes4s.studio.core.freshness.{FreshnessText, RunStanding}
 
 /** History rows retain their document identities; the navigator never runs a study. */
 final case class AnalysisHistoryRow(
@@ -40,9 +41,20 @@ final case class AnalysisHistoryRow(
     label: String,
     detail: String,
     selected: Boolean,
-    open: Intent
+    open: Intent,
+    /** The golden's two lines (overhaul v4): "Rev 4 · run 7" over "data r3",
+      * and the row's state at its right.
+      */
+    title: String = "",
+    sub: String = "",
+    state: Option[HistoryState] = None
 ) derives CanEqual:
   def accessible: String = s"$label · $detail"
+
+/** A history row's state, as its tag shows it. */
+enum HistoryState derives CanEqual:
+  case NotRun, Current, Stale, Running, Failed
+  case Cancelled(words: String)
 
 final case class AnalysisHistoryGroup(
     family: AnalysisFamilyId,
@@ -82,6 +94,9 @@ object AnalysesNavigator:
           .toOption
       yield Command.StartFamily(name.value, data.id, initial._1, initial._2.copy(name = name))
 
+  // "rev 4" as a row's title writes it: "Rev 4".
+  private def capital(label: String): String = label.take(1).toUpperCase + label.drop(1)
+
   def selected(model: AppModel): Option[AnalysisRevision] =
     AnalysisSelection.selected(model).map(_.id)
 
@@ -111,7 +126,10 @@ object AnalysesNavigator:
             analysis.id.label,
             AnalysesText(NotRun, analysis.dataset.label),
             chosen.contains(analysis.id),
-            open(analysis.id)
+            open(analysis.id),
+            capital(analysis.id.label),
+            AnalysesText(Data, analysis.dataset.label),
+            Some(HistoryState.NotRun)
           )
         )
       else
@@ -125,6 +143,12 @@ object AnalysesNavigator:
                 AnalysesText(CancelledAt, stage.toString)
               )
             case RunStanding.Failed => AnalysesText(Failed)
+          val tag = entry.standing match
+            case RunStanding.Current      => HistoryState.Current
+            case RunStanding.Stale(_)     => HistoryState.Stale
+            case RunStanding.Running      => HistoryState.Running
+            case RunStanding.Cancelled(_) => HistoryState.Cancelled(AnalysesText(Cancelled))
+            case RunStanding.Failed       => HistoryState.Failed
           AnalysisHistoryRow(
             analysis.id,
             entry.run.dataset,
@@ -138,7 +162,10 @@ object AnalysesNavigator:
                 Perspective.Analysis,
                 AnalysisSelection.trail(document, analysis.id) :+ Place.Run(entry.run.id)
               )
-            )
+            ),
+            s"${capital(analysis.id.label)} · ${entry.run.id.label}",
+            AnalysesText(Data, entry.run.dataset.label),
+            Some(tag)
           )
         }
       document.familyOf(analysis.id).toVector.flatMap(family => entries.map(family -> _))
@@ -155,7 +182,14 @@ object AnalysesNavigator:
             AnalysesText(Draft, context.id.label),
             AnalysesText(NotRun, context.dataset.label),
             chosen.contains(context.id),
-            open(context.id)
+            open(context.id),
+            AnalysesText(Draft, context.id.label),
+            // "adds σ 8° · data r3": what the draft changes, then its data.
+            (context.savedBase.toVector.flatMap { base =>
+              val changes = RecipeChange.between(base.recipe, context.recipe)
+              Option.when(changes.nonEmpty)(FreshnessText.describe(changes)).toVector
+            } :+ AnalysesText(Data, context.dataset.label)).mkString(" · "),
+            Some(HistoryState.NotRun)
           )
         )
     }

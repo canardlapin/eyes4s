@@ -108,6 +108,16 @@ final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
   /** The pane's state now. */
   def state: ResolvedDesign = panel
 
+  /** The pane header's subtitle (overhaul v4): the queries and how they
+    * were counted.
+    */
+  def subtitle: String =
+    val vm = ResolvedDesignVM.of(panel)
+    vm.chips.headOption.fold("")(c =>
+      eyes4s.studio.app.text
+        .DesignText(eyes4s.studio.app.text.DesignTextId.Subtitle, c.count, vm.mode)
+    )
+
   // Who follows the pane's state (the preflight pane, S7.6).
   private var followers = Vector.empty[ResolvedDesign => Unit]
 

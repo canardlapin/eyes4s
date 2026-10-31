@@ -302,7 +302,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
         .fold(e => fail(e.toString), identity)
       choose(fx, w, CommandRegistry.reviewDraft.id)
       eventually(fx, "rev 5's pair rows")(
-        shown(w).exists(_.contains("Save & run rev 5 · 44,845 pairs"))
+        shown(w).exists(_.contains("Save and run rev 5"))
       )
       // Edit › Discard draft (in Analysis the draft's actions are the menu's).
       choose(fx, w, CommandRegistry.discardDraft.id)

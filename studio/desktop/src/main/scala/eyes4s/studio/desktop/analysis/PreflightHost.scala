@@ -65,7 +65,7 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
   private val lines      = GridPane()
   lines.setHgap(8.0)
   lines.setVgap(3.0)
-  private val keyColumn   = ColumnConstraints(78)
+  private val keyColumn   = ColumnConstraints(116)
   private val valueColumn = ColumnConstraints()
   valueColumn.setMinWidth(0)
   valueColumn.setHgrow(Priority.ALWAYS)
@@ -158,38 +158,45 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     )
   private val eyesHeading =
     heading(PreflightText(PreflightTextId.Eyes4sHeading), report)
+  // The golden's Run section: the analysis name first, then its lines and
+  // Save and run; the notes are the recipe's Notes tab (overhaul v4).
+  private val notesLabel =
+    label(eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Notes), "t11")
+  Vector(notesLabel, runDescription).foreach { n => n.setVisible(false); n.setManaged(false) }
+  runName.getStyleClass.add("studio-field")
   private val card = VBox(
-    6.0,
-    heading(
-      PreflightText(PreflightTextId.RunHeading),
-      label(PreflightText(PreflightTextId.RunKind), "kind")
+    8.0,
+    label(PreflightText(PreflightTextId.RunHeading), "t13", "preflight-section"),
+    label(
+      eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Name),
+      "t11",
+      "preflight-key"
     ),
-    lines,
-    label(eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Name), "t11"),
     runName,
     nameError,
-    label(eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Notes), "t11"),
+    lines,
+    notesLabel,
     runDescription,
     run,
     verdict
   )
-  card.getStyleClass.add("find")
+  card.getStyleClass.add("preflight-run-section")
 
-  private val content = VBox(
-    8.0,
-    status,
-    studioHeading,
-    studio,
-    eyesHeading,
-    eyes,
-    VBox(
-      2.0,
-      label(PreflightText(PreflightTextId.NotCheckedHeading), "t11", "preflight-key"),
-      notChecked
-    ),
-    card
-  )
-  content.setPadding(javafx.geometry.Insets(10, 12, 10, 12))
+  /** The pane header's control: Ready, or Blocked (overhaul v4). */
+  private val readiness = label("", "t12", "preflight-readiness")
+  readiness.setMinWidth(Region.USE_PREF_SIZE)
+  readiness.setWrapText(false)
+  val headerControls: Vector[javafx.scene.Node] = Vector(readiness)
+  private val counts                            = label("", "t11", "preflight-note")
+
+  // The golden's rail: the counts, the findings, what is not checked, then
+  // Run; the studio's own section only when it has findings.
+  eyesHeading.setVisible(false)
+  eyesHeading.setManaged(false)
+  private val checks =
+    VBox(8.0, status, counts, studioHeading, studio, eyesHeading, eyes, notChecked)
+  checks.getStyleClass.add("preflight-checks")
+  private val content = VBox(0.0, checks, card)
 
   /** The pane's content. */
   val node: ScrollPane = ScrollPane(content)
@@ -244,10 +251,6 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
            FocusStop(
              A11yRole.TextField,
              eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Name)
-           ),
-           FocusStop(
-             A11yRole.TextArea,
-             eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Notes)
            )
          )) ++
       Option.when(!run.isDisabled)(FocusStop(A11yRole.Button, v.card.button))
@@ -263,16 +266,24 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     render()
 
   private def findingNode(f: FindingVM): VBox =
-    val pill = label(f.severity.label, "pill")
-    pill.getStyleClass.add(
-      if f.severity == FindingSeverity.Blocker then "pill-blocker" else "pill-warning"
+    val blocker = f.severity == FindingSeverity.Blocker
+    val title   = label(f.title, "preflight-title", "t12")
+    title.setGraphic(
+      eyes4s.studio.desktop.icons.StudioIcons
+        .graphic(
+          eyes4s.studio.app.icons.Icon.Warning,
+          eyes4s.studio.desktop.icons.IconSize.Px16
+        )
     )
-    val head = HBox(6.0, pill, label(f.title, "preflight-title"))
+    title.setGraphicTextGap(6.0)
+    // The severity is read with the title; the card's colour shows it.
+    title.setAccessibleText(s"${f.severity.label}: ${f.title}")
+    val head = HBox(6.0, title)
     head.setAlignment(Pos.CENTER_LEFT)
     val box = VBox(3.0, head, label(f.detail, "t11", "preflight-note"))
     f.remedy.foreach { r =>
       val b = Button(r.label)
-      b.getStyleClass.add("chip")
+      b.getStyleClass.addAll("studio-button", "preflight-remedy")
       b.setAccessibleText(r.label)
       b.setOnAction { _ =>
         selection.foreach { s =>
@@ -283,7 +294,10 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
       }
       box.getChildren.add(b)
     }
-    box.getStyleClass.add("find")
+    box.getStyleClass.addAll(
+      "preflight-finding",
+      if blocker then "preflight-finding-blocker" else "preflight-finding-warning"
+    )
     box.setUserData(f)
     box
 
@@ -310,11 +324,25 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
         f.fold(Vector.empty[javafx.scene.Node])(_.eyes4s.map(findingNode))*
       ): Unit
     notChecked.setText(v.notChecked)
+    val hasStudio = f.exists(_.studio.nonEmpty)
+    Vector(studioHeading, studio).foreach { n =>
+      n.setVisible(hasStudio); n.setManaged(hasStudio)
+    }
+    counts.setText(f.fold("") { x =>
+      def n(k: Int, one: PreflightTextId, many: PreflightTextId) =
+        if k == 1 then PreflightText(one) else PreflightText(many, k.toString)
+      PreflightText(
+        PreflightTextId.Counts,
+        n(x.blockers, PreflightTextId.OneBlocker, PreflightTextId.Blockers),
+        n(x.warnings, PreflightTextId.OneWarning, PreflightTextId.Warnings)
+      )
+    })
+    counts.setVisible(f.isDefined); counts.setManaged(f.isDefined)
     if !rendered.exists(_.card.lines == v.card.lines) then
       lines.getChildren.clear()
       v.card.lines.zipWithIndex.foreach { (l, i) =>
-        lines.add(label(l.label, "t11", "preflight-key"), 0, i)
-        lines.add(label(l.value, "t11", "mono"), 1, i)
+        lines.add(label(l.label, "t12", "preflight-key"), 0, i)
+        lines.add(label(l.value, "t12"), 1, i)
       }
     run.setText(v.card.button)
     run.setAccessibleText(v.card.button)
@@ -344,4 +372,11 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
         }
     )
     verdict.setText(editing.orElse(v.card.reason).getOrElse(v.card.verdict))
+    readiness.setText(
+      PreflightText(if run.isDisabled then PreflightTextId.BlockedShort
+      else PreflightTextId.Ready)
+    )
+    readiness.getStyleClass.removeAll("preflight-ready", "preflight-blocked")
+    readiness.getStyleClass.add(if run.isDisabled then "preflight-blocked"
+    else "preflight-ready")
     rendered = Some(v)

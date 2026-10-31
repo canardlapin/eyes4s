@@ -63,3 +63,28 @@
 .pair-trials-status { -fx-text-fill: -es-ink-2; -fx-padding: 8 14 8 14; }
 .pair-trials-foot { -fx-padding: 4 12 6 14; -fx-border-color: -es-hairline transparent transparent transparent; }
 .pair-trials-all { -fx-text-fill: -es-accent; -fx-padding: 0; -fx-border-width: 0; }
+
+/* The Analyses navigator (overhaul v4, analysis.html): a family heading,
+ * then 44 px rows of a revision or run over its data, its state at the right. */
+.analyses-family { -fx-text-fill: -es-ink-2; -fx-font-family: "IBM Plex Sans Medm"; -fx-padding: 8 14 6 14; }
+.analyses-row {
+  -fx-background-color: transparent;
+  -fx-background-radius: 0;
+  -fx-border-width: 0 0 0 2;
+  -fx-border-color: transparent;
+  -fx-padding: 0 12 0 14;
+  -fx-min-height: 44px;
+  -fx-pref-height: 44px;
+  -fx-alignment: center-left;
+}
+.analyses-row:hover { -fx-background-color: -es-surface-2; }
+.analyses-row:selected { -fx-background-color: -es-sel-fill; -fx-border-color: -es-accent; }
+.analyses-row:focus-visible { -fx-border-width: 2; -fx-border-color: -es-accent; }
+.analyses-title { -fx-text-fill: -es-ink; }
+.analyses-title-selected { -fx-font-family: "IBM Plex Sans Medm"; }
+.analyses-sub { -fx-text-fill: -es-ink-3; }
+.analyses-state { -fx-text-fill: -es-ink-2; }
+.analyses-current-dot { -fx-fill: -es-accent; }
+.analyses-stale { -fx-background-color: -es-warn-soft; -fx-text-fill: -es-warn-text; }
+.analyses-note { -fx-text-fill: -es-ink-3; -fx-padding: 8 14 8 14; }
+.analyses-new > .label { -fx-text-fill: -es-ink-2; }

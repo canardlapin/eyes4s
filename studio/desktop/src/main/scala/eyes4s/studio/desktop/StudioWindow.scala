@@ -720,6 +720,7 @@ object StudioWindow:
     // target revision, prepared once the perspective is shown.
     val analyses = eyes4s.studio.desktop.analysis.AnalysesNavigatorHost(dispatch)
     host.host(StudioLayouts.analyses, analyses.node)
+    host.controls(StudioLayouts.analyses, analyses.headerControls*)
     val analysesListener: AppModel => Unit = analyses.sync
     r.listen(analysesListener)
     analyses.sync(r.model)
@@ -730,12 +731,17 @@ object StudioWindow:
       hostPlatform
     )
     host.host(StudioLayouts.recipe, recipe.node)
+    val recipeTitle: AppModel => Unit = _ =>
+      host.describe(StudioLayouts.recipe, recipe.subtitle)
     host.host(StudioLayouts.recipeDiff, recipe.diffNode)
     val recipeListener: AppModel => Unit = recipe.sync
     r.listen(recipeListener)
+    r.listen(recipeTitle)
+    recipeTitle(r.model)
     recipe.sync(r.model)
     val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
     host.host(StudioLayouts.resolvedDesign, design.node)
+    design.follow(_ => host.describe(StudioLayouts.resolvedDesign, design.subtitle))
     val designListener: AppModel => Unit = design.sync
     r.listen(designListener)
     design.sync(r.model)
@@ -768,6 +774,7 @@ object StudioWindow:
     // The preflight pane and run card (Analysis): the design's findings.
     val preflight = PreflightHost(() => r.model, dispatch)
     host.host(StudioLayouts.preflight, preflight.node)
+    host.controls(StudioLayouts.preflight, preflight.headerControls*)
     host.host(StudioLayouts.recipeDescription, preflight.descriptionNode)
     design.follow(preflight.follow)
     val preflightListener: AppModel => Unit = preflight.sync

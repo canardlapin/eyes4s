@@ -81,7 +81,12 @@ final class RecipePaneHost(
         eyes4s.studio.desktop.scanpath.ScanpathWorkbench.open(node.getScene.getWindow, platform)
       scanpathWindows = scanpathWindows.filter(_.isShowing) :+ window
   }
-  private val content = VBox(8, heading, presets.node, details, note, editor.node, scanpaths)
+  // The preset bar is the recipe grid's first row; its heading and the
+  // presets' detail lines are read, not shown (overhaul v4).
+  Vector(heading, details).foreach { l => l.setVisible(false); l.setManaged(false) }
+  editor.presetSlot.getChildren.setAll(presets.node, note)
+  scanpaths.getStyleClass.add("recipe-quiet")
+  private val content = VBox(8, heading, details, editor.node, scanpaths)
   content.getStyleClass.add("inspector")
   content.setPadding(javafx.geometry.Insets(10, 16, 10, 16))
   val node = ScrollPane(content)
@@ -120,6 +125,26 @@ final class RecipePaneHost(
       RecipeText(T.Diff, context.flatMap(_.savedBase).fold(RecipeText(T.Recipe))(_.id.label))
     )
     refreshDiff()
+
+  /** The pane header's subtitle (overhaul v4): the revision, and for a
+    * draft how many changes it makes to its saved base.
+    */
+  def subtitle: String =
+    val m = model()
+    AnalysisSelection.selected(m).fold("") { c =>
+      val draft = m.document.draft.exists(_.id == c.id)
+      c.savedBase.filter(_ => draft).fold(RecipeText(T.PaneSaved, c.id.label)) { base =>
+        val n =
+          eyes4s.studio.core.document.RecipeChange.between(base.recipe, c.recipe).size
+        RecipeText(
+          T.PaneDraft,
+          c.id.label,
+          if n == 1 then RecipeText(T.OneChange) else RecipeText(T.Changes, n.toString),
+          base.id.label
+        )
+      }
+    }
+
   def choose(preset: Preset): Unit     = if enabled(preset) then presets.choose(preset)
   def enabled(preset: Preset): Boolean = PresetPicker
     .vm(model().document, AnalysesNavigator.selected(model()))

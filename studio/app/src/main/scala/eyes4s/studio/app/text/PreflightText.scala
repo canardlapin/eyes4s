@@ -29,6 +29,9 @@ enum PreflightTextId derives CanEqual:
   case Verdict
   case RunButtonUncounted
 
+  /** The rail's count line (overhaul v4): "0 blockers · 1 warning". */
+  case Counts, OneBlocker, Blockers, OneWarning, Warnings
+
 object PreflightText:
 
   def english(id: PreflightTextId): String =
@@ -39,15 +42,15 @@ object PreflightText:
       case NoStudioChecks    => "No studio check applies"
       case NotCheckedHeading => "Not checked"
       case NotChecked        =>
-        "Stimulus image content · calibration quality · sample-level validity (fixation input only)"
+        "Not checked: stimulus content, calibration quality, sample-level validity."
       case RunHeading         => "Run"
       case RunKind            => "Analysis · rerun"
       case PairRows           => "Pair rows"
       case PairRowsValue      => "{0} × {1} scales = {2}"
       case ChangeVs           => "Change vs {0}"
       case NoChange           => "none"
-      case RunButton          => "Save & run {0} · {1} pairs"
-      case RunButtonUncounted => "Save & run {0}"
+      case RunButton          => "Save and run {0}"
+      case RunButtonUncounted => "Save and run {0}"
       case Ready              => "Ready"
       case BlockedShort       => "Blocked"
       case Blocked            => "Save & run disabled: {0}"
@@ -57,6 +60,11 @@ object PreflightText:
       case NothingToCheck     => "No analysis revision to check"
       case Refused            => "The check of {0} could not be made: {1}"
       case Verdict            => "{0} · {1} · {2} reported with the run"
+      case Counts             => "{0} · {1}"
+      case OneBlocker         => "1 blocker"
+      case Blockers           => "{0} blockers"
+      case OneWarning         => "1 warning"
+      case Warnings           => "{0} warnings"
 
   def apply(id: PreflightTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

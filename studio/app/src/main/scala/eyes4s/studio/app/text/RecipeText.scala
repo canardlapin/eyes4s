@@ -26,6 +26,14 @@ enum RecipeTextId derives CanEqual:
   case Name, Notes, Served, PresetHelp, SelectionNeeded, MinimumItems, MaximumItems, LastScale,
     CrossDeclared, DescriptionSave
 
+  /** The σ rings beside the scales (overhaul v4): the note, the cell key, a new ring's label, and
+    * the preset row's label.
+    */
+  case RingsNote, CellKey, NewRing, PresetLabel
+
+  /** The recipe pane's subtitle: "draft rev 5 · 1 change from rev 4". */
+  case PaneDraft, PaneSaved, OneChange, Changes
+
 object RecipeText:
   def english(id: RecipeTextId): String =
     import RecipeTextId.*
@@ -38,24 +46,33 @@ object RecipeText:
       case Checking               => "Checking settings…"
       case Applied                => "Settings applied."
       case Unapplied              => "Apply these changes before Save & run."
-      case Locked        => "Finish or discard the other draft before editing this revision."
-      case Field         => "{0}"
-      case Metadata      => "{0} · v{1} · {2}"
-      case Default       => "Default: {0} · {1}"
-      case Optional      => "Use {0}"
-      case Add           => "Add {0}"
-      case Remove        => "Remove {0}"
-      case ReadOnly      => "{0} is supplied by the dataset."
-      case Scanpaths     => "Open MultiMatch scanpath workspace"
-      case Cell          => "cell {0}° × {1}°"
-      case CellUnknown   => "Cell size in degrees needs a declared angular scale."
-      case BelowCells    => "σ {0}° ≈ {1} cells: below {2} cells, the map is grid-limited."
-      case NearUniform   => "σ {0}° spans {1} of the image extent: maps are near-uniform."
+      case Locked      => "Finish or discard the other draft before editing this revision."
+      case Field       => "{0}"
+      case Metadata    => "{0} · v{1} · {2}"
+      case Default     => "Default: {0} · {1}"
+      case Optional    => "Use {0}"
+      case Add         => "Add {0}"
+      case Remove      => "Remove {0}"
+      case ReadOnly    => "{0} is supplied by the dataset."
+      case Scanpaths   => "Open MultiMatch scanpath workspace"
+      case Cell        => "cell {0}° × {1}°"
+      case CellUnknown => "Cell size in degrees needs a declared angular scale."
+      case BelowCells  => "{0}° is {1} cells wide: grid-limited"
+      case NearUniform => "{0}° radius is {1} of the frame height: near-uniform maps"
+      case RingsNote   =>
+        "Radius σ on the {0} × {1} frame at a declared {2} px/° (not calibrated); inner rings {3}."
+      case CellKey       => "1 grid cell ({0}°)"
+      case NewRing       => "{0} new"
+      case PresetLabel   => "Preset"
+      case PaneDraft     => "draft {0} · {1} from {2}"
+      case PaneSaved     => "{0}"
+      case OneChange     => "1 change"
+      case Changes       => "{0} changes"
       case Scale         => "{0}°"
-      case NewScale      => "{0}° · new"
+      case NewScale      => "{0}° new"
       case Scales        => "Scales σ"
-      case AddScale      => "Add a scale"
-      case RemoveScale   => "Remove selected scale"
+      case AddScale      => "Add scale"
+      case RemoveScale   => "Remove scale"
       case ScaleEntry    => "New scale σ in degrees"
       case CrossDeclared =>
         "Drop leading fixations within {0}° of the cross at ({1}, {2}) screen px"

@@ -62,6 +62,14 @@ final case class DesignNoteVM(text: String, refs: Vector[StudioRef], mono: Boole
     derives CanEqual
 
 /** Everything the resolved-design pane shows, in the board's order. */
+/** One part of the design's funnel (overhaul v4, `analysis.html`): the
+  * queries that contribute, fail, have no match or are not admitted.
+  */
+enum FunnelPart derives CanEqual:
+  case Contributing, Failed, NoMatch, NotAdmitted
+
+final case class FunnelVM(part: FunnelPart, count: Long, label: String) derives CanEqual
+
 final case class ResolvedDesignVM(
     title: String,
     empty: Option[String],
@@ -76,7 +84,9 @@ final case class ResolvedDesignVM(
     notes: Vector[DesignNoteVM],
     problem: Option[String],
     accessible: String,
-    accessibleHelp: String
+    accessibleHelp: String,
+    /** The funnel's parts, every count eyes4s's; empty until it has counted. */
+    funnel: Vector[FunnelVM] = Vector.empty
 ) derives CanEqual:
 
   /** The pane's focus stops after its own, in Tab order: each chip that can
@@ -253,8 +263,29 @@ object ResolvedDesignVM:
         (candidateNote ++ exactNote ++ preparationNote ++ countingNote ++ same ++ stampNote).toVector,
       problem = problem,
       accessible = revision.fold(t(NoRevision))(r => t(Accessible, r.label)),
-      accessibleHelp = t(AccessibleHelp, chips.head.count)
+      accessibleHelp = t(AccessibleHelp, chips.head.count),
+      funnel = funnelOf(ready, candidates)
     )
+
+  /** The funnel once eyes4s has counted: the eligible queries without a
+    * known focal failure, those that will fail, those with no match and
+    * those not admitted, as the counts serve them.
+    */
+  private def funnelOf(
+      ready: Option[eyes4s.studio.core.preview.PreviewReady],
+      candidates: Option[eyes4s.studio.core.preview.PreviewCandidates]
+  ): Vector[FunnelVM] =
+    (for
+      r       <- ready
+      c       <- candidates
+      without <- r.counts.withoutKnownFocalFailure
+      failing <- r.counts.knownFailingFocalQueries
+    yield Vector(
+      FunnelVM(FunnelPart.Contributing, without.toLong, t(FunnelContributing)),
+      FunnelVM(FunnelPart.Failed, failing.value.toLong, t(FunnelFailed)),
+      FunnelVM(FunnelPart.NoMatch, r.counts.unmatchedQueries.value.toLong, t(FunnelNoMatch)),
+      FunnelVM(FunnelPart.NotAdmitted, c.queriesNotAdmitted.value.toLong, t(FunnelNotAdmitted))
+    )).getOrElse(Vector.empty)
 
   /** The row of `r`: its matched reference and controls only when it enters
     * the comparisons, and its status in the board's words.

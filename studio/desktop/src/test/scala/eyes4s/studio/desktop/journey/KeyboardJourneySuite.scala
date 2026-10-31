@@ -346,7 +346,7 @@ class KeyboardJourneySuite extends GoldenWindow:
       eventually(fx, "the draft's design is checked")(
         w.resolvedDesign.state.preview.receipt.isDefined
       )
-      tabToNamed(fx, "Save & run rev 4")
+      tabToNamed(fx, "Save and run rev 4")
       space(fx)
       eventually(fx, "run 6's job")(w.runtime.model.jobs.jobs.exists(_.run == run6))
       val job = model(w).jobs.jobs.find(_.run == run6).get.id
@@ -453,7 +453,7 @@ class KeyboardJourneySuite extends GoldenWindow:
       // The state menu's Review in Analysis, then rev 5's pair rows there.
       stateAction(fx, w, "Review in Analysis")
       eventually(fx, "rev 5's pair rows")(
-        shownTexts(w).exists(_.contains("Save & run rev 5 · 44,845 pairs"))
+        shownTexts(w).exists(_.contains("Save and run rev 5"))
       )
       audit(w, "rev 5 in Analysis")
       // Discard draft from the state menu in Compare, then the confirmation's.

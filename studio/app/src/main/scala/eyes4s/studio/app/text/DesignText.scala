@@ -26,6 +26,10 @@ import eyes4s.studio.core.selection.DesignCount
 enum DesignTextId derives CanEqual:
   case Title, NoRevision, Accessible, AccessibleHelp, EmptyFilter
 
+  // --- The funnel (overhaul v4) ----------------------------------------------------------
+  case FunnelContributing, FunnelFailed, FunnelNoMatch, FunnelNotAdmitted, FunnelExceptions
+  case Subtitle
+
   // --- Filter chips --------------------------------------------------------------------
   case ChipAll, ChipEligible, ChipNoMatch, ChipNotAdmitted, ChipByDesign, NotApplicable
   case Pending
@@ -82,6 +86,12 @@ object DesignText:
     case StatusControlAdmission => "{0} · declared control candidates not admitted ({1}): {2}"
     case ReferenceDisposition   => "{0} ({1})"
     case StatusEligible         => "Eligible"
+    case FunnelContributing     => "contributing"
+    case Subtitle               => "{0} queries · {1}"
+    case FunnelFailed           => "failed"
+    case FunnelNoMatch          => "no match"
+    case FunnelNotAdmitted      => "query not admitted"
+    case FunnelExceptions       => "The {0} that do not contribute, at their own scale"
     case StatusFocalFailure     => "Eligible · focal trial will fail: {0}"
     case StatusPreparationNote  => "Eligible · {0}"
     case PreparationNote        =>

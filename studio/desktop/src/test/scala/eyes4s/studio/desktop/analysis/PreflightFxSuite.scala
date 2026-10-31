@@ -110,7 +110,7 @@ class PreflightFxSuite extends ShellFxSuite:
     ready(fx, w)
     val remedy = runOnFx(
       w.preflight.node
-        .lookupAll(".find .button")
+        .lookupAll(".preflight-finding .button")
         .asScala
         .collectFirst {
           case b: Button if !b.isDisabled => b
@@ -131,7 +131,7 @@ class PreflightFxSuite extends ShellFxSuite:
       val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
       ready(fx, w)
       val (label, enabled, said) = runOnFx(w.preflight.runButton)
-      assertEquals((label, enabled), ("Save & run rev 5 · 44,845 pairs", true))
+      assertEquals((label, enabled), ("Save and run rev 5", true))
       assert(said.startsWith("Ready · 0 blockers"), said)
       assert(runOnFx(w.preflight.vm.card.lines.exists(_.value == "8,969 × 5 scales = 44,845")))
       fx.snapshot(StudioTheme.Light)

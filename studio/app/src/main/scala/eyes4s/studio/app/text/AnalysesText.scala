@@ -18,7 +18,8 @@ package eyes4s.studio.app.text
 
 enum AnalysesTextId derives CanEqual:
   case NewAnalysis, Draft, NotRun, Current, Stale, Running, Cancelled, CancelledAt, Failed,
-    HeldDraft, Immutable, NewFamilyName, CurrentRun, NoCurrentRun, ShowCurrent, FamilyLabel
+    HeldDraft, Immutable, NewFamilyName, CurrentRun, NoCurrentRun, ShowCurrent, FamilyLabel,
+    Data, NotRunTag
 
 object AnalysesText:
   def english(id: AnalysesTextId): String =
@@ -32,6 +33,8 @@ object AnalysesText:
       case ShowCurrent   => "Show current result"
       case Draft         => "Draft {0}"
       case NotRun        => "data {0} · not run"
+      case Data          => "data {0}"
+      case NotRunTag     => "not run"
       case Current       => "current"
       case Stale         => "stale"
       case Running       => "running"

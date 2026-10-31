@@ -12,9 +12,9 @@ toggle-button: rev 4 · run 6 · data r3 · cancelled at Comparing
 toggle-button: rev 3 · run 5 · data r2 · stale
 region: Recipe
 radio-button: Encoding → Retrieval preset, Query: Retrieval · Reference: Encoding · match on item; no change
-radio-button: 8° · new
+radio-button: 8° new
 text-field: New scale σ in degrees
-button: Remove selected scale
+button: Remove scale
 text-field: The focal (query) phase
 text-field: The reference phase
 combo-box: Per-fixation mass: uniform count or measured duration
@@ -45,5 +45,4 @@ table: Resolved design, rev 5; arrow keys move the row cursor
 region: Preflight
 button: Open the affected trials
 text-field: Analysis name
-text-area: Analysis notes
-button: Save & run rev 5 · 44,845 pairs
+button: Save and run rev 5

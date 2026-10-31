@@ -85,7 +85,29 @@ final class RecipeForm(model: () => AppModel, app: Intent => Unit, inputs: Recip
   private val conventions = Label()
   conventions.setWrapText(true)
   conventions.getStyleClass.add("t11")
-  val node = VBox(8, sentence, scales.node, descriptor.node, conventions, problem, apply)
+
+  /** Where the pane puts its preset bar: the grid's first row (overhaul v4). */
+  val presetSlot: VBox = VBox(4)
+
+  // The golden's recipe: the sentence, then a label column beside the
+  // preset and the scales, then the remaining fields.
+  private def rowLabel(words: String): Label =
+    val l = Label(words)
+    l.getStyleClass.addAll("recipe-row-label", "t12")
+    l
+  private val grid = javafx.scene.layout.GridPane()
+  grid.getStyleClass.add("recipe-grid")
+  grid.setHgap(16)
+  grid.setVgap(10)
+  grid.getColumnConstraints.addAll(
+    javafx.scene.layout.ColumnConstraints(120),
+    javafx.scene.layout.ColumnConstraints()
+  )
+  grid.addRow(0, rowLabel(RecipeText(T.PresetLabel)), presetSlot)
+  grid.addRow(1, rowLabel(RecipeText(T.Scales)), scales.node)
+  javafx.scene.layout.GridPane.setValignment(grid.getChildren.get(0), javafx.geometry.VPos.TOP)
+  javafx.scene.layout.GridPane.setValignment(grid.getChildren.get(2), javafx.geometry.VPos.TOP)
+  val node = VBox(12, sentence, grid, descriptor.node, conventions, problem, apply)
   node.getStyleClass.add("recipe-form")
   Option(getClass.getClassLoader.getResource("eyes4s/studio/desktop/studio-recipe.css"))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
@@ -145,7 +167,18 @@ final class RecipeForm(model: () => AppModel, app: Intent => Unit, inputs: Recip
         .toVector
         .flatMap(_.seedRecipe.scales.values.map(_.degrees))
         .toSet
-      val chips = scales.show(scalesRaw, baseline, panel.result)
+      // The image frame the maps are on, for the rings to scale.
+      val frame = AnalysisSelection
+        .selected(model())
+        .flatMap(c => model().document.dataset(c.dataset))
+        .map(d =>
+          SigmaRings.Frame(
+            d.geometry.image.width,
+            d.geometry.image.height,
+            d.geometry.pixelsPerDegree.value
+          )
+        )
+      val chips = scales.show(scalesRaw, baseline, panel.result, frame)
       if rebuild || rendered.isEmpty then
         descriptor.show(form, values, if chips then Set("scales") else Set.empty)
         rendered = Some(form)
@@ -158,7 +191,7 @@ final class RecipeForm(model: () => AppModel, app: Intent => Unit, inputs: Recip
     panel.result.foreach { served =>
       sentence.getChildren.setAll(served.sentence.map { token =>
         val text = Text(RecipeText(T.Served, token.text))
-        text.getStyleClass.add("t12")
+        text.getStyleClass.add("t16")
         token.role.foreach(role => text.getStyleClass.add(s"recipe-token-${role.toLowerCase}"))
         text
       }*)
