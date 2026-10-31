@@ -177,7 +177,8 @@ object StudioLayouts:
         PaneDecl(dataIssues, PaneTitle.Fixed("Data issues"), Form),
         pane("data.outside-frame", "Records outside frame", Table)
       ),
-      // 372 px until Port 8 fits the geometry form to the golden's 300.
+      // 372 px: the geometry form's fields and its two thumbnails need it;
+      // the golden's 300 px rail waits on a single-preview placement check.
       group(PaneDecl(dataGeometry, PaneTitle.Fixed("Geometry"), Form)) -> 372.0
     ),
     MessageId.HintDataVerify

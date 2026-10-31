@@ -332,7 +332,56 @@ final class SourcesPaneHost(
   private var pane     = SourcesPane.empty
   private var disposed = false
 
-  val view: SourcesView       = SourcesView(i => dispatch(i))
+  // The setup steps over the pane (overhaul v4, data.html); the sources'
+  // own cards show under the Sources step.
+  private val steps = VBox()
+  steps.getStyleClass.add("data-steps")
+  private var shownSteps = Vector.empty[eyes4s.studio.app.data.DataStepVM]
+  private def renderSteps(m: AppModel, v: SourcesVM): Unit =
+    import eyes4s.studio.app.data.{DataSteps, StepState}
+    val next = DataSteps.vm(m, v)
+    if next != shownSteps then
+      shownSteps = next
+      steps.getChildren.setAll(next.map { st =>
+        val number = Label(st.number.toString)
+        number.getStyleClass.addAll("data-step-number", "t12")
+        val title = Label(st.title)
+        title.getStyleClass.addAll("data-step-title", "t12")
+        val sub = Label(st.sub)
+        sub.getStyleClass.addAll("data-step-sub", "t11")
+        val lines  = VBox(1.0, title, sub)
+        val spacer = javafx.scene.layout.Region()
+        javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+        val state: javafx.scene.Node = st.state match
+          case StepState.Problems(k) =>
+            val l = Label(k.toString); l.getStyleClass.addAll("data-step-badge", "t11"); l
+          case StepState.Done =>
+            eyes4s.studio.desktop.icons.StudioIcons
+              .graphic(
+                eyes4s.studio.app.icons.Icon.Check,
+                eyes4s.studio.desktop.icons.IconSize.Px16
+              )
+          case StepState.Open => javafx.scene.layout.Region()
+        val row = javafx.scene.layout.HBox(10.0, number, lines, spacer, state)
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
+        val b = Button()
+        b.setGraphic(row)
+        b.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY)
+        b.setText(st.title)
+        b.setAccessibleText(st.spoken)
+        b.setMaxWidth(Double.MaxValue)
+        b.getStyleClass.add("data-step")
+        if st.current then b.getStyleClass.add("data-step-current"): Unit
+        b.setOnAction(_ => if !disposed then app(st.open))
+        b
+      }*): Unit
+    // The cards and their checks belong to the Sources step.
+    val atSources = DataSteps.section(m).forall(_ == eyes4s.studio.app.nav.DataSection.Sources)
+    view.sources.setVisible(atSources)
+    view.sources.setManaged(atSources)
+
+  val view: SourcesView = SourcesView(i => dispatch(i))
+  view.node.getChildren.add(0, steps)
   def node: javafx.scene.Node = view.node
 
   /** The pane's state now. */
@@ -359,7 +408,9 @@ final class SourcesPaneHost(
     */
   def focusStops: Vector[FocusStop] =
     val v = vm
-    dataSwitch.focusStops ++ v.sources
+    dataSwitch.focusStops ++ shownSteps.map(st =>
+      FocusStop(A11yRole.Button, st.spoken)
+    ) ++ v.sources
       .flatMap(_.repair)
       .map((text, _) => FocusStop(A11yRole.Button, text)) ++
       Option
@@ -376,6 +427,7 @@ final class SourcesPaneHost(
       pane = next
       perform(effects)
       view.render(project(m))
+      renderSteps(m, project(m))
 
   def dispatch(intent: SourcesIntent): Unit =
     if !disposed then
@@ -383,6 +435,7 @@ final class SourcesPaneHost(
       pane = next
       perform(effects)
       view.render(vm)
+      renderSteps(model(), vm)
 
   def dispose(): Unit = disposed = true
 

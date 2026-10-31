@@ -84,15 +84,15 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
     assertEquals(
       rows(w),
       Vector(
-        "Inventory"                                                         -> "960",
-        "Admitted"                                                          -> "937",
-        "Quarantined — whole trial held back when any record is invalid"    -> "17",
-        "duplicate-ordinals"                                                -> "4",
-        "no-fixations"                                                      -> "5",
-        "overlap"                                                           -> "6",
-        "rejected-records"                                                  -> "2",
-        "Absent — in trials.csv, no fixation records at all"                -> "6",
-        "Outside screen — excluded from maps and reported, not quarantined" -> "0"
+        "Inventory"          -> "960",
+        "Admitted"           -> "937",
+        "Quarantined"        -> "17",
+        "duplicate-ordinals" -> "4",
+        "no-fixations"       -> "5",
+        "overlap"            -> "6",
+        "rejected-records"   -> "2",
+        "Absent"             -> "6",
+        "Outside screen"     -> "0"
       )
     )
     assertEquals(runOnFx(v.equation.getText), "937 + 17 + 6 = 960.")

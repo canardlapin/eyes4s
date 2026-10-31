@@ -385,7 +385,7 @@ class SelectionFillFxSuite extends StudioFxSuite:
       ("timeline speed", speed, List(hairline, selFill), speed, MonoMedium),
       ("figure row", figure, List(selFill), figureTitle, SansSemibold),
       ("ledger row", ledger, List(surface3, selFill), ledgerLabel, SansSemibold),
-      ("ledger count", ledger, List(surface3, selFill), ledgerCount, MonoMedium),
+      ("ledger count", ledger, List(surface3, selFill), ledgerCount, SansMedium),
       ("source record", record, List(selFill), recordCell, SansMedium)
     )
     cases.foreach { (clue, node, expected, text, family) =>

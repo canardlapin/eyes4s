@@ -252,7 +252,11 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   )
   private val counted = section(outsideWindow.node, outsideScreen.node, countsSource)
 
-  private val content = VBox(empty, problem, declared, placement, ledger, policy, counted)
+  // The editor follows the declared facts, before the placement check, so
+  // Tab meets the fields in the order the derived stops list them.
+  private val editing = VBox()
+  private val content =
+    VBox(empty, problem, declared, editing, placement, ledger, policy, counted)
   content.getStyleClass.add("geometry-content")
   private val scroll = ScrollPane(content)
   scroll.setFitToWidth(true)
@@ -284,10 +288,10 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     * scrolls with the panel's body.
     */
   def embed(form: Region): Unit =
-    editor.foreach(e => declared.getChildren.remove(e): Unit)
+    editor.foreach(e => editing.getChildren.remove(e): Unit)
     editor = Some(form)
     form.setMinHeight(Region.USE_PREF_SIZE)
-    declared.getChildren.add(declared.getChildren.indexOf(facts) + 1, form)
+    editing.getChildren.add(form)
     GeometryField.values.foreach { f =>
       visible(fields(f), false)
       visible(fieldLabels(f), false)

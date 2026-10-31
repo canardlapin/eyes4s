@@ -31,6 +31,10 @@ enum LedgerTextId derives CanEqual:
   case EquationMismatch, NoFixationsTerm, NoFixationsDefinition, AbsentTerm
   case AbsentDefinition, OpensHint
 
+  // --- Overhaul v4: meanings and bars -------------------------------------------------
+  case AdmittedMeaning, QuarantinedMeaning, OutsideScreenMeaning, OverlapMeaning
+  case BarAdmitted, BarQuarantined, BarAbsent, NotAdmittedScale, StatusHeader, MeaningHeader
+
   // --- An opened count -------------------------------------------------------------
   case OpenedTitle, Close, NoTrials, TrialAbsent, TrialNoFixations, TrialAdmitted
   case TrialOutside, TrialAccessible, LedgerWaiting, LedgerFailed
@@ -81,6 +85,16 @@ object LedgerText:
     case AbsentTerm            => "Absent"
     case AbsentDefinition      => ": listed in the inventory, no records in {0}."
     case OpensHint             => "Each count opens its trials and records."
+    case AdmittedMeaning       => "every record valid"
+    case QuarantinedMeaning    => "the whole trial is held back when any record is invalid"
+    case OutsideScreenMeaning  => "excluded from maps and reported, not quarantined"
+    case OverlapMeaning        => "a fixation begins before the previous fixation ends"
+    case BarAdmitted           => "admitted"
+    case BarQuarantined        => "quarantined"
+    case BarAbsent             => "absent"
+    case NotAdmittedScale      => "The {0} not admitted, at their own scale"
+    case StatusHeader          => "Status"
+    case MeaningHeader         => "Meaning"
 
     case OpenedTitle      => "{0} · {1} trials"
     case Close            => "Close"

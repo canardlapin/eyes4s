@@ -58,8 +58,9 @@
   -fx-background-color: -es-surface-3, -es-surface-2;
 }
 
-.ledger-row.cause {
-  -fx-padding: 0 14 0 30;
+/* A cause is indented within its Status cell, so Meaning stays aligned. */
+.ledger-row.cause .ledger-label {
+  -fx-padding: 0 0 0 16;
 }
 
 /* The opened count is the selected row: the selection fill, its label and
@@ -87,7 +88,7 @@
 }
 
 .ledger-row.opened .ledger-count {
-  -fx-font-family: "IBM Plex Mono Medm";
+  -fx-font-family: "IBM Plex Sans Medm";
 }
 
 .ledger-detail, .ledger-note, .ledger-definitions, .ledger-hint {
@@ -108,7 +109,7 @@
 }
 
 .ledger-row.total .ledger-count {
-  -fx-font-family: "IBM Plex Mono Medm";
+  -fx-font-family: "IBM Plex Sans Medm";
 }
 
 .ledger-count:hover {
@@ -255,3 +256,17 @@
 .ledger-button:disabled {
   -fx-opacity: 0.4;
 }
+
+/* Overhaul v4 (data.html): the inventory's bar and the trials not admitted at
+ * their own scale above the table, the Meaning column, sans counts. */
+.ledger-bars { -fx-padding: 4 14 8 14; }
+.ledger-bar-keys { -fx-alignment: center-left; -fx-min-height: 22px; }
+.ledger-swatch { -fx-min-width: 10px; -fx-pref-width: 10px; -fx-max-width: 10px; -fx-min-height: 10px; -fx-max-height: 10px; }
+.ledger-bar-count { -fx-text-fill: -es-ink; -fx-font-family: "IBM Plex Sans Medm"; }
+.ledger-bar-label, .ledger-bar-note { -fx-text-fill: -es-ink-3; }
+.ledger-tone-admitted { -fx-background-color: -es-ink-2; }
+.ledger-tone-quarantined { -fx-background-color: -es-fail; }
+.ledger-tone-cause { -fx-background-color: -es-fail-soft, -es-fail; -fx-background-insets: 0, 0; -fx-opacity: 0.75; }
+.ledger-tone-absent { -fx-background-color: -es-hairline-strong; }
+.ledger-meaning { -fx-text-fill: -es-ink-2; }
+.ledger-decision { -fx-padding: 16 14 16 14; -fx-border-color: -es-hairline transparent transparent transparent; -fx-border-width: 1 0 0 0; }

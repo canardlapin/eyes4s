@@ -46,8 +46,34 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
 
   val header: Label       = label("t11")
   val trialsHeader: Label = label("t11")
-  private val head        = HBox(header, spacer(), trialsHeader)
+  // The golden's columns (overhaul v4): Status, Meaning, Trials. The
+  // counting's source is the pane's subtitle.
+  private val statusHead = label("t12")
+  statusHead.setText(
+    eyes4s.studio.app.text.LedgerText(eyes4s.studio.app.text.LedgerTextId.StatusHeader)
+  )
+  statusHead.setPrefWidth(RowView.StatusPx)
+  statusHead.setMinWidth(RowView.StatusPx)
+  private val meaningHead = label("t12")
+  meaningHead.setText(
+    eyes4s.studio.app.text.LedgerText(eyes4s.studio.app.text.LedgerTextId.MeaningHeader)
+  )
+  HBox.setHgrow(meaningHead, Priority.ALWAYS)
+  meaningHead.setMaxWidth(Double.MaxValue)
+  header.setVisible(false); header.setManaged(false)
+  trialsHeader.getStyleClass.add("t12")
+  private val head = HBox(header, statusHead, meaningHead, trialsHeader)
   head.getStyleClass.add("ledger-head")
+
+  // --- the bars (overhaul v4, data.html) ----------------------------------------
+  private val bar       = eyes4s.studio.desktop.analysis.FunnelBar()
+  private val barKeys   = HBox(18.0)
+  private val causeNote = label("ledger-bar-note", "t11")
+  private val causeBar  = eyes4s.studio.desktop.analysis.FunnelBar()
+  private val causeKeys = HBox()
+  Vector(barKeys, causeKeys).foreach(_.getStyleClass.addAll("ledger-bar-keys", "t11"))
+  private val bars = VBox(4.0, bar.node, barKeys, causeNote, causeBar.node, causeKeys)
+  bars.getStyleClass.add("ledger-bars")
 
   private val rowBox                    = VBox()
   private var rowViews: Vector[RowView] = Vector.empty
@@ -105,7 +131,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   private val opened = VBox(openedHead, openedNote, trials)
   opened.getStyleClass.add("ledger-opened")
 
-  private val counts = VBox(head, rowBox, text, issues, opened)
+  private val counts = VBox(bars, head, rowBox, text, issues, opened)
   private val scroll = ScrollPane(counts)
   scroll.setFitToWidth(true)
   scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
@@ -160,7 +186,10 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   decisionScroll.getStyleClass.add("edge-to-edge")
   decisionScroll.setMinWidth(Region.USE_PREF_SIZE)
 
-  private val body = HBox(scroll, decisionScroll)
+  // The decision sits under the counts, as the golden's (overhaul v4).
+  decisionScroll.setMinWidth(0)
+  counts.getChildren.add(decision)
+  private val body = HBox(scroll)
   VBox.setVgrow(body, Priority.ALWAYS)
 
   val node: VBox = VBox(empty, problem, body)
@@ -171,6 +200,42 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   private var rendered: Option[AdmissionLedgerVM] = None
 
   /** Bind `vm`: text, numbers, choices, enablement and visibility. */
+  private def toneClass(t: LedgerTone): String = t match
+    case LedgerTone.Admitted    => "ledger-tone-admitted"
+    case LedgerTone.Quarantined => "ledger-tone-quarantined"
+    case LedgerTone.Absent      => "ledger-tone-absent"
+    case LedgerTone.Cause       => "ledger-tone-cause"
+
+  private def renderBars(vm: AdmissionLedgerVM): Unit =
+    visible(bars, vm.bars.nonEmpty)
+    def key(p: LedgerPart, swatch: Boolean) =
+      val sw = Region()
+      sw.getStyleClass.addAll("ledger-swatch", toneClass(p.tone))
+      val n = label("ledger-bar-count", "t11");
+      n.setText(eyes4s.studio.app.text.Format.count(p.count))
+      val w = label("ledger-bar-label", "t11"); w.setText(p.label)
+      val h = if swatch then HBox(6.0, sw, n, w) else HBox(4.0, n, w)
+      h.setAlignment(Pos.CENTER_LEFT)
+      h
+    bar.show(vm.bars.map(p => (p.count.toDouble, toneClass(p.tone))))
+    barKeys.getChildren.setAll(vm.bars.map(key(_, swatch = true))*)
+    val total = vm.causeBars.map(_.count).sum
+    causeNote.setText(
+      eyes4s.studio.app.text.LedgerText(
+        eyes4s.studio.app.text.LedgerTextId.NotAdmittedScale,
+        eyes4s.studio.app.text.Format.count(total)
+      )
+    )
+    causeBar.show(vm.causeBars.map(p => (p.count.toDouble, toneClass(p.tone))))
+    causeKeys.getChildren.setAll(vm.causeBars.map { p =>
+      val h = key(p, swatch = false)
+      h.prefWidthProperty.bind(
+        causeKeys.widthProperty.multiply(if total > 0 then p.count.toDouble / total else 0.0)
+      )
+      h.setMinWidth(0)
+      h
+    }*): Unit
+
   def render(vm: AdmissionLedgerVM): Unit =
     rendering = true
     try
@@ -179,6 +244,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
       visible(body, vm.empty.isEmpty)
       header.setText(vm.header)
       trialsHeader.setText(vm.trialsHeader)
+      renderBars(vm)
 
       // Rows are kept while the same counts are shown, so the focused count
       // keeps its focus when the trail opens it.
@@ -292,19 +358,29 @@ object AdmissionLedgerView:
   /** One count: what it counts, a note or detail, and its number as the
     * button that opens its trials.
     */
+  object RowView:
+    /** The Status column's width (the golden's 270, less the row's padding). */
+    val StatusPx: Double = 260.0
+
   final class RowView(val ref: StudioRef, fire: LedgerIntent => Unit):
-    val label: Label  = wrapping("ledger-label", "t12")
-    val detail: Label = AdmissionLedgerView.label("ledger-detail", "t11")
-    val count: Button = button("ledger-count", "mono", "t12")
+    val label: Label   = wrapping("ledger-label", "t12")
+    val detail: Label  = AdmissionLedgerView.label("ledger-detail", "t11")
+    val meaning: Label = wrapping("ledger-meaning", "t12")
+    val count: Button  = button("ledger-count", "t12")
     count.setOnAction(_ => fire(LedgerIntent.Open(ref)))
     private val text = VBox(label, detail)
     text.setAlignment(Pos.CENTER_LEFT)
-    HBox.setHgrow(text, Priority.ALWAYS)
-    val node: HBox = HBox(text, count)
+    text.setPrefWidth(RowView.StatusPx)
+    text.setMinWidth(RowView.StatusPx)
+    HBox.setHgrow(meaning, Priority.ALWAYS)
+    meaning.setMaxWidth(Double.MaxValue)
+    val node: HBox = HBox(text, meaning, count)
+    node.setAlignment(Pos.CENTER_LEFT)
     node.getStyleClass.add("ledger-row")
 
     def render(vm: CountRowVM): Unit =
       label.setText(vm.label)
+      meaning.setText(vm.meaning.getOrElse(""))
       show(detail, vm.detail.orElse(vm.note))
       count.setText(vm.value)
       count.setDisable(!vm.counted)

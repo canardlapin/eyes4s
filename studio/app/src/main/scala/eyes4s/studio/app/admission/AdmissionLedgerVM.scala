@@ -54,8 +54,16 @@ final case class CountRowVM(
     style: CountStyle,
     accessible: String,
     counted: Boolean,
-    opened: Boolean
+    opened: Boolean,
+    /** What the count means (overhaul v4's Meaning column). */
+    meaning: Option[String] = None
 ) derives CanEqual
+
+/** One part of the admission bars (overhaul v4, `data.html`). */
+enum LedgerTone derives CanEqual:
+  case Admitted, Quarantined, Absent, Cause
+
+final case class LedgerPart(tone: LedgerTone, count: Long, label: String) derives CanEqual
 
 /** A term the ledger defines ("no-fixations", ": the trial has …"). */
 final case class DefinitionVM(term: String, text: String) derives CanEqual
@@ -117,7 +125,12 @@ final case class AdmissionLedgerVM(
     status: Option[String],
     countsSource: String,
     retry: Option[String],
-    problem: Option[String]
+    problem: Option[String],
+    /** The inventory's bar (admitted, quarantined, absent) and the trials
+      * not admitted at their own scale, by cause; empty until counted.
+      */
+    bars: Vector[LedgerPart] = Vector.empty,
+    causeBars: Vector[LedgerPart] = Vector.empty
 ) derives CanEqual:
   /** The backend equation's four count operands, for inspecting their ledger entries. */
   def equationRefs: Vector[StudioRef] =
@@ -293,8 +306,40 @@ object AdmissionLedgerVM:
       retry = Option.when(spec.isDefined && (failed(ledger.counts) || failed(ledger.entries)))(
         t(Retry)
       ),
-      problem = ledger.problem
+      problem = ledger.problem,
+      bars = summary.toVector.flatMap(barsOf(id, _)),
+      causeBars = summary.toVector.flatMap(causeBarsOf)
     )
+
+  /** The inventory's bar: admitted, quarantined, absent, each eyes4s's. */
+  private def barsOf(id: Option[DatasetRevision], s: AdmissionSummary): Vector[LedgerPart] =
+    id.toVector.flatMap { d =>
+      def count(k: InventoryKind) = LedgerCounts.count(StudioRef.InventoryCount(d, k), s)
+      Vector(
+        (LedgerTone.Admitted, InventoryKind.Admitted, t(BarAdmitted)),
+        (LedgerTone.Quarantined, InventoryKind.Quarantined, t(BarQuarantined)),
+        (LedgerTone.Absent, InventoryKind.Absent, t(BarAbsent))
+      ).flatMap((tone, kind, label) => count(kind).map(n => LedgerPart(tone, n.toLong, label)))
+    }
+
+  /** The trials not admitted at their own scale: each cause, then absent. */
+  private def causeBarsOf(s: AdmissionSummary): Vector[LedgerPart] =
+    (s.quarantined.map(q => LedgerPart(LedgerTone.Cause, q.trials.toLong, causeName(q.code))) ++
+      Option.when(s.noFixations > 0)(
+        LedgerPart(LedgerTone.Cause, s.noFixations.toLong, t(NoFixations))
+      ) ++
+      s.equation.map(e => LedgerPart(LedgerTone.Absent, e.absent.toLong, t(BarAbsent))))
+      .sortBy(p => (p.tone == LedgerTone.Absent, p.label))
+
+  /** A cause's meaning: eyes4s's own words where the cause has no operands,
+    * else the golden's general wording (overhaul v4).
+    */
+  def causeMeaning(code: String): Option[String] =
+    import eyes4s.studio.core.backend.QuarantineCause as Q
+    Vector(Q.RejectedRecords, Q.DuplicateOrdinals, Q.NoFixations)
+      .find(_.code == code)
+      .map(_.message)
+      .orElse(Option.when(code == "quarantine.overlap")(t(OverlapMeaning)))
 
   private def file(path: String): String = path.split('/').last
 
@@ -329,7 +374,8 @@ object AdmissionLedgerVM:
         kind: InventoryKind,
         label: String,
         style: CountStyle,
-        note: Option[String] = None
+        note: Option[String] = None,
+        meaning: Option[String] = None
     ): CountRowVM =
       val ref   = StudioRef.InventoryCount(d, kind)
       val value = LedgerCounts.count(ref, s)
@@ -347,20 +393,30 @@ object AdmissionLedgerVM:
         style,
         name,
         value.isDefined,
-        open.contains(ref)
+        open.contains(ref),
+        meaning
       )
     val causes =
-      (s.quarantined.map(q => InventoryKind.Cause(q.code) -> causeName(q.code)) ++
-        Option.when(s.noFixations > 0)(InventoryKind.NoFixations -> t(NoFixations)))
+      (s.quarantined.map(q =>
+        (InventoryKind.Cause(q.code), causeName(q.code), causeMeaning(q.code))
+      ) ++
+        Option.when(s.noFixations > 0)(
+          (
+            InventoryKind.NoFixations,
+            t(NoFixations),
+            Some(eyes4s.studio.core.backend.QuarantineCause.NoFixations.message)
+          )
+        ))
         .sortBy(_._2)
-        .map((kind, name) => row(kind, name, CountStyle.Cause))
+        .map((kind, name, meaning) => row(kind, name, CountStyle.Cause, meaning = meaning))
     val absent = inv match
       case Some(vm) =>
         row(
           InventoryKind.Absent,
-          t(AbsentRow, vm.absentLabel, vm.absentDefinition),
+          vm.absentLabel,
           CountStyle.Plain,
-          vm.absentNote
+          vm.absentNote,
+          Some(vm.absentDefinition)
         )
       case None => row(InventoryKind.Absent, t(AbsentTerm), CountStyle.Plain)
     val outside = Option.when(policy == OffScreenChoice.ExcludeRecord) {
@@ -368,14 +424,15 @@ object AdmissionLedgerVM:
       val trials = n(s.window.trialsOutsideScreen)
       CountRowVM(
         ref,
-        t(OutsideScreen),
+        t(OutsideScreenName),
         trials,
         Some(t(OutsideScreenRecords, n(s.window.outsideScreen))),
         None,
         CountStyle.Reported,
         t(CountAccessible, countLabel(ref), trials),
         counted = true,
-        opened = open.contains(ref)
+        opened = open.contains(ref),
+        meaning = Some(t(OutsideScreenMeaning))
       )
     }
     Vector(
@@ -385,8 +442,18 @@ object AdmissionLedgerVM:
         CountStyle.Total,
         inv.map(_.detail)
       ),
-      row(InventoryKind.Admitted, t(Admitted), CountStyle.Plain),
-      row(InventoryKind.Quarantined, t(Quarantined), CountStyle.Group)
+      row(
+        InventoryKind.Admitted,
+        t(Admitted),
+        CountStyle.Plain,
+        meaning = Some(t(AdmittedMeaning))
+      ),
+      row(
+        InventoryKind.Quarantined,
+        t(QuarantinedName),
+        CountStyle.Group,
+        meaning = Some(t(QuarantinedMeaning))
+      )
     ) ++ causes ++ Vector(absent) ++ outside
 
   /** "937 + 17 + 6 = 960.", or what does not add up. Only a joined

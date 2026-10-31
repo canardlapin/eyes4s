@@ -7,6 +7,11 @@ button: Admission, current location
 list: Sources
 toggle-button: Setup
 toggle-button: Trials
+button: Step 1, Sources: 2 to repair
+button: Step 2, Columns: done
+button: Step 3, Trial identity: done
+button: Step 4, Geometry: done
+button: Step 5, Admission: review, then admit r3
 button: Repair…
 button: Show 4 trials
 region: Admission

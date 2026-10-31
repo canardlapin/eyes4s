@@ -131,17 +131,38 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       assertEquals(
         rows(vm),
         Vector(
-          "Inventory"                                                         -> "960",
-          "Admitted"                                                          -> "937",
-          "Quarantined — whole trial held back when any record is invalid"    -> "17",
-          "duplicate-ordinals"                                                -> "4",
-          "no-fixations"                                                      -> "5",
-          "overlap"                                                           -> "6",
-          "rejected-records"                                                  -> "2",
-          "Absent — in trials.csv, no fixation records at all"                -> "6",
-          "Outside screen — excluded from maps and reported, not quarantined" -> "0"
+          "Inventory"          -> "960",
+          "Admitted"           -> "937",
+          "Quarantined"        -> "17",
+          "duplicate-ordinals" -> "4",
+          "no-fixations"       -> "5",
+          "overlap"            -> "6",
+          "rejected-records"   -> "2",
+          "Absent"             -> "6",
+          "Outside screen"     -> "0"
         )
       )
+      // The Meaning column (overhaul v4): eyes4s's words for a cause without
+      // operands, the golden's for overlap.
+      assertEquals(
+        vm.rows.map(_.meaning),
+        Vector(
+          None,
+          Some("every record valid"),
+          Some("the whole trial is held back when any record is invalid"),
+          Some("duplicate fixation ordinals"),
+          Some("a scanpath needs at least one fixation"),
+          Some("a fixation begins before the previous fixation ends"),
+          Some("one or more source rows were rejected"),
+          Some("in trials.csv, no fixation records at all"),
+          Some("excluded from maps and reported, not quarantined")
+        )
+      )
+      assertEquals(
+        vm.bars.map(p => (p.label, p.count)),
+        Vector(("admitted", 937L), ("quarantined", 17L), ("absent", 6L))
+      )
+      assertEquals(vm.causeBars.map(_.count).sum, 23L)
       assertEquals(vm.equation, Some("937 + 17 + 6 = 960."))
       def count(kind: InventoryKind) = StudioRef.InventoryCount(r3, kind)
       assertEquals(
