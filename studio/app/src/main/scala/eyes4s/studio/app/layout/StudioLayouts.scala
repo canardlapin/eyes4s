@@ -118,6 +118,13 @@ object StudioLayouts:
   val methods: PaneId     = PaneId("figures.methods")
   val methodsDiff: PaneId = PaneId("figures.methods-diff")
 
+  /** The Report's navigator and its figure page. */
+  val report: PaneId     = PaneId("figures.figures")
+  val figurePage: PaneId = PaneId("figures.page")
+
+  /** The Report's panel inspector (its binding and bundle). */
+  val figurePanel: PaneId = PaneId("figures.panel")
+
   /** The panes that host Compare's Queries and Items navigators (S8.1). */
   val compareQueries: PaneId = PaneId("compare.queries")
   val compareItems: PaneId   = PaneId("compare.items")
@@ -361,7 +368,7 @@ object StudioLayouts:
     "figures",
     Perspective.Report,
     columns(
-      navigator(pane("figures.figures", "Figures", Navigator)) -> NavPx,
+      navigator(pane("figures.figures", "Report", Navigator)) -> NavPx,
       // The golden's Report: the figure page alone; Methods is its own page.
       group(
         dynamic("figures.page", "Figure", Plot),

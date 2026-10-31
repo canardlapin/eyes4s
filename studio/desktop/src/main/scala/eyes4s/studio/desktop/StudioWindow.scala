@@ -803,6 +803,12 @@ object StudioWindow:
       "figures.methods"      -> figures.methodsNode,
       "figures.methods-diff" -> figures.methodsDiffNode
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    host.controls(StudioLayouts.report, figures.navigatorControls*)
+    host.controls(StudioLayouts.figurePage, figures.headerControls*)
+    figures.onRendered { () =>
+      host.retitle(StudioLayouts.figurePage, figures.pageTitle)
+      host.describe(StudioLayouts.figurePage, figures.pageSubtitle)
+    }
     val figuresListener: AppModel => Unit = figures.sync
     r.listen(figuresListener)
     figures.sync(r.model)

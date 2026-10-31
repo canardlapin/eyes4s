@@ -120,10 +120,10 @@ class LayoutSpecSuite extends munit.FunSuite:
       )
     ),
     (
-      "Figures.dc.html",
+      "Figures.dc.html (overhaul v4: the Report)",
       figures,
       Vector(
-        "Figures"           -> "figures.figures",
+        "Report"            -> "figures.figures",
         "Figure 1"          -> "figures.page",
         "Table"             -> "figures.page.table",
         "Methods"           -> "figures.methods",

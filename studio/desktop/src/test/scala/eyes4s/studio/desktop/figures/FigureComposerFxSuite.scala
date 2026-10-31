@@ -170,15 +170,16 @@ class FigureComposerFxSuite extends ShellFxSuite:
   fxStage.test("the page, its widths and zoom, the Table tab and the panels A and B") { fx =>
     val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
     loaded(fx, w)
-    val page = texts(w.figures.pageNode)
-    Vector("Figure 1", "Page 183 mm · two-column", "100% · 3.5 px/mm").foreach(t =>
-      assert(page.contains(t), s"'$t' not on the page: $page")
-    )
+    // The figure's title and width are the page pane header's (overhaul v4).
+    assertEquals(runOnFx(w.figures.pageTitle), "Figure 1")
+    assertEquals(runOnFx(w.figures.pageSubtitle), "Page 183 mm · two-column")
+    val header = w.figures.headerControls.flatMap(texts)
+    assert(header.contains("100%"), s"zoom not in the header: $header")
     assertEquals(runOnFx(panelNode(w, "D").getPrefWidth), 89 * 3.5)
     runOnFx(w.figures.dispatch(ComposerIntent.SetWidth(PageWidth.SingleColumn)))
     runOnFx(w.figures.dispatch(ComposerIntent.ZoomIn))
-    assert(texts(w.figures.pageNode).contains("Page 89 mm · one-column"))
-    assert(texts(w.figures.pageNode).contains("150% · 5.3 px/mm"))
+    assertEquals(runOnFx(w.figures.pageSubtitle), "Page 89 mm · one-column")
+    assert(w.figures.headerControls.flatMap(texts).contains("150%"))
     assertEquals(runOnFx(panelNode(w, "D").getPrefWidth), 89 * 5.25)
     // t2Figures has panel D selected: the Table tab shows its 50 values.
     eventually(fx, "panel D's table is shown")(
@@ -265,7 +266,7 @@ class FigureComposerFxSuite extends ShellFxSuite:
       val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
       loaded(fx, w)
       val nav = texts(w.figures.navigatorNode)
-      Vector("2 figures", "Figure 1", "current", "Figure 2", "Stale", "run 5 · rev 3 · data r2")
+      Vector("Figures", "Figure 1", "current", "Figure 2", "Stale", "run 5 · rev 3 · data r2")
         .foreach(t => assert(nav.contains(t), s"'$t' not in the navigator: $nav"))
       runOnFx(w.figures.dispatch(ComposerIntent.Binding(FigureIntent.Select(figure2))))
       // The r2 → r3 status comparison is performed: the fake serves no r2 ledger.
@@ -277,8 +278,8 @@ class FigureComposerFxSuite extends ShellFxSuite:
         )
       }
       runOnFx(w.figures.dispatch(ComposerIntent.NewFigure))
-      eventually(fx, "Figure 3 is shown")(texts(w.figures.pageNode).contains("Figure 3"))
-      assert(texts(w.figures.navigatorNode).contains("3 figures"))
+      eventually(fx, "Figure 3 is shown")(runOnFx(w.figures.pageTitle) == "Figure 3")
+      assert(texts(w.figures.navigatorNode).contains("Figure 3"))
   }
 
   fxStage.test("Add panel: one item per template, disabled with why; an item adds the panel") {

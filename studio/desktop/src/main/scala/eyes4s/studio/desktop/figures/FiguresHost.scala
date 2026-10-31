@@ -405,11 +405,62 @@ final class FiguresHost(
   private val dialog = VBox(4.0)
   dialog.getStyleClass.add("figures-dialog")
 
+  // The Report navigator (overhaul v4): New figure is the header's "+";
+  // the figures, then the text and the export, each a section.
+  newFigure.setGraphic(Label("+"))
+  newFigure.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY)
+  newFigure.getStyleClass.add("icon-button")
+  startFigure.getStyleClass.add("figures-start")
+
+  /** The navigator pane header's control: New figure. */
+  val navigatorControls: Vector[Node] = Vector(newFigure)
+
+  private def section(words: String): Label =
+    val l = Label(words)
+    l.getStyleClass.addAll("figures-section", "t12")
+    l
+  private def navRow(title: String, sub: String, go: () => Unit): Button =
+    val name = Label(title); name.getStyleClass.addAll("figures-row-title", "t12")
+    val line = Label(sub); line.getStyleClass.addAll("figures-row-sub", "t11")
+    val b    = Button()
+    b.setGraphic(VBox(1.0, name, line))
+    b.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY)
+    b.setText(title)
+    b.setAccessibleText(title)
+    b.setMaxWidth(Double.MaxValue)
+    b.getStyleClass.add("figures-row")
+    b.setOnAction(_ => go())
+    b
+
+  /** The Text section's Methods, which opens the methods page. */
+  val methodsRow: Button = navRow(
+    FiguresHost.MethodsRow,
+    FiguresHost.MethodsRowSub,
+    () => app(Intent.FocusPane(eyes4s.studio.app.layout.StudioLayouts.methods))
+  )
+
+  /** The Export section's Bundle, which opens the bundle in the inspector. */
+  val bundleRow: Button = navRow(
+    FiguresHost.BundleRow,
+    FiguresHost.BundleRowSub,
+    () => app(Intent.FocusPane(eyes4s.studio.app.layout.StudioLayouts.figurePanel))
+  )
+
   /** The Figures navigator pane. */
   val navigatorNode: VBox =
-    val head = HBox(8.0, newFigure, startFigure, spacer(), count)
-    head.setAlignment(Pos.CENTER_LEFT)
-    val box = VBox(6.0, head, rows, notice, dialog, problem)
+    count.setVisible(false); count.setManaged(false)
+    val box = VBox(
+      section(FiguresHost.FiguresSection),
+      rows,
+      startFigure,
+      notice,
+      dialog,
+      problem,
+      section(FiguresHost.TextSection),
+      methodsRow,
+      section(FiguresHost.ExportSection),
+      bundleRow
+    )
     box.getStyleClass.add("figures-navigator")
     sheet(box)
     box
@@ -417,10 +468,12 @@ final class FiguresHost(
   // --- the page --------------------------------------------------------------------
   private val title = Label()
   title.getStyleClass.addAll("figures-title", "t13")
-  private val widths = HBox(4.0)
+  // The page width is one "Page" menu in the header (overhaul v4).
+  private val widths = MenuButton(FiguresHost.PageMenu)
+  widths.getStyleClass.add("figures-page-menu")
 
   /** "Greyscale check": the paper shown without colour, as it prints in greyscale. */
-  private val greyscale = Button("Greyscale check")
+  private val greyscale = Button("Greyscale")
 
   private val zoomOut = Button("−")
   private val zoomIn  = Button("+")
@@ -439,6 +492,8 @@ final class FiguresHost(
   val addPanel: MenuButton = MenuButton(AddPanel.Label)
   addPanel.getStyleClass.add("figures-add-panel")
   addPanel.setAccessibleText(AddPanel.Label)
+  addPanel.setText(FiguresHost.PanelMenu)
+  addPanel.setGraphic(Label("+"))
 
   /** Keyboard reachable edits of the selected panel. */
   val removePanel: Button      = button(PanelEditing.Remove)
@@ -458,22 +513,47 @@ final class FiguresHost(
   /** The greyscale check, drawn over the paper while it is on. */
   val greyscaleProof: GreyscaleProof = GreyscaleProof(paper)
 
-  /** The page pane: the toolbar, then the paper. */
+  /** Export the figure's bundle from the page's header (overhaul v4). */
+  val exportFigure: Button = Button(FigureBundle.Action)
+  exportFigure.getStyleClass.addAll("figures-export", "t12")
+  exportFigure.setAccessibleText(FigureBundle.Action)
+  exportFigure.setOnAction(_ => dispatch(ComposerIntent.ExportBundle))
+
+  private val zoomBox = HBox(zoomOut, zoom, zoomIn)
+  zoomBox.getStyleClass.add("figures-zoom")
+  zoomBox.setAlignment(Pos.CENTER)
+
+  /** The page pane header's controls (overhaul v4): the page widths, the
+    * greyscale proof, the zoom, + Panel and Export, in their Tab order.
+    */
+  val headerControls: Vector[Node] = Vector(widths, greyscale, zoomBox, addPanel, exportFigure)
+  // The header's controls keep their words; the subtitle gives way first.
+  Vector[javafx.scene.layout.Region](widths, greyscale, zoomBox, addPanel, exportFigure, zoom)
+    .foreach(_.setMinWidth(Region.USE_PREF_SIZE))
+  // They sit in the pane header, outside the panes this sheet styles.
+  (headerControls ++ navigatorControls).foreach {
+    case p: javafx.scene.Parent => sheet(p)
+    case _                      => ()
+  }
+
+  /** The page pane: the panel edits, then the paper centred on its ground. */
   val pageNode: VBox =
-    val bar =
-      HBox(8.0, title, width, widths, spacer(), greyscale, zoomOut, zoom, zoomIn, addPanel)
-    bar.setAlignment(Pos.CENTER_LEFT)
-    bar.getStyleClass.add("figures-toolbar")
+    title.setVisible(false); title.setManaged(false)
+    width.setVisible(false); width.setManaged(false)
     val sheetOfPaper = StackPane(paper, greyscaleProof.node)
     sheetOfPaper.getStyleClass.add("figures-sheet")
     sheetOfPaper.setAlignment(Pos.TOP_LEFT)
-    val scroll = ScrollPane(sheetOfPaper)
-    scroll.setFitToWidth(false)
+    sheetOfPaper.setMaxWidth(Region.USE_PREF_SIZE)
+    val ground = StackPane(sheetOfPaper)
+    ground.getStyleClass.add("figures-ground")
+    ground.setAlignment(Pos.TOP_CENTER)
+    val scroll = ScrollPane(ground)
+    scroll.setFitToWidth(true)
     VBox.setVgrow(scroll, Priority.ALWAYS)
     val edits = HBox(8.0, movePanelEarlier, movePanelLater, removePanel)
     edits.setAlignment(Pos.CENTER_LEFT)
     edits.getStyleClass.add("figures-toolbar")
-    val box = VBox(bar, edits, scroll)
+    val box = VBox(edits, scroll)
     box.getStyleClass.add("figures-page")
     sheet(box)
     box
@@ -658,6 +738,17 @@ final class FiguresHost(
             inputs.save(name, format, file, a => later(ComposerIntent.Exported(a)))
     }
 
+  private var rendered: Vector[() => Unit] = Vector.empty
+
+  /** Runs `f` after every render, for the pane header that shows the page. */
+  def onRendered(f: () => Unit): Unit = rendered = rendered :+ f
+
+  /** The page pane's title: the figure's, or the pane's own. */
+  def pageTitle: String = Option(title.getText).filter(_.nonEmpty).getOrElse("Figure")
+
+  /** The page pane's subtitle: the figure's width. */
+  def pageSubtitle: String = Option(width.getText).getOrElse("")
+
   private def render(m: AppModel): Unit = if !disposed then
     val v = FigureComposer.view(state, m)
     // The panes are rebuilt from the view-model; focus returns to the control
@@ -668,6 +759,7 @@ final class FiguresHost(
       renderInspector(v)
       renderMethods(v)
     }
+    rendered.foreach(_())
 
   private def keepingFocus(rebuild: => Unit): Unit =
     val panes           = Vector(navigatorNode, pageNode, inspectorNode, methodsDiffNode)
@@ -693,12 +785,19 @@ final class FiguresHost(
     newFigure.setAccessibleText(v.newFigure)
     count.setText(v.figures.header)
     rows.getChildren.setAll(v.figures.rows.map { r =>
-      val name = Label(r.title); name.getStyleClass.add("t12")
+      // The golden's row: the figure over its run and reporting, its state
+      // at the right (overhaul v4).
+      val name = Label(r.title); name.getStyleClass.addAll("figures-row-title", "t12")
       val chip = Label(r.status); chip.getStyleClass.addAll("figures-chip", "t11")
       if r.stale then chip.getStyleClass.add("figures-stale"): Unit
-      val bound = Label(r.binding); bound.getStyleClass.addAll("figures-binding-text", "t11")
-      val rep   = Label(r.reporting); rep.getStyleClass.add("t11")
-      val row   = VBox(2.0, HBox(6.0, name, chip), bound, rep)
+      val bound = Label(r.binding); bound.getStyleClass.addAll("figures-row-sub", "t11")
+      val rep   = Label(r.reporting); rep.getStyleClass.addAll("figures-row-sub", "t11")
+      val lines = VBox(1.0, name, bound, rep)
+      lines.setMinWidth(0)
+      chip.setMinWidth(Region.USE_PREF_SIZE)
+      val gap = Region()
+      HBox.setHgrow(gap, Priority.ALWAYS)
+      val row = HBox(8.0, lines, gap, chip)
       row.getStyleClass.add("figures-row")
       if r.selected then row.getStyleClass.add("figures-row-selected"): Unit
       row.setAccessibleText(FiguresHost.rowName(r))
@@ -728,6 +827,9 @@ final class FiguresHost(
       }
       Vector(text, HBox(6.0, rebind, keep))
     }*): Unit
+    // An empty notice or dialog takes no room: its tinted box would show.
+    notice.setVisible(v.figures.notice.nonEmpty); notice.setManaged(v.figures.notice.nonEmpty)
+    dialog.setVisible(v.figures.dialog.nonEmpty); dialog.setManaged(v.figures.dialog.nonEmpty)
     dialog.getChildren.setAll(v.figures.dialog.toVector.flatMap { d =>
       val head  = Label(d.title); head.getStyleClass.add("t12")
       val lines = (Vector(d.plan, d.data) ++ d.conflicts).map { t =>
@@ -748,16 +850,19 @@ final class FiguresHost(
     problem.setManaged(said.nonEmpty)
 
   private def renderPage(v: ComposerVM): Unit =
-    widths.getChildren.setAll(v.widths.map { (w, label, chosen) =>
-      val b = button(label)
-      b.setAccessibleText(FiguresHost.widthName(label, chosen))
-      if chosen then b.getStyleClass.add("figures-chosen"): Unit
-      b.setOnAction(_ => dispatch(ComposerIntent.SetWidth(w)))
-      b
+    widths.getItems.setAll(v.widths.map { (w, label, chosen) =>
+      val item = javafx.scene.control.CheckMenuItem(label)
+      item.setSelected(chosen)
+      item.setOnAction(_ => dispatch(ComposerIntent.SetWidth(w)))
+      item
     }*): Unit
+    widths.setAccessibleText(FiguresHost.pageName(v.widths.collectFirst {
+      case (_, label, true) => label
+    }))
     v.page match
       case None =>
         greyscaleProof.show(false)
+        exportFigure.setDisable(true)
         title.setText("")
         width.setText("")
         zoom.setText("")
@@ -771,6 +876,9 @@ final class FiguresHost(
         tableNote.setText("")
         table.clear()
       case Some(p) =>
+        exportFigure.setDisable(false)
+        exportFigure.setText(FiguresHost.exportName(p.title))
+        exportFigure.setAccessibleText(exportFigure.getText)
         greyscale.setAccessibleText(FiguresHost.greyscaleName(p.greyscale))
         greyscale.setOnAction(_ => dispatch(ComposerIntent.SetGreyscale(!p.greyscale)))
         if p.greyscale then greyscale.getStyleClass.add("figures-chosen"): Unit
@@ -779,7 +887,10 @@ final class FiguresHost(
         greyscaleProof.show(p.greyscale)
         title.setText(p.title)
         width.setText(p.widthLabel)
-        zoom.setText(p.zoom)
+        // The header shows the percentage; the scale is in the name and tip.
+        zoom.setText(p.zoom.split(" · ").head)
+        zoom.setAccessibleText(p.zoom)
+        zoom.setTooltip(javafx.scene.control.Tooltip(p.zoom))
         renderAddPanel(p.addPanel)
         removePanel.setDisable(!p.panelEditing.canRemove)
         movePanelEarlier.setDisable(!p.panelEditing.canMoveEarlier)
@@ -1186,19 +1297,24 @@ final class FiguresHost(
   /** The navigator's controls, in Tab order. */
   def navigatorStops: Vector[FocusStop] =
     val v = vm
+    // The header's "+", the figures, then Start figure (overhaul v4).
     Vector(FocusStop(A11yRole.Button, v.newFigure)) ++
+      v.figures.rows.map(r => FocusStop(A11yRole.Button, FiguresHost.rowName(r))) ++
       Option
         .when(v.startFigure.choices.exists(_.enabled))(
           FocusStop(A11yRole.MenuButton, v.startFigure.label)
         )
         .toVector ++
-      v.figures.rows.map(r => FocusStop(A11yRole.Button, FiguresHost.rowName(r))) ++
       v.figures.notice.toVector.flatMap(n =>
         Vector(FocusStop(A11yRole.Button, n.rebind), FocusStop(A11yRole.Button, n.keep))
       ) ++
       v.figures.dialog.toVector.flatMap(d =>
         Option.when(d.canConfirm)(FocusStop(A11yRole.Button, d.confirm)).toVector :+
           FocusStop(A11yRole.Button, d.cancel)
+      ) ++
+      Vector(
+        FocusStop(A11yRole.Button, FiguresHost.MethodsRow),
+        FocusStop(A11yRole.Button, FiguresHost.BundleRow)
       )
 
   /** The page's controls, in Tab order: the widths, the zoom, then each
@@ -1207,8 +1323,11 @@ final class FiguresHost(
   def pageStops: Vector[FocusStop] =
     val v = vm
     v.page.toVector.flatMap { p =>
-      v.widths.map((_, label, chosen) =>
-        FocusStop(A11yRole.Button, FiguresHost.widthName(label, chosen))
+      Vector(
+        FocusStop(
+          A11yRole.MenuButton,
+          FiguresHost.pageName(v.widths.collectFirst { case (_, label, true) => label })
+        )
       ) ++
         Vector(
           FocusStop(A11yRole.Button, FiguresHost.greyscaleName(p.greyscale)),
@@ -1220,6 +1339,7 @@ final class FiguresHost(
             FocusStop(A11yRole.MenuButton, p.addPanel.label)
           )
           .toVector ++
+        Vector(FocusStop(A11yRole.Button, FiguresHost.exportName(p.title))) ++
         Vector(
           Option.when(p.panelEditing.canMoveEarlier)(
             FocusStop(A11yRole.Button, PanelEditing.Earlier)
@@ -1296,8 +1416,24 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
-  val MapReading: String            = "Reading the map…"
-  def mapName(t: MapTileVM): String = s"Density map, ${t.heading}"
+
+  /** The Report navigator's sections and rows (overhaul v4). */
+  val FiguresSection: String = "Figures"
+  val TextSection: String    = "Text"
+  val ExportSection: String  = "Export"
+  val MethodsRow: String     = "Methods"
+  val MethodsRowSub: String  = "generated from the bound run"
+  val BundleRow: String      = "Bundle"
+  val BundleRowSub: String   = "figure, tables, methods, snapshot"
+  val PageMenu: String       = "Page"
+  val PanelMenu: String      = "Panel"
+
+  /** The page header's export, named for its figure ("Export Figure 1…"),
+    * apart from the inspector's Export bundle….
+    */
+  def exportName(figure: String): String = s"Export $figure…"
+  val MapReading: String                 = "Reading the map…"
+  def mapName(t: MapTileVM): String      = s"Density map, ${t.heading}"
 
   /** A gaze panel drawing's accessible name. */
   def gazeName(p: PanelVM, d: GazeTrialVM): String =
@@ -1344,9 +1480,9 @@ object FiguresHost:
   /** A navigator row's accessible name. */
   def rowName(r: FigureRowVM): String = s"${r.title}, ${r.status}, ${r.binding}"
 
-  /** A page width button's accessible name. */
-  def widthName(label: String, chosen: Boolean): String =
-    if chosen then s"$label, selected" else label
+  /** The page width menu's accessible name: "Page, 183 mm · two-column". */
+  def pageName(chosen: Option[String]): String =
+    chosen.fold(PageMenu)(label => s"$PageMenu, $label")
 
   /** A panel button's accessible name: "Panel D, Participant D by response". */
   def panelName(p: PanelVM): String =

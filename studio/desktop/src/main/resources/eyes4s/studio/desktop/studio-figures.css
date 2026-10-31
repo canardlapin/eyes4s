@@ -62,6 +62,9 @@
 
 .figures-stale {
   -fx-text-fill: -es-warn-text;
+  -fx-background-color: -es-warn-soft;
+  -fx-background-radius: 3;
+  -fx-padding: 1 6 1 6;
 }
 
 .figures-notice,
@@ -161,4 +164,51 @@
 
 .figures-diff-added {
   -fx-background-color: -es-accent-soft;
+}
+
+/* The Report (overhaul v4): the paper on a surface-3 ground, the export the
+ * page header's one primary, the navigator in Figures, Text and Export. */
+.figures-ground {
+  -fx-background-color: -es-surface-3;
+  -fx-padding: 28;
+}
+
+.figures-export {
+  -fx-background-color: -es-accent;
+  -fx-background-radius: 4;
+  -fx-text-fill: -es-on-accent;
+  -fx-padding: 3 10 3 10;
+}
+
+.figures-export:focus-visible {
+  -fx-background-color: -es-accent, -es-on-accent, -es-accent;
+  -fx-background-insets: 0, 2, 4;
+  -fx-background-radius: 4, 3, 2;
+}
+
+.figures-export:disabled {
+  -fx-opacity: 0.5;
+}
+
+.figures-zoom {
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+}
+
+.figures-section {
+  -fx-text-fill: -es-ink-2;
+  -fx-padding: 10 0 4 0;
+}
+
+.figures-row-sub {
+  -fx-text-fill: -es-ink-2;
+}
+
+.figures-row-title {
+  -fx-text-fill: -es-ink;
+}
+
+.figures-start {
+  -fx-padding: 4 0 0 0;
 }
