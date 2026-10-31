@@ -50,7 +50,7 @@
   -es-sel-ring-inner: #000000;
   -es-tl-bg: #2B2B2B;
   -es-tl-text: #B0B0B0;
-  -es-stage: #1A1A1A;
+  -es-stage: #0E0F10;
   -es-on-stage: #D9D6CF;
   -es-halo: #FFFFFF;
   -es-ramp-0: #B0609C;
@@ -77,7 +77,7 @@
 
 /* Stage variants: set one of these style classes on the stage node. */
 .stage-dark {
-  -es-stage: #1A1A1A;
+  -es-stage: #0E0F10;
   -es-on-stage: #D9D6CF;
   -es-halo: #FFFFFF;
 }

@@ -484,8 +484,10 @@ object TrialScene:
   val CrossPx: Double       = 2.0
   val CrossCasingPx: Double = 4.0
 
-  /** Order lines and the analysis-window outline. */
-  val OrderLinePx: Double  = 1.5
+  /** Order lines (the v4 golden's 1 px solid path) and the analysis-window
+    * outline.
+    */
+  val OrderLinePx: Double  = 1.0
   val WindowLinePx: Double = 1.0
 
   /** Arms of the fixation cross, in screen pixels from the image centre. */
@@ -496,7 +498,6 @@ object TrialScene:
   private def pt(px: Double): Double = px * PointsPerPixel
 
   // Dash rhythms (device pixels; see the report on Intaglio's dash units).
-  private val OrderDash            = DashPattern.unsafe(6.0, 5.0)
   private val DroppedInitialDash   = DashPattern.unsafe(1.5, 3.0)
   private val OutsideScreenDash    = DashPattern.unsafe(7.0, 2.0)
   private val OutsideExcludeDash   = DashPattern.unsafe(3.0, 2.5)
@@ -1197,7 +1198,7 @@ object TrialScene:
       else
         part("order lines")(
           for
-            gp  <- stroke(staged(StageToken.Halo), OrderLinePx, LineType.Custom(OrderDash))
+            gp  <- stroke(staged(StageToken.Halo), OrderLinePx)
             pts <- fs.foldLeft[Either[GraphicsError, Vector[Point]]](Right(Vector.empty)) {
               (acc, f) => acc.flatMap(ps => Point.native(f.screenX, f.screenY).map(ps :+ _))
             }

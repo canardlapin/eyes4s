@@ -163,6 +163,7 @@ class TokenFilesSuite extends munit.FunSuite:
       "query",
       "query-soft",
       "sel-fill",
+      "stage",
       "surface",
       "surface-2",
       "surface-3",

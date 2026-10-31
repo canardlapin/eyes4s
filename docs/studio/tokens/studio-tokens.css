@@ -51,7 +51,7 @@
   --tl-bg: #ECECEC;
   --tl-text: #4D4D4D;
   --sel-ring: 0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;
-  --stage: #1A1A1A;
+  --stage: #0E0F10;
   --on-stage: #D9D6CF;
   --halo: #FFFFFF;
   --ramp-0: #B0609C;
@@ -114,7 +114,7 @@
 
 [data-stage=dark],
 .es[data-stage=dark] {
-  --stage: #1A1A1A;
+  --stage: #0E0F10;
   --on-stage: #D9D6CF;
   --halo: #FFFFFF;
 }

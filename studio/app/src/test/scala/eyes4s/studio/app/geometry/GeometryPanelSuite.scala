@@ -584,7 +584,7 @@ class GeometryPanelSuite extends munit.FunSuite:
       val model = AppModel.update(small, Intent.Dispatch(Command.SetStage(stage)))._1
       assertEquals(model.document.presentation.stage, stage)
       GeometryPanelVM.of(panel, model, Some(pics)).densityKey
-    // A swatch sits on the stage: 4-15 to >=64 on Dark (>=64 at 1.19:1); 1-3
+    // A swatch sits on the stage: 4-15 to >=64 on Dark (>=64 at 1.31:1); 1-3
     // to 16-63 on Mid; none on Light, where every level reads. Always the halo.
     val halo = Some(DensityBand.Halo)
     assertEquals(

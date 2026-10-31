@@ -360,7 +360,7 @@ class TokenContrastSuite extends munit.FunSuite:
       )
     )
     // Without its band, a level falls below 3:1: a Dark-stage singleton over
-    // the blank screen (1.49), >=64 on the Dark stage (1.19), a Mid-stage
+    // the blank screen (1.49), >=64 on the Dark stage (1.31), a Mid-stage
     // singleton on the stage (1.08).
     val bare = densityFailures(cased = false)
     assert(
@@ -371,7 +371,7 @@ class TokenContrastSuite extends munit.FunSuite:
     assert(bare.exists(_.startsWith("mid stage: level 1 (--ramp-0) on the stage")), bare)
     val pinned = List(
       (StageVariant.Dark, DensityGround.Screen, 1, 1.49),
-      (StageVariant.Dark, DensityGround.Stage, 4, 1.19),
+      (StageVariant.Dark, DensityGround.Stage, 4, 1.31),
       (StageVariant.Mid, DensityGround.Stage, 1, 1.08)
     )
     pinned.foreach { (stage, ground, level, expected) =>
@@ -384,10 +384,10 @@ class TokenContrastSuite extends munit.FunSuite:
   }
 
   test("a density level whose fill reads on its ground is not cased there") {
-    // Dark 1-3 on the stage (4.14), Mid >=64 on the stage (3.22), Light 1-3
+    // Dark 1-3 on the v4 dark stage #0E0F10 (4.57), Mid >=64 on the stage (3.22), Light 1-3
     // and >=64 on the golden's light stage (3.31, 11.53), 16-63 on the screen (3.55).
     List(
-      (StageVariant.Dark, DensityGround.Stage, 1, 4.14),
+      (StageVariant.Dark, DensityGround.Stage, 1, 4.57),
       (StageVariant.Mid, DensityGround.Stage, 4, 3.22),
       (StageVariant.Light, DensityGround.Stage, 1, 3.31),
       (StageVariant.Light, DensityGround.Stage, 4, 11.53),
@@ -403,11 +403,11 @@ class TokenContrastSuite extends munit.FunSuite:
   }
 
   test("a density band's contrast against its ground is pinned") {
-    // Halo on the stages: 17.40 (Dark), 4.54 (Mid), 13.16 (Light); on the
+    // Halo on the stages: 19.19 (Dark, #0E0F10), 4.54 (Mid), 13.16 (Light); on the
     // screen, the inner casing 5.07 (Dark, Mid) beats white --halo 2.82, and
     // ink --halo 5.92 (Light) beats the white inner casing 2.15.
     List(
-      (StageVariant.Dark, DensityGround.Stage, DensityBand.Halo, 17.40),
+      (StageVariant.Dark, DensityGround.Stage, DensityBand.Halo, 19.19),
       (StageVariant.Mid, DensityGround.Stage, DensityBand.Halo, 4.54),
       (StageVariant.Light, DensityGround.Stage, DensityBand.Halo, 13.16),
       (StageVariant.Dark, DensityGround.Screen, DensityBand.InnerCasing, 5.07),

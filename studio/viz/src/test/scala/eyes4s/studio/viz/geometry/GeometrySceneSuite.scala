@@ -443,7 +443,7 @@ class GeometrySceneSuite extends munit.FunSuite:
         v -> Wcag.contrast(ramp0, stage(v)).fold(e => fail(e.message), identity)
       )
     val pinned =
-      Vector(StageVariant.Dark -> 4.14, StageVariant.Mid -> 1.08, StageVariant.Light -> 3.31)
+      Vector(StageVariant.Dark -> 4.57, StageVariant.Mid -> 1.08, StageVariant.Light -> 3.31)
     assertEquals(measured.map(_._1).toSet, pinned.map(_._1).toSet)
     pinned.foreach { (v, expected) =>
       assertEqualsDouble(measured.toMap.apply(v), expected, QuotedPlaces, clue(v))

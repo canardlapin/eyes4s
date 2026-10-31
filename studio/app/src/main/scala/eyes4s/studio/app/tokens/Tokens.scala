@@ -223,7 +223,8 @@ object Tokens:
   /** A stage token's value. */
   def staged(stage: StageVariant, token: StageToken): Colour =
     (stage, token) match
-      case (StageVariant.Dark, StageToken.Stage)    => Colour.srgb(0x1a1a1a)
+      // The v4 golden's dark `--stage` (overhaul Port 10).
+      case (StageVariant.Dark, StageToken.Stage)    => Colour.srgb(0x0e0f10)
       case (StageVariant.Dark, StageToken.OnStage)  => Colour.srgb(0xd9d6cf)
       case (StageVariant.Dark, StageToken.Halo)     => Colour.srgb(0xffffff)
       case (StageVariant.Mid, StageToken.Stage)     => Colour.srgb(0x767676)
