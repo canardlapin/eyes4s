@@ -81,6 +81,7 @@ class SelectionFillFxSuite extends StudioFxSuite:
   private val Selected = PseudoClass.getPseudoClass("selected")
 
   private val SansSemibold = "IBM Plex Sans SmBld"
+  private val SansMedium   = "IBM Plex Sans Medm"
   private val MonoMedium   = "IBM Plex Mono Medm"
 
   private def right[E, A](either: Either[E, A]): A =
@@ -351,8 +352,9 @@ class SelectionFillFxSuite extends StudioFxSuite:
       b.getStyleClass.addAll("ledger-count", "mono", "t12")
       b
     }
-    val ledger      = box("ledger-row", "cause", "opened")(VBox(ledgerLabel), ledgerCount)
-    val recordCell  = labelled("mono", "t11", "records-cell")
+    val ledger = box("ledger-row", "cause", "opened")(VBox(ledgerLabel), ledgerCount)
+    // Records are Plex Sans since the overhaul (v4), Medium when selected.
+    val recordCell  = labelled("t12", "records-cell")
     val record      = box("records-row")(recordCell)
     val plainRecord = box("records-row")(labelled("mono", "t11", "records-cell"))
     // The ledger count takes no focus; the figure row is a Tab stop, as in
@@ -384,7 +386,7 @@ class SelectionFillFxSuite extends StudioFxSuite:
       ("figure row", figure, List(selFill), figureTitle, SansSemibold),
       ("ledger row", ledger, List(surface3, selFill), ledgerLabel, SansSemibold),
       ("ledger count", ledger, List(surface3, selFill), ledgerCount, MonoMedium),
-      ("source record", record, List(selFill), recordCell, MonoMedium)
+      ("source record", record, List(selFill), recordCell, SansMedium)
     )
     cases.foreach { (clue, node, expected, text, family) =>
       assertEquals(drawn(node)(fills(node)), expected, clue)

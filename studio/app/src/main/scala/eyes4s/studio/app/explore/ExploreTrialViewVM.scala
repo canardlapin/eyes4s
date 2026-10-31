@@ -24,9 +24,16 @@ import eyes4s.studio.app.text.{ExploreText, ExploreTextId, Format}
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.assets.{Display, DisplayKind, TrialDisplay}
-import eyes4s.studio.core.backend.{AdmittedFixation, ScreenRegion, TrialKey, TrialPreview}
+import eyes4s.studio.core.backend.{
+  AdmittedFixation,
+  PairDesign,
+  ScreenRegion,
+  TrialKey,
+  TrialPreview
+}
 import eyes4s.studio.core.document.ScreenSize
-import eyes4s.studio.core.selection.FixationIndex
+import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
+import eyes4s.studio.app.nav.Place
 
 /** A toolbar toggle: its label, state and whether it can act. */
 final case class ToggleVM(
@@ -74,12 +81,22 @@ final case class ShownTrialVM(
     order: Boolean,
     map: Option[PreviewMapVM],
     theme: Theme,
-    stage: StageVariant
+    stage: StageVariant,
+    /** The trial's role in the pair the trail drilled from, if any: the
+      * Results drill draws a reference's marks in its role (overhaul v4).
+      */
+    role: Option[ExploreRole] = None
 ) derives CanEqual
+
+/** A drilled trial's role in its pair. */
+enum ExploreRole derives CanEqual:
+  case Query, Matched, Control
 
 /** Everything Explore's trial view shows. */
 final case class ExploreTrialViewVM(
     title: String,
+    /** The pane header's subtitle: "σ 2°, 35 px/° declared". */
+    subtitle: String,
     toggles: Vector[ToggleVM],
     mapLabel: Option[String],
     mapNote: Option[String],
@@ -221,11 +238,29 @@ object ExploreTrialViewVM:
     val label     = trial.fold("")(_.label)
     val preview   = answered(view.preview)
     val fixations = answered(view.fixations)
-    val title     = trial.fold("")(k =>
-      displayOf(view, model, k).flatMap(_._1.item) match
-        case Some(item) => t(Title, k.participant, k.trial, item.value)
-        case None       => t(TitleNoItem, k.participant, k.trial)
-    )
+    // The golden's title names the participant and the trial; the item is
+    // the navigator's and the inspector's.
+    val title    = trial.fold("")(k => t(TitleNoItem, k.participant, k.trial))
+    val subtitle = (for
+      p <- preview
+      d <- view.dataset
+    yield t(
+      Subtitle,
+      degrees(p.sigmaDegrees),
+      Format.decimal(d.geometry.pixelsPerDegree.value, 0)
+    )).getOrElse("")
+    val role = for
+      k                      <- trial
+      (design, query, other) <- model.location.trail.reverseIterator
+        .collectFirst { case Place.At(StudioRef.Pair(_, _, d, q, o)) => (d, q, o) }
+      r <-
+        if k == query then Some(ExploreRole.Query)
+        else if k == other then
+          Some(design match
+            case PairDesign.Matched => ExploreRole.Matched
+            case PairDesign.Control => ExploreRole.Control)
+        else None
+    yield r
     val drawable              = preview.map(previewMap)
     val (theme, stage)        = appearance(model)
     val (drawnMarks, skipped) =
@@ -243,7 +278,8 @@ object ExploreTrialViewVM:
       view.order,
       if view.map then drawable.flatMap(_.toOption) else None,
       theme,
-      stage
+      stage,
+      role
     )
     val note =
       if trial.isEmpty then Some(t(NoTrial))
@@ -281,6 +317,7 @@ object ExploreTrialViewVM:
       ToggleVM(tg, name, on, enabled, if on then t(ToggleOn, name) else t(ToggleOff, name))
     ExploreTrialViewVM(
       title,
+      subtitle,
       Vector(
         toggle(TrialToggle.Points, Points, true),
         toggle(TrialToggle.Order, Order, true),
@@ -300,5 +337,5 @@ object ExploreTrialViewVM:
     * toggle, then Retry after a failed read.
     */
   def focusStops(vm: ExploreTrialViewVM): Vector[FocusStop] =
-    vm.toggles.filter(_.enabled).map(t => FocusStop(A11yRole.ToggleButton, t.accessible)) ++
+    vm.toggles.filter(_.enabled).map(t => FocusStop(A11yRole.CheckBox, t.accessible)) ++
       vm.retry.map(FocusStop(A11yRole.Button, _))

@@ -200,6 +200,21 @@ class AppShellFxSuite extends ShellFxSuite:
     assertEquals(runOnFx(w.host.active), Some("compare.summary"))
     dispatch(fx, w, Intent.Back)
     assertEquals(runOnFx(w.host.active), Some("explore"))
+    // Data › Trials (overhaul v4).
+    dispatch(
+      fx,
+      w,
+      Intent.Navigate(
+        eyes4s.studio.app.nav.Location(
+          Perspective.Data,
+          Vector(
+            eyes4s.studio.app.nav.Place.Dataset(eyes4s.studio.core.backend.DatasetRevision(3)),
+            eyes4s.studio.app.nav.Place.DataView(eyes4s.studio.app.nav.DataSection.Trials)
+          )
+        )
+      )
+    )
+    assertEquals(runOnFx(w.host.active), Some("data.trials"))
     val built = runOnFx(panes.creations)
     assertEquals(built.distinct, built, "a pane was built twice")
     assertEquals(runOnFx(panes.disposals), Vector.empty)

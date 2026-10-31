@@ -34,6 +34,9 @@ import eyes4s.studio.core.selection.StudioRef
 enum DataSection derives CanEqual:
   case Sources, ColumnMapping, TrialMetadata, Admission, Geometry
 
+  /** Data › Trials (overhaul v4): participants → trials, no run's results. */
+  case Trials
+
 /** One crumb of a trail, or one step of a status-bar path: a typed place,
   * never a string (DESIGN_SPEC section 3's trail grammar). Results places
   * carry the reporting spec and group, so drilling down from the summary
@@ -71,6 +74,11 @@ object Place:
     * (`StudioLayouts.compareLayout`).
     */
   def home(trail: Vector[Place]): Option[Perspective] =
+    // Below Data › Trials every trial, fixation and record stays Data's.
+    if trail.contains(DataView(DataSection.Trials)) then Some(Perspective.Data)
+    else home1(trail)
+
+  private def home1(trail: Vector[Place]): Option[Perspective] =
     trail.lastOption.map {
       case NewProject | Dataset(_) | Source(_) | DataView(_) => Perspective.Data
       case Analyses | Family(_) | Lineage(_) | Revision(_) | Run(_) | Field(_) =>

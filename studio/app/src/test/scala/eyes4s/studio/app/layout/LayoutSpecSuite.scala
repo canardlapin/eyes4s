@@ -54,19 +54,30 @@ class LayoutSpecSuite extends munit.FunSuite:
       )
     ),
     (
-      "Explore.dc.html",
+      "explore.html",
       explore,
       Vector(
-        "Trials"                   -> "explore.trials",
-        "Items"                    -> "explore.items",
-        "P17 · enc_03 · beach-042" -> "explore.trial-view",
-        "Table"                    -> "explore.trial-view.table",
-        "Small multiples"          -> "explore.small-multiples",
-        "Timeline"                 -> "explore.timeline",
-        "Table"                    -> "explore.timeline.table",
-        "Source records"           -> "explore.source-records",
-        "trials.csv"               -> "explore.trial-inventory",
-        "Inspector"                -> "explore.inspector"
+        "Trials in this pair" -> "compare.pair-trials",
+        "P17 · enc_03"        -> "explore.trial-view",
+        "Table"               -> "explore.trial-view.table",
+        "Timeline"            -> "explore.timeline",
+        "Table"               -> "explore.timeline.table",
+        "Source records"      -> "explore.source-records",
+        "Fixation 6 of 13"    -> "explore.inspector"
+      )
+    ),
+    (
+      "data-trials.html",
+      dataTrials,
+      Vector(
+        "Trials"           -> "explore.trials",
+        "Items"            -> "explore.items",
+        "P17 · enc_03"     -> "explore.trial-view",
+        "Table"            -> "explore.trial-view.table",
+        "Timeline"         -> "explore.timeline",
+        "Table"            -> "explore.timeline.table",
+        "Source records"   -> "explore.source-records",
+        "Fixation 6 of 13" -> "explore.inspector"
       )
     ),
     (

@@ -21,7 +21,6 @@ import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.{Format, InspectorText, InspectorTextId}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.assets.Display
 import eyes4s.studio.core.backend.{
   AdmittedFixation,
   AnalysisRevision,
@@ -106,8 +105,7 @@ final case class FixationInspectorVM(
     raw: Option[String],
     usedByTitle: String,
     usedBy: Vector[InspectorLink],
-    usedByNote: Option[String],
-    trial: Vector[InspectorLine]
+    usedByNote: Option[String]
 ) derives CanEqual
 
 /** Explore's fixation inspector (ticket S6.5): the selected fixation, under
@@ -323,8 +321,7 @@ object FixationInspector:
           None,
           "",
           Vector.empty,
-          None,
-          Vector.empty
+          None
         )
       case Some(f) =>
         val fs     = s.fixations.toOption.collect { case BackendAnswer.Answered(t) => t }
@@ -345,24 +342,20 @@ object FixationInspector:
             t(OutsideExcluded)
           case MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.FailTrial) =>
             t(OutsideFails))
+        // The golden's lines (overhaul v4): onset and duration apart, the
+        // image and degree frames; the raw screen position is the records'.
         val fixation = Vector(
           InspectorLine(
-            t(OnsetDuration),
-            a.fold(none)(x =>
-              t(
-                Milliseconds,
-                Format.count(math.round(x.onsetMs)),
-                Format.count(math.round(x.durationMs))
-              )
-            )
+            t(Onset),
+            a.fold(none)(x => t(Ms, Format.count(math.round(x.onsetMs))))
+          ),
+          InspectorLine(
+            t(Duration),
+            a.fold(none)(x => t(Ms, Format.count(math.round(x.durationMs))))
           ),
           InspectorLine(
             t(ImagePx),
             r.flatMap(_.image).fold(none)(pair(_, Format.decimal(_, 0)))
-          ),
-          InspectorLine(
-            t(ScreenRaw),
-            r.flatMap(_.screen).fold(none)(pair(_, Format.decimal(_, 1)))
           ),
           InspectorLine(
             t(Degrees),
@@ -378,16 +371,25 @@ object FixationInspector:
             .map(x =>
               t(
                 FrameNote,
-                Format.decimal(x.pixelsPerDegree, 0),
-                x.source match
-                  case ScaleSource.Recipe  => t(ScaleOfRecipe)
-                  case ScaleSource.Dataset => t(ScaleOfDataset)
+                t(
+                  x.source match
+                    case ScaleSource.Recipe  => ScaleOfRecipe
+                    case ScaleSource.Dataset => ScaleOfDataset
+                  ,
+                  Format.decimal(x.pixelsPerDegree, 0)
+                )
               )
             )
         )
         val sourceFile = s.dataset.flatMap(_.sources.fixations)
         val source     = Vector(
-          InspectorLine(t(File), sourceFile.fold(none)(_.path.value)),
+          // The file's name, as the golden writes it; its path is Data's.
+          InspectorLine(
+            t(File),
+            sourceFile.fold(none)(f =>
+              f.path.value.split('/').lastOption.getOrElse(f.path.value)
+            )
+          ),
           InspectorLine(
             t(Record),
             a.fold(none)(x =>
@@ -398,61 +400,9 @@ object FixationInspector:
               )
             )
           ),
-          InspectorLine(
-            t(Digest),
-            sourceFile.fold(none) { src =>
-              val hex = src.bytes.hex
-              t(DigestShort, hex.take(4), hex.takeRight(3))
-            }
-          ),
-          InspectorLine(t(Ledger), fs.fold(none)(x => t(Admitted, x.dataset.label)))
+          InspectorLine(t(Admission), fs.fold(none)(x => t(Admitted, x.dataset.label)))
         )
         val (title, links, note) = usedByOf(s)
-        val display              = s.displays.toOption
-          .collect { case DisplaySource.Served(reg) => reg }
-          .flatMap(_.display(f.trial))
-        val outside = fs.map(_.fixations.count(_.placement match
-          case MapPlacement.OutsideWindow(_) => true
-          case _                             => false))
-        val trial = Vector(
-          InspectorLine(
-            t(Key),
-            t(
-              KeyValue,
-              f.trial.participant,
-              f.trial.phase.label,
-              f.trial.trial,
-              f.trial.occurrence.toString
-            )
-          ),
-          InspectorLine(
-            t(DisplayLabel),
-            display.fold(none)(d =>
-              d.display match
-                case Display.Image(link)            => t(DisplayImage, link.fileName.value)
-                case Display.Blank                  => t(DisplayBlank)
-                case Display.BlankWithFixationCross => t(DisplayCross)
-                case Display.Cue(_)                 => t(DisplayCue)
-                case Display.Unknown(_)             => t(DisplayUnknown)
-            )
-          ),
-          InspectorLine(t(MatchItem), display.flatMap(_.item).fold(none)(_.value)),
-          InspectorLine(
-            t(Extent),
-            fs.fold(none)(x =>
-              x.extent.declared
-                .fold(t(ExtentMissing))(e =>
-                  t(ExtentSeconds, Format.decimal(e.durationMicros / 1000000.0, 1))
-                )
-            )
-          ),
-          InspectorLine(
-            t(Fixations),
-            fs.fold(none)(x =>
-              t(FixationsValue, x.fixations.size.toString, outside.getOrElse(0).toString)
-            )
-          )
-        )
         FixationInspectorVM(
           status,
           t(Title, f.index.value.toString, if count.isEmpty then none else count),
@@ -462,8 +412,7 @@ object FixationInspector:
           if s.raw then r.map(_.raw) else None,
           title,
           links,
-          note,
-          trial
+          note
         )
 
   // "Used by (run 7, σ 2°)": the pairs that use the trial's map, as links.

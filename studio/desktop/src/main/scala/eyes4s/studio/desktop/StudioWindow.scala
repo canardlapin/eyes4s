@@ -614,7 +614,8 @@ object StudioWindow:
       "compare.contrast"               -> summary.contrastNode,
       "compare.pairs"                  -> summary.pairsNode,
       "compare.pair.table"             -> summary.pairTables,
-      "compare.items"                  -> summary.items.node
+      "compare.items"                  -> summary.items.node,
+      "compare.pair-trials"            -> summary.pairTrials.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     host.controls(StudioLayouts.pair, summary.panels.headerControls*)
     host.controls(StudioLayouts.participantPlot, summary.chrome.reporting)
@@ -626,6 +627,7 @@ object StudioWindow:
       host.describe(StudioLayouts.participantPlot, board.plotSubtitle)
       host.describe(StudioLayouts.participantTable, board.tableSubtitle)
       host.describe(StudioLayouts.participants, summary.participants.subtitle)
+      host.describe(StudioLayouts.pairTrials, summary.pairTrials.count)
     }
     summary.onRendered(() => summary.focusPlans.foreach((id, plan) => host.focus(id, plan)))
     // Compare's inspector (S8.4): why this reference, beside the panels.
@@ -685,6 +687,9 @@ object StudioWindow:
       firstRun.sync(model)
     r.listen(sourcesListener)
     sourcesListener(r.model)
+    // Data's navigator switch, Setup | Trials, on the Setup side; Trials
+    // returns by its Dataset crumb (its header holds Trials | Items).
+    host.controls(StudioLayouts.sources, sources.dataSwitch.node)
     // Explore's trial view: the explored trial under the shown run's revision.
     val explore =
       ExploreTrialViewHost(
@@ -694,6 +699,12 @@ object StudioWindow:
         dispatch
       )
     host.host(StudioLayouts.trialView, explore.node)
+    host.controls(StudioLayouts.trialView, explore.pane.headerControls*)
+    explore.onChange { () =>
+      val vm = explore.vm
+      if vm.title.nonEmpty then host.retitle(StudioLayouts.trialView, vm.title)
+      host.describe(StudioLayouts.trialView, vm.subtitle)
+    }
     val exploreListener: AppModel => Unit = explore.sync
     r.listen(exploreListener)
     // Explore's timeline: the trial view's fixations, the playhead and the brush.
@@ -701,6 +712,8 @@ object StudioWindow:
     host.host(StudioLayouts.timeline, timeline.node)
     host.host(StudioLayouts.timelineTable, timeline.tableNode)
     explore.onChange(() => timeline.refresh())
+    host.controls(StudioLayouts.timeline, timeline.headerControls*)
+    timeline.onRendered(() => host.describe(StudioLayouts.timeline, timeline.vm.subtitle))
     val timelineListener: AppModel => Unit = timeline.sync
     r.listen(timelineListener)
     // The resolved-design table (Analysis): the backend's preview of the
@@ -731,6 +744,7 @@ object StudioWindow:
     val sourceRecords =
       SourceRecordsHost(() => r.model, dispatch, served, TrialViewInputs.of(session, displays))
     host.host(StudioLayouts.sourceRecords, sourceRecords.node)
+    host.controls(StudioLayouts.sourceRecords, sourceRecords.headerControls*)
     val recordsListener: AppModel => Unit = sourceRecords.sync
     r.listen(recordsListener)
     sourceRecords.sync(r.model)
@@ -742,6 +756,11 @@ object StudioWindow:
       UsedByInputs.of(session)
     )
     host.host(StudioLayouts.exploreInspector, inspector.node)
+    host.controls(StudioLayouts.exploreInspector, inspector.headerControls*)
+    inspector.onRendered(() =>
+      if inspector.titleText.nonEmpty then
+        host.retitle(StudioLayouts.exploreInspector, inspector.titleText)
+    )
     val inspectorListener: AppModel => Unit = inspector.sync
     r.listen(inspectorListener)
     inspector.sync(r.model)

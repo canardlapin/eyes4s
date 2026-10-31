@@ -28,10 +28,8 @@ import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 class TableTwinSuite extends munit.FunSuite:
 
   /** Plots without a twin in a layout, and why. */
-  private val exceptions: Map[(String, String), String] = Map(
-    ("explore", "explore.small-multiples") ->
-      "S6.7 (Explore small multiples) is not built: the pane is a placeholder; its Table twin comes with it"
-  )
+  // None since the overhaul dropped Explore's small-multiples placeholder (v4).
+  private val exceptions: Map[(String, String), String] = Map.empty
 
   private def excepted(layout: PerspectiveLayout, decl: PaneDecl): Boolean =
     exceptions.contains((layout.id.value, decl.id.value))

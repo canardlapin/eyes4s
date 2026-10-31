@@ -64,13 +64,12 @@ class SourceRecordsFxSuite extends ShellFxSuite:
             cells,
             Vector(
               "7,214",
-              "enc_03",
               "6",
               "2,160",
               "412",
-              "1148.0,456.0",
-              "700,300",
-              "+5.4°,+2.4°",
+              "1148.0, 456.0",
+              "700, 300",
+              "+5.4°, +2.4°",
               "206",
               "inside"
             )
@@ -174,14 +173,11 @@ class SourceRecordsFxSuite extends ShellFxSuite:
   ) { fx =>
     val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
+    // Show raw record sits in the pane header (overhaul v4).
     val toggle = runOnFx(
-      w.sourceRecords.node
-        .lookupAll(".tog")
-        .toArray
-        .collectFirst { case t: javafx.scene.control.ToggleButton =>
-          t
-        }
-        .get
+      w.sourceRecords.headerControls.collectFirst { case t: javafx.scene.control.ToggleButton =>
+        t
+      }.get
     )
     val before = runOnFx(w.runtime.model.selection.selected)
     runOnFx(toggle.requestFocus())

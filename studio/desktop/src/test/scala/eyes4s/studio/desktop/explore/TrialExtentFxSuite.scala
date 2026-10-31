@@ -111,57 +111,55 @@ class TrialExtentFxSuite extends ShellFxSuite:
     )
 
   for cell <- Vector(Some("5"), None, Some("")) do
-    fxStage.test(s"native CSV trial extent $cell reaches inspector and timeline honestly") {
-      fx =>
-        val w = boot(fx, model(cell), StoryMoment.T2, nativeSources = Some(sources(cell)))
-        val expected = if cell.contains("5") then "5.0 s" else "Not declared"
-        eventually(
-          fx,
-          s"native inspector extent and timeline: selected ${w.runtime.model.selection.selected}, inspector ${w.inspector.vm.status}, timeline ${w.timeline.vm.note}"
-        ) {
-          w.inspector.lines.contains("Extent" -> expected) && w.timeline.vm.enabled
-        }
-        val timeline = w.timeline.vm
-        assertEquals(timeline.source.map(_.rows.size), Some(1))
-        assertEquals(
-          timeline.source.flatMap(
-            _.number(0, ok(eyes4s.studio.app.plot.TimelineColumns.standard).onset)
-          ),
-          Some(100.0)
+    fxStage.test(s"native CSV trial extent $cell reaches the timeline honestly") { fx =>
+      val w = boot(fx, model(cell), StoryMoment.T2, nativeSources = Some(sources(cell)))
+      eventually(
+        fx,
+        s"native timeline: selected ${w.runtime.model.selection.selected}, inspector ${w.inspector.vm.status}, timeline ${w.timeline.vm.note}"
+      ) {
+        w.timeline.vm.enabled
+      }
+      val timeline = w.timeline.vm
+      assertEquals(timeline.source.map(_.rows.size), Some(1))
+      assertEquals(
+        timeline.source.flatMap(
+          _.number(0, ok(eyes4s.studio.app.plot.TimelineColumns.standard).onset)
+        ),
+        Some(100.0)
+      )
+      if cell.contains("5") then
+        assertEquals(timeline.extentNote, Some("Trial extent 5.00 s"))
+        eventually(fx, "declared timeline domain is drawn")(
+          w.timeline.twin.input.targets.isDefined
         )
-        if cell.contains("5") then
-          assertEquals(timeline.extentNote, Some("Trial extent 5.00 s"))
-          eventually(fx, "declared timeline domain is drawn")(
-            w.timeline.twin.input.targets.isDefined
+        val inside = runOnFx {
+          val targets = w.timeline.twin.input.targets.getOrElse(fail("no timeline transform"))
+          val end     = targets.transform.deviceToCanvas(
+            ok(targets.transform.dataToDevice(DataPoint(5000, 0)))
           )
-          val inside = runOnFx {
-            val targets = w.timeline.twin.input.targets.getOrElse(fail("no timeline transform"))
-            val end     = targets.transform.deviceToCanvas(
-              ok(targets.transform.dataToDevice(DataPoint(5000, 0)))
-            )
-            end.x <= targets.transform.surface.logicalWidth
-          }
-          assert(inside, "served trial end must be visible before playback")
-          runOnFx {
-            w.timeline.dispatch(TimelineIntent.Play)
-            w.timeline.dispatch(TimelineIntent.Tick(1000))
-            w.timeline.dispatch(TimelineIntent.Pause)
-          }
-          assert(runOnFx(w.timeline.timeline.playheadMs >= 1000))
-          runOnFx {
-            w.timeline.dispatch(TimelineIntent.Play)
-            w.timeline.dispatch(TimelineIntent.Tick(10000))
-          }
-          assertEquals(runOnFx(w.timeline.timeline.playheadMs), 5000.0)
-          assert(!runOnFx(w.timeline.timeline.playing))
-          assert(runOnFx(w.timeline.note.getText.contains("Trial extent 5.00 s")))
-        else
-          assert(timeline.extentNote.exists(_.contains("not declared")))
-          runOnFx {
-            w.timeline.dispatch(TimelineIntent.Play)
-            w.timeline.dispatch(TimelineIntent.Tick(10000))
-          }
-          assertEquals(runOnFx(w.timeline.timeline.playheadMs), 400.0)
+          end.x <= targets.transform.surface.logicalWidth
+        }
+        assert(inside, "served trial end must be visible before playback")
+        runOnFx {
+          w.timeline.dispatch(TimelineIntent.Play)
+          w.timeline.dispatch(TimelineIntent.Tick(1000))
+          w.timeline.dispatch(TimelineIntent.Pause)
+        }
+        assert(runOnFx(w.timeline.timeline.playheadMs >= 1000))
+        runOnFx {
+          w.timeline.dispatch(TimelineIntent.Play)
+          w.timeline.dispatch(TimelineIntent.Tick(10000))
+        }
+        assertEquals(runOnFx(w.timeline.timeline.playheadMs), 5000.0)
+        assert(!runOnFx(w.timeline.timeline.playing))
+        assert(runOnFx(w.timeline.note.getText.contains("Trial extent 5.00 s")))
+      else
+        assert(timeline.extentNote.exists(_.contains("not declared")))
+        runOnFx {
+          w.timeline.dispatch(TimelineIntent.Play)
+          w.timeline.dispatch(TimelineIntent.Tick(10000))
+        }
+        assertEquals(runOnFx(w.timeline.timeline.playheadMs), 400.0)
     }
 
   fxStage.test(

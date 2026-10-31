@@ -22,7 +22,8 @@ package eyes4s.studio.app.text
   */
 enum ExploreTextId derives CanEqual:
   // --- The toolbar --------------------------------------------------------------
-  case Title, TitleNoItem, Points, Order, Map, ToggleOn, ToggleOff, MapPreview
+  case Title, TitleNoItem, Points, Order, Map, ToggleOn, ToggleOff, MapPreview, Subtitle,
+    SelectedKey, RampKey, IsolineKey, TimelineSubtitle, TimelineSubtitleBrushed
   case MapNotServed, CanvasHint
 
   // --- Prev and Next (S6.6) ---------------------------------------------------------
@@ -47,14 +48,22 @@ object ExploreText:
 
   /** The reference English template of `id`. */
   def english(id: ExploreTextId): String = id match
-    case Title        => "{0} · {1} · {2}"
-    case TitleNoItem  => "{0} · {1}"
-    case Points       => "Points"
-    case Order        => "Order"
-    case Map          => "Map"
-    case ToggleOn     => "{0}, on"
-    case ToggleOff    => "{0}, off"
-    case MapPreview   => "Map: preview · σ {0}° · not a result"
+    case Title            => "{0} · {1} · {2}"
+    case TitleNoItem      => "{0} · {1}"
+    case Points           => "Points"
+    case Order            => "Order"
+    case Map              => "Map"
+    case ToggleOn         => "{0}, on"
+    case ToggleOff        => "{0}, off"
+    case MapPreview       => "Map is a preview, not a result"
+    case Subtitle         => "σ {0}°, {1} px/° declared"
+    case SelectedKey      => "selected"
+    case RampKey          => "max density · photo in grey"
+    case IsolineKey       => "50 · 90% of mass"
+    case TimelineSubtitle =>
+      "{0} fixations · brushing highlights fixations; the analysis is unchanged"
+    case TimelineSubtitleBrushed =>
+      "{0} fixations · brush {1}–{2} s highlights fixations; the analysis is unchanged"
     case MapNotServed => "Map preview not available: {0}"
     case CanvasHint   => "Canvas focused · arrows move · Enter selects · Esc clears"
     case PrevFixation => "Previous fixation"
@@ -91,13 +100,13 @@ object ExploreText:
     case TimelineNotRead => "The timeline of {0} cannot be drawn: {1}"
 
     case LegendTitle            => "Legend"
-    case Fixation               => "Fixation · marker area ∝ duration"
-    case OutsideWindowExcluded  => "Outside the analysis window · excluded from the map"
+    case Fixation               => "fixation, area shows duration"
+    case OutsideWindowExcluded  => "outside window"
     case OutsideWindowFails     => "Outside the analysis window · the trial fails"
     case InsideWindowTrialFails => "Inside the analysis window · the trial fails"
     case OutsideScreen          => "Outside the screen"
     case DroppedInitial         => "Dropped by the initial-fixation policy"
-    case OrderLines             => "Order between fixation centres, not measured saccades"
+    case OrderLines             => "order, not saccades"
     case PreviewMap             => "Preview density · σ {0}° · not a result"
     case MissingAsset           => "Missing asset"
 

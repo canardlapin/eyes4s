@@ -17,10 +17,9 @@
 package eyes4s.studio.app.explore
 
 import cats.instances.future.*
-import eyes4s.plan.MapPlacement
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.core.backend.{AdmittedFixation, AnalysisRevision, RunId, TrialFixations}
+import eyes4s.studio.core.backend.{AnalysisRevision, RunId}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
@@ -135,35 +134,24 @@ class FixationInspectorSuite extends munit.FunSuite:
       assertEquals(
         vm.fixation.map(l => (l.label, l.value)),
         Vector(
-          ("Onset · duration", "2,160 ms · 412 ms"),
-          ("Image frame px", "700, 300"),
-          ("Screen px (raw)", "1148.0, 456.0"),
-          ("Degrees from centre", "+5.4°, +2.4°"),
-          ("Analysis window", "Inside")
+          ("Onset", "2,160 ms"),
+          ("Duration", "412 ms"),
+          ("Image px", "700, 300"),
+          ("Degrees", "+5.4°, +2.4°"),
+          ("Window", "inside")
         )
       )
       val source = vm.source.map(l => (l.label, l.value)).toMap
       assertEquals(source("Record"), "7,214 of 11,520")
-      assertEquals(source("Ledger"), "Admitted · dataset r3")
-      assert(source("Digest").startsWith("sha256:"), source)
+      assertEquals(source("Admission"), "admitted · dataset r3")
       assertEquals(
         source("File"),
-        right(StoryMoments.t2).datasets.last.sources.fixations.get.path.value
-      )
-      assertEquals(
-        vm.trial.map(l => (l.label, l.value)),
-        Vector(
-          ("Key", "P17 · Encoding · enc_03 · occ 1"),
-          ("Display", "Image · beach-042.png"),
-          ("Match item", "beach-042"),
-          ("Extent", "Not declared"),
-          ("Fixations", "13 · 1 outside")
-        )
+        right(StoryMoments.t2).datasets.last.sources.fixations.get.path.value.split('/').last
       )
       // The scale the served degrees are at, as the page states it.
       assertEquals(
         vm.frameNote,
-        Some("Degrees from image centre, x right, y up; 35 px/°, the recipe's scale.")
+        Some("Degrees from the image centre, x right, y up, at the recipe's 35 px/°.")
       )
       assertEquals(FixationInspector.vm(s).raw, None)
     }
@@ -172,10 +160,10 @@ class FixationInspectorSuite extends munit.FunSuite:
   test("used by run 7 at σ 2°: ret_07 as the matched reference, 18 pairs as a control") {
     settled.map { s =>
       val vm = FixationInspector.vm(s)
-      assertEquals(vm.usedByTitle, "Used by (run 7, σ 2°)")
+      assertEquals(vm.usedByTitle, "Used by run 7 at σ 2°")
       assertEquals(
         vm.usedBy.map(_.label),
-        Vector("ret_07 contrast (matched reference)", "18 pairs (as a control)")
+        Vector("ret_07 · matched reference", "18 pairs as a control")
       )
       assertEquals(vm.usedBy.head.go, Intent.Explain(Place.At(StoryModels.pair)))
       // The control link opens Compare's query view, with its control list.
@@ -244,7 +232,7 @@ class FixationInspectorSuite extends munit.FunSuite:
       },
       gx
     )
-    assertEquals(FixationInspector.vm(u).usedByTitle.startsWith("Used by (run 6, "), true)
+    assertEquals(FixationInspector.vm(u).usedByTitle.startsWith("Used by run 6 at "), true)
     // A run change at the same scale is still a change.
     val sameScale = navigate(
       run6,
@@ -269,31 +257,6 @@ class FixationInspectorSuite extends munit.FunSuite:
       ),
       hx
     )
-  }
-
-  test("'outside' counts fixations outside the window only, not dropped or off-screen ones") {
-    settled.map { s =>
-      val t = s.fixations.toOption.collect { case BackendAnswer.Answered(t) => t }.get
-      def placed(i: Int, p: MapPlacement) =
-        val a = t.fixations(i)
-        right(
-          AdmittedFixation.of(a.ref, a.record, a.screenX, a.screenY, a.onsetMs, a.durationMs, p)
-        )
-      val inside =
-        t.fixations.indices.filter(i => t.fixations(i).placement == MapPlacement.InWindow)
-      val mixed = t.fixations
-        .updated(inside(0), placed(inside(0), MapPlacement.DroppedInitial))
-        .updated(inside(1), placed(inside(1), MapPlacement.OutsideScreen))
-      val u  = right(TrialFixations.of(t.revision, t.dataset, t.trial, mixed))
-      val vm = FixationInspector.vm(
-        s.copy(fixations = eyes4s.studio.app.geometry.Loading.Ready(BackendAnswer.Answered(u)))
-      )
-      val outside = t.fixations.count(_.placement match
-        case MapPlacement.OutsideWindow(_) => true
-        case _                             => false)
-      assertEquals(outside, 1)
-      assertEquals(vm.trial.last.value, "13 · 1 outside")
-    }
   }
 
   test("'Show raw record' gives the verbatim line; a late answer is ignored") {
@@ -358,23 +321,4 @@ class FixationInspectorSuite extends munit.FunSuite:
     val vm = FixationInspector.vm(FixationInspector.empty)
     assertEquals(vm.status, Some("Select a fixation to inspect it"))
     assertEquals(ScaleIndex.of(0).isRight, true)
-  }
-
-  test("inspector extent uses native declared duration rather than the last fixation end") {
-    val native     = eyes4s.studio.core.real.TrialDurationNativeFixture.served()
-    val (state, _) = FixationInspector.sync(FixationInspector.empty, StoryModels.t2Explore)
-    val (next, _)  = FixationInspector.update(
-      state,
-      InspectorIntent.FixationsRead(
-        native.revision,
-        native.trial,
-        state.ask,
-        Right(BackendAnswer.Answered(native))
-      )
-    )
-    assertEquals(native.fixations.last.onsetMs + native.fixations.last.durationMs, 400.0)
-    assertEquals(
-      FixationInspector.vm(next).trial.find(_.label == "Extent").map(_.value),
-      Some("5.0 s")
-    )
   }

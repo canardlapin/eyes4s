@@ -311,6 +311,11 @@ class KeymapFxSuite extends ShellFxSuite:
     val drill = boot(fx, StoryModels.t2Explore)
     assertEquals(runOnFx(drill.host.active), Some("explore"))
     reached ++= tour(fx, drill)
+    // Data › Trials (overhaul v4), at P17's enc_03.
+    runOnFx(drill.close())
+    val trials = boot(fx, StoryModels.t2DataTrials)
+    assertEquals(runOnFx(trials.host.active), Some("data.trials"))
+    reached ++= tour(fx, trials)
     val declared = StudioLayouts.spec.all
       .filterNot(_ == StudioLayouts.dataFirstRun) // shown only before any dataset
       .flatMap(_.panes.map(_.id.value))

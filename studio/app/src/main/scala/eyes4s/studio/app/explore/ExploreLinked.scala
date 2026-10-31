@@ -68,20 +68,10 @@ object ExploreLinked:
       marks: Option[String]
   ): Vector[eyes4s.studio.app.vm.FocusStop] =
     import eyes4s.studio.app.vm.{A11yRole, FocusStop}
-    import eyes4s.studio.app.text.{ExploreText, ExploreTextId}
     val vm = ExploreTrialViewVM.of(view, m)
-    ExploreTrialViewVM.focusStops(vm) ++
-      Option
-        .when(canStep(view, m, -1))(
-          FocusStop(A11yRole.Button, ExploreText(ExploreTextId.PrevFixation))
-        )
-        .toVector ++
-      Option
-        .when(canStep(view, m, 1))(
-          FocusStop(A11yRole.Button, ExploreText(ExploreTextId.NextFixation))
-        )
-        .toVector ++
-      marks.map(FocusStop(A11yRole.Region, _)).toVector
+    // Previous and Next left the pane for the canvas's own keys and the
+    // timeline's steps (overhaul v4).
+    ExploreTrialViewVM.focusStops(vm) ++ marks.map(FocusStop(A11yRole.Region, _)).toVector
 
   /** The trail's crumb for `f`: its source record, which names it, when the
     * trial view knows its record.

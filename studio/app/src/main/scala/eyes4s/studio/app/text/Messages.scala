@@ -43,6 +43,10 @@ enum MessageId derives CanEqual:
   case LineageEncodingRetrieval, LineageRecognition, LineageCustom, LineagePerceptionImagery
   case SectionSources, SectionColumnMapping, SectionTrialMetadata, SectionAdmission
   case SectionGeometry
+  case SectionTrials
+
+  /** Data's navigator switch: its setup half (overhaul v4). */
+  case DataSetup
   case DesignMatched, DesignControl
 
   // --- Freshness -------------------------------------------------------------
@@ -70,6 +74,9 @@ enum MessageId derives CanEqual:
 
   /** The summary's hint with a participant selected (overhaul v4). */
   case HintCompareParticipant
+
+  /** Data › Trials' hint (overhaul v4). */
+  case HintDataTrials
 
   // --- Commands --------------------------------------------------------------------
   case CommandUndo, CommandRedo, CommandUndoView, CommandRedoView, CommandNextPane
@@ -209,6 +216,8 @@ object Catalogue:
       case SectionTrialMetadata     => "Trial metadata"
       case SectionAdmission         => "Admission"
       case SectionGeometry          => "Geometry"
+      case SectionTrials            => "Trials"
+      case DataSetup                => "Setup"
       case DesignMatched            => "matched"
       case DesignControl            => "control"
 
@@ -286,7 +295,8 @@ object Catalogue:
       case HintDataFirstRun       => "Drop files anywhere in this window"
       case HintDataVerify         => "Mapping and geometry changes make a new dataset revision"
       case HintDataPending        => "Mapping and geometry changes apply when {0} is admitted"
-      case HintExplore            => "View state only · no analysis changed"
+      case HintExplore            => "Arrows move between fixations · Enter selects"
+      case HintDataTrials         => "Arrows move between fixations · Enter selects"
       case HintAnalysis           => "Edits change the draft only · runs are never relabelled"
       case HintCompareSummary     => "Enter on a participant opens its queries · F6 next pane"
       case HintCompareParticipant => "Enter opens {0}'s queries"

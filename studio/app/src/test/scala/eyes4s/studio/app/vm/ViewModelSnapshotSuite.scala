@@ -89,7 +89,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
           |app.state: Run 7 · current | Data r3 | Analysis rev 5 · not run
           |context.nav: Back (⌘[) | [Forward (⌘])]
           |context.trail: Summary · by retrieval response / Remembered / P17 / ret_07 · beach-042 / pair ret_07 × enc_03 / enc_03 · fixation 6 / *fixations.csv record 7,214*
-          |status: View state only · no analysis changed | Saved 10:24""".stripMargin
+          |status: Arrows move between fixations · Enter selects | Saved 10:24""".stripMargin
     )
   }
 

@@ -160,6 +160,29 @@ object StoryModels:
     )
   )
 
+  /** data-trials.html (overhaul v4), t2: Data › Trials at P17's enc_03,
+    * fixation 6 selected.
+    */
+  def t2DataTrials: AppModel = saved(
+    play(
+      t2Compare,
+      _ =>
+        Intent.Navigate(
+          Location(
+            Perspective.Data,
+            Vector(
+              Place.Dataset(DatasetRevision(3)),
+              Place.DataView(DataSection.Trials),
+              Place.At(StudioRef.Participant("P17")),
+              Place.At(StudioRef.Trial(p17enc03)),
+              Place.At(StudioRef.Fixation(p17enc03, fixation6))
+            )
+          )
+        ),
+      m => select(m, "explore.trial-view", record)
+    )
+  )
+
   /** Analysis.dc.html, t2: draft rev 5, the Scales field in focus. */
   def t2Analysis: AppModel = saved(
     play(

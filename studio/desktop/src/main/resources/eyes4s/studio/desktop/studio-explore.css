@@ -68,15 +68,6 @@
 }
 
 /* The preview label's dashed frame says the map is not a result. */
-.explore-preview {
-  -fx-padding: 2 8 2 8;
-  -fx-border-color: -es-ink-2;
-  -fx-border-style: segments(4, 3);
-  -fx-border-width: 1;
-  -fx-border-radius: 11;
-  -fx-text-fill: -es-ink;
-}
-
 .explore-hint,
 .explore-note,
 .explore-legend-label,
@@ -174,4 +165,29 @@
   -fx-fill: -es-ramp-2;
   -fx-stroke: -es-ink-2;
   -fx-stroke-dash-array: 2 1.5;
+}
+
+/* Overhaul v4 (explore.html, data-trials.html): the preview's tag in the
+ * pane header, and the legend's neutral and selected keys beside the pair's. */
+.explore-preview {
+  -fx-padding: 2 7 2 7;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 4;
+  -fx-border-width: 0;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.pair-glyph.explore-neutral-glyph {
+  -fx-background-color: -es-ink-3;
+  -fx-background-radius: 5;
+}
+
+.pair-glyph.explore-selected-glyph {
+  -fx-border-color: -es-ink;
+  -fx-border-width: 1.5;
+  -fx-border-radius: 5;
+  -fx-background-color: -es-ink, -es-surface, -es-ink;
+  -fx-background-insets: 0, 1.5, 3;
+  -fx-background-radius: 5, 4, 2;
 }

@@ -260,7 +260,7 @@
 
 .records-header {
   -fx-text-fill: -es-ink-3;
-  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-font-family: "IBM Plex Sans Medm";
 }
 
 .records-row {
@@ -269,7 +269,7 @@
 }
 
 /* Hover is surface-2; a selected record, hovered or not, the selection fill
- * with its mono cells in Mono 500. */
+ * with its cells in Plex Sans 500 (overhaul v4). */
 .records-row:hover {
   -fx-background-color: -es-surface-2;
 }
@@ -279,7 +279,7 @@
 }
 
 .records-row:selected .records-cell {
-  -fx-font-family: "IBM Plex Mono Medm";
+  -fx-font-family: "IBM Plex Sans Medm";
 }
 
 /* The row cursor, while the keyboard holds the records' pane stop: a 2 px

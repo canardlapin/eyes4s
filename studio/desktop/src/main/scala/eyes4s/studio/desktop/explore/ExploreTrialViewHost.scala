@@ -45,6 +45,7 @@ import eyes4s.studio.viz.trial.{
   MarkStyle,
   ScreenRect,
   TrialFixation,
+  TrialRole,
   TrialSceneInput,
   TrialSceneOptions
 }
@@ -278,8 +279,8 @@ object ExploreTrialViewHost:
       MapCoverage.Region(region)
     )
 
-  /** The trial scene input of a shown trial: neutral marks (Explore never
-    * shows roles), the toolbar's Points and Order, the window outline, and
+  /** The trial scene input of a shown trial: its marks in its role in the
+    * drilled pair (neutral outside one), the header's Points and Order, and
     * the document's theme and stage; and the words of any mark the scene
     * refused, which is left out rather than losing the trial.
     */
@@ -295,10 +296,21 @@ object ExploreTrialViewHost:
         shown.display,
         shown.screen,
         built.collect { case Right(f) => f },
-        MarkStyle.Neutral,
+        shown.role.fold(MarkStyle.Neutral)(r =>
+          MarkStyle.Role(r match
+            case ExploreRole.Query   => TrialRole.Query
+            case ExploreRole.Matched => TrialRole.Matched
+            case ExploreRole.Control => TrialRole.Control)
+        ),
         shown.theme,
         shown.stage,
-        options = TrialSceneOptions(points = shown.points, order = shown.order)
+        // The stage alone, as the pair's: no caption band and no outline.
+        options = TrialSceneOptions(
+          points = shown.points,
+          order = shown.order,
+          captionBand = false,
+          windowOutline = false
+        )
       ),
       built.collect { case Left(why) => why }
     )

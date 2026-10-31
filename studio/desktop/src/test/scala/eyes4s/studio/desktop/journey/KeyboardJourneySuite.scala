@@ -303,14 +303,10 @@ class KeyboardJourneySuite extends GoldenWindow:
       audit(w, "after repair")
       // --- Explore P17 enc_03 -----------------------------------------------
 
-      // Results' trial browser. Until Port 6 gives trial browsing its keyboard
-      // path in Data › Trials, the browser is opened by location: Results
-      // keeps one trail, and here it is at the summary.
-      dispatch(
-        fx,
-        w,
-        Intent.Navigate(eyes4s.studio.app.nav.Location(Perspective.Results, Vector.empty))
-      )
+      // Data › Trials (overhaul v4): the Setup | Trials switch's Trials.
+      tabToNamed(fx, "Trials")
+      space(fx)
+      eventually(fx, "Data › Trials")(w.host.active.contains("data.trials"))
       tabToNamed(fx, "Filter trials")
       fx.robot.typeText("P17")
       val trials = tabToNamed(fx, "Trials of r3")

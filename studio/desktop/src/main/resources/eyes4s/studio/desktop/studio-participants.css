@@ -52,3 +52,14 @@
 /* The list only realizes rows; selection and focus belong to the composite pane. */
 .participants-list { -fx-background-color: transparent; -fx-padding: 0; }
 .participants-list .list-cell { -fx-background-color: transparent; -fx-padding: 0; }
+
+/* The drill's pair navigator (overhaul v4, explore.html): section headings,
+ * 26 px trial rows with a role glyph, the item and the cosine. */
+.pair-trials-scroll, .pair-trials-scroll > .viewport { -fx-background-color: -es-surface; -fx-padding: 0; }
+.pair-trials-heading { -fx-text-fill: -es-ink-2; -fx-font-family: "IBM Plex Sans Medm"; -fx-padding: 4 12 4 14; -fx-min-height: 24px; }
+.pair-trials-row { -fx-min-height: 26px; -fx-pref-height: 26px; -fx-max-height: 26px; }
+.pair-trials-item { -fx-text-fill: -es-ink-2; }
+.pair-trials-value { -fx-text-fill: -es-ink-3; }
+.pair-trials-status { -fx-text-fill: -es-ink-2; -fx-padding: 8 14 8 14; }
+.pair-trials-foot { -fx-padding: 4 12 6 14; -fx-border-color: -es-hairline transparent transparent transparent; }
+.pair-trials-all { -fx-text-fill: -es-accent; -fx-padding: 0; -fx-border-width: 0; }

@@ -40,7 +40,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
     eventually(fx, "the inspector is filled") {
       w.inspector.lines.exists(_ == ("Record", "7,214 of 11,520")) &&
       w.inspector.linkLabels.size == 2 &&
-      w.inspector.lines.exists((k, v) => k == "Display" && v != "—")
+      w.inspector.lines.exists((k, v) => k == "Admission" && v != "—")
     }
 
   fxStage.test(
@@ -50,22 +50,18 @@ class FixationInspectorFxSuite extends ShellFxSuite:
     ready(fx, w)
     assertEquals(runOnFx(w.inspector.titleText), "Fixation 6 of 13")
     val lines = runOnFx(w.inspector.lines).toMap
-    assertEquals(lines("Onset · duration"), "2,160 ms · 412 ms")
-    assertEquals(lines("Screen px (raw)"), "1148.0, 456.0")
-    assertEquals(lines("Image frame px"), "700, 300")
-    assertEquals(lines("Degrees from centre"), "+5.4°, +2.4°")
-    assertEquals(lines("Analysis window"), "Inside")
+    assertEquals(lines("Onset"), "2,160 ms")
+    assertEquals(lines("Duration"), "412 ms")
+    assertEquals(lines("Image px"), "700, 300")
+    assertEquals(lines("Degrees"), "+5.4°, +2.4°")
+    assertEquals(lines("Window"), "inside")
     assertEquals(lines("Record"), "7,214 of 11,520")
-    assertEquals(lines("Ledger"), "Admitted · dataset r3")
-    assertEquals(lines("Key"), "P17 · Encoding · enc_03 · occ 1")
-    assertEquals(lines("Display"), "Image · beach-042.png")
-    assertEquals(lines("Match item"), "beach-042")
-    assertEquals(lines("Fixations"), "13 · 1 outside")
+    assertEquals(lines("Admission"), "admitted · dataset r3")
     // The numbers are the fixture's.
-    val (sx, sy) = lines("Screen px (raw)").split(", ") match
+    val (ix, iy) = lines("Image px").split(", ") match
       case Array(a, b) => (a.toDouble, b.toDouble)
       case other       => fail(other.mkString)
-    assertEquals((sx, sy), (1148.0, 456.0))
+    assertEquals((ix, iy), (700.0, 300.0))
     fx.snapshot(StudioTheme.Light)
   }
 
@@ -77,11 +73,11 @@ class FixationInspectorFxSuite extends ShellFxSuite:
     assertEquals(
       runOnFx(w.inspector.linkLabels),
       Vector(
-        "ret_07 contrast (matched reference)",
-        "18 pairs (as a control)"
+        "ret_07 · matched reference",
+        "18 pairs as a control"
       )
     )
-    runOnFx(w.inspector.follow("ret_07 contrast (matched reference)"))
+    runOnFx(w.inspector.follow("ret_07 · matched reference"))
     fx.awaitLayout()
     val m = runOnFx(w.runtime.model)
     assertEquals(m.perspective, Perspective.Results)

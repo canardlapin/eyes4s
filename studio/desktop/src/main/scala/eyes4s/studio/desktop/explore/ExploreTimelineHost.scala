@@ -84,15 +84,21 @@ final class ExploreTimelineHost(
   )
 
   // --- the toolbar ----------------------------------------------------------------
+  // Icon buttons in the pane header (overhaul v4); their words are read.
   val play: Button =
-    button(() => if state.playing then TimelineIntent.Pause else TimelineIntent.Play)
-  val stepBack: Button                         = button(() => TimelineIntent.StepBack)
-  val stepForward: Button                      = button(() => TimelineIntent.StepForward)
+    button(
+      eyes4s.studio.app.icons.Icon.Play,
+      () => if state.playing then TimelineIntent.Pause else TimelineIntent.Play
+    )
+  val stepBack: Button =
+    button(eyes4s.studio.app.icons.Icon.StepBack, () => TimelineIntent.StepBack)
+  val stepForward: Button =
+    button(eyes4s.studio.app.icons.Icon.StepForward, () => TimelineIntent.StepForward)
   private val group                            = ToggleGroup()
   val speeds: Map[PlaybackSpeed, ToggleButton] = PlaybackSpeed.values.toVector.map { s =>
     val b = ToggleButton()
     b.setMnemonicParsing(false)
-    b.getStyleClass.addAll("timeline-speed", "mono", "t11")
+    b.getStyleClass.addAll("segment", "t12")
     b.setToggleGroup(group)
     b.setOnAction(_ => dispatch(TimelineIntent.SetSpeed(s)))
     s -> b
@@ -111,7 +117,23 @@ final class ExploreTimelineHost(
   bar.getStyleClass.add("timeline-bar")
   VBox.setVgrow(twin.plotNode, Priority.ALWAYS)
 
-  /** The Timeline pane: the toolbar over the plot. */
+  private val speedBar = HBox(PlaybackSpeed.values.toVector.map(speeds)*)
+  speedBar.getStyleClass.add("segmented-bar")
+
+  /** The pane header's controls (overhaul v4): step back, play, step
+    * forward, then the speeds; the status is the header's subtitle.
+    */
+  val headerControls: Vector[javafx.scene.Node] =
+    Vector(stepBack, play, stepForward, speedBar)
+  bar.setVisible(false)
+  bar.setManaged(false)
+
+  private var rendered: Vector[() => Unit] = Vector.empty
+
+  /** Call `f` after each render, as the pane header follows the timeline. */
+  def onRendered(f: () => Unit): Unit = rendered = rendered :+ f
+
+  /** The Timeline pane: the notes over the plot. */
   val node: VBox = VBox(bar, note, twin.plotNode)
   node.getStyleClass.add("timeline-panel")
   Option(getClass.getClassLoader.getResource(ExploreTimelineHost.stylesheetResource))
@@ -160,8 +182,8 @@ final class ExploreTimelineHost(
     if !v.enabled then Vector.empty
     else
       Vector(
-        FocusStop(A11yRole.Button, v.playLabel),
         FocusStop(A11yRole.Button, v.stepBack),
+        FocusStop(A11yRole.Button, v.playLabel),
         FocusStop(A11yRole.Button, v.stepForward)
       ) ++ v.speeds.collect { case (_, label, true) =>
         FocusStop(A11yRole.ToggleButton, label)
@@ -256,11 +278,17 @@ final class ExploreTimelineHost(
       if drawn.exists(_._2 == v.brush) then brush.refresh()
       else brush.restore(v.brush)
     drawn = Some((v.playheadMs, v.brush))
+    rendered.foreach(_())
 
-  private def button(intent: () => TimelineIntent): Button =
+  private def button(icon: eyes4s.studio.app.icons.Icon, intent: () => TimelineIntent): Button =
     val b = Button()
     b.setMnemonicParsing(false)
-    b.getStyleClass.addAll("timeline-button", "t11")
+    b.setGraphic(
+      eyes4s.studio.desktop.icons.StudioIcons
+        .graphic(icon, eyes4s.studio.desktop.icons.IconSize.Px16)
+    )
+    b.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY)
+    b.getStyleClass.addAll("icon-button", "timeline-button")
     b.setOnAction(_ => dispatch(intent()))
     b
 

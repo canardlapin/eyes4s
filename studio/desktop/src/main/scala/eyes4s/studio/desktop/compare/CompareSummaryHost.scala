@@ -281,6 +281,42 @@ final class CompareSummaryHost(
       app
     )
 
+  private var pairTrialsState = PairTrials.empty
+
+  /** The drill's pair navigator (overhaul v4): the pair's trials. */
+  val pairTrials: PairTrialsView = PairTrialsView(
+    key =>
+      if !disposed then {
+        val (next, intent) = PairTrials.key(pairTrialsState, pairTrialsVM, key)
+        pairTrialsState = next
+        render(model())
+        intent.foreach(app)
+      },
+    row =>
+      if !disposed then {
+        pairTrialsState = pairTrialsState.copy(cursor = Some(row.trial))
+        app(row.open)
+      },
+    app
+  )
+
+  /** The pair navigator's view-model now. */
+  def pairTrialsVM: PairTrialsVM =
+    val m     = model()
+    val focus = TrialPanels.focusOf(m)
+    PairTrials.vm(
+      pairTrialsState,
+      m,
+      focus,
+      pairsState.answer.collect { case PairsAnswer.Answered(rows) => rows },
+      rows,
+      focus
+        .flatMap(f => scaleLabels.lift(f.scale.value))
+        .map(l =>
+          eyes4s.studio.app.text.SummaryText(eyes4s.studio.app.text.SummaryTextId.Scale, l)
+        )
+    )
+
   val participants: ParticipantsNavigatorView = ParticipantsNavigatorView(
     key =>
       if !disposed then {
@@ -491,8 +527,8 @@ final class CompareSummaryHost(
       "compare.participant-plot.table" -> participantPlot.table.focusStops,
       "compare.participant-table"      -> participantTable.focusStops
     )
-    val nav = ParticipantsNavigator.vm(participantsState, state, model())
-    eyes4s.studio.app.layout.StudioLayouts.spec.all
+    val nav   = ParticipantsNavigator.vm(participantsState, state, model())
+    val plans = eyes4s.studio.app.layout.StudioLayouts.spec.all
       .flatMap(_.panes)
       .distinct
       .flatMap(decl =>
@@ -501,6 +537,19 @@ final class CompareSummaryHost(
         }
       )
       .toMap
+    // The pair navigator is one composite stop, named with its cursor.
+    eyes4s.studio.app.layout.StudioLayouts.explore
+      .pane(eyes4s.studio.app.layout.StudioLayouts.pairTrials)
+      .fold(plans) { decl =>
+        val name = (Vector(decl.accessibleName) ++ pairTrials.vm.cursorText).mkString(", ")
+        plans.updated(
+          decl.id,
+          eyes4s.studio.app.vm.PaneFocus(
+            Some(eyes4s.studio.app.vm.FocusStop(eyes4s.studio.app.vm.A11yRole.List, name)),
+            Vector.empty
+          )
+        )
+      }
 
   /** The pair pane's subtitle (the golden's): the focused scale and the
     * run's declared pixels per degree.
@@ -716,6 +765,7 @@ final class CompareSummaryHost(
       participantsState =
         eyes4s.studio.app.compare.ParticipantsNavigator.follow(participantsState, state)
       participants.render(participantVMOf(m))
+      pairTrials.render(pairTrialsVM)
       val navigators = navigatorVMOf(m)
       queries.render(navigators)
       items.render(navigators)
@@ -847,6 +897,7 @@ final class CompareSummaryHost(
       participantTable.dispose()
       ladder.dispose()
       participants.dispose()
+      pairTrials.dispose()
       queries.dispose()
       items.dispose()
       queryTrialTable.dispose()

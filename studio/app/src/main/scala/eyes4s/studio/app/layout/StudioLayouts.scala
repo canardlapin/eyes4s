@@ -202,33 +202,60 @@ object StudioLayouts:
   val timeline: PaneId      = PaneId("explore.timeline")
   val timelineTable: PaneId = PaneId("explore.timeline.table")
 
-  /** Explore.dc.html. */
-  val explore: PerspectiveLayout = layout(
-    "explore",
-    Perspective.Results,
+  /** The Results drill's navigator (overhaul v4): the trials of the pair. */
+  val pairTrials: PaneId = PaneId("compare.pair-trials")
+
+  /** The drill's centre and inspector, shared by Results' drill and Data ›
+    * Trials (one live view each).
+    */
+  private def drillColumns(nav: LayoutNode) =
     columns(
-      navigator(
-        PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
-        PaneDecl(items, PaneTitle.Fixed("Items"), Navigator)
-      ) -> NavPx,
+      nav -> NavPx,
       // The golden's heights: the stage 440, the timeline 102, records 248.
       stack(
         group(
           PaneDecl(trialView, PaneTitle.Dynamic("Trial view"), Plot),
-          table("explore.trial-view"),
-          pane("explore.small-multiples", "Small multiples", Plot)
+          table("explore.trial-view")
         ) -> 440.0,
         group(
           PaneDecl(timeline, PaneTitle.Fixed("Timeline"), Plot),
           PaneDecl(timelineTable, PaneTitle.Fixed("Table"), Table)
         ) -> 102.0,
+        // The golden's records pane alone: small multiples and the trial
+        // inventory were placeholders the overhaul drops.
         group(
           pane("explore.source-records", "Source records", Table)
-            .copy(described = Some(RecordText(RecordTextId.TableName))),
-          dynamic("explore.trial-inventory", "Trial inventory", Table)
+            .copy(described = Some(RecordText(RecordTextId.TableName)))
         ) -> 248.0
       ),
-      group(pane("explore.inspector", "Inspector", Inspector)) -> InspectorPx
+      group(
+        PaneDecl(exploreInspector, PaneTitle.Dynamic("Inspector"), Inspector)
+      ) -> InspectorPx
+    )
+
+  /** data-trials.html (overhaul v4): participants → trials, a trial's stage,
+    * timeline and records, no run's results.
+    */
+  val dataTrials: PerspectiveLayout = layout(
+    "data.trials",
+    Perspective.Data,
+    // The golden's navigator is the trials tree; the Items pane stays beside
+    // it, so a matched item can still be browsed.
+    drillColumns(
+      navigator(
+        PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
+        PaneDecl(items, PaneTitle.Fixed("Items"), Navigator)
+      )
+    ),
+    MessageId.HintDataTrials
+  )
+
+  /** Explore.dc.html; explore.html (overhaul v4): the Results drill. */
+  val explore: PerspectiveLayout = layout(
+    "explore",
+    Perspective.Results,
+    drillColumns(
+      navigator(PaneDecl(pairTrials, PaneTitle.Fixed("Trials in this pair"), Navigator))
     ),
     MessageId.HintExplore
   )
@@ -386,7 +413,7 @@ object StudioLayouts:
 
   val spec: LayoutSpec = LayoutSpec(
     Vector(
-      Perspective.Data     -> NonEmptyVector.of(dataVerify, dataFirstRun),
+      Perspective.Data     -> NonEmptyVector.of(dataVerify, dataFirstRun, dataTrials),
       Perspective.Analysis -> NonEmptyVector.one(analysis),
       Perspective.Results  -> NonEmptyVector.of(compareQuery, compareSummary, explore),
       Perspective.Report   -> NonEmptyVector.one(figures)
@@ -417,9 +444,16 @@ object StudioLayouts:
           case _                                        => CompareLayout.Query
       case _ => CompareLayout.Query
 
-  /** Whether `perspective` at `trail` shows Results' drill. */
+  /** Whether `perspective` at `trail` shows a trial drill: Results' drill
+    * below a pair, or Data › Trials (overhaul v4).
+    */
   def drilling(perspective: Perspective, trail: Vector[Place]): Boolean =
-    perspective == Perspective.Results && compareLayout(trail) == CompareLayout.Drill
+    (perspective == Perspective.Results && compareLayout(trail) == CompareLayout.Drill) ||
+      (perspective == Perspective.Data && dataTrialsAt(trail))
+
+  /** Whether a Data trail is in Data › Trials. */
+  def dataTrialsAt(trail: Vector[Place]): Boolean =
+    trail.contains(Place.DataView(eyes4s.studio.app.nav.DataSection.Trials))
 
   /** The layout a perspective shows: Data's first-run layout until a dataset
     * exists, and Compare's by trail depth.
@@ -430,7 +464,10 @@ object StudioLayouts:
       hasData: Boolean
   ): PerspectiveLayout =
     perspective match
-      case Perspective.Data     => if hasData then dataVerify else dataFirstRun
+      case Perspective.Data =>
+        if !hasData then dataFirstRun
+        else if dataTrialsAt(trail) then dataTrials
+        else dataVerify
       case Perspective.Analysis => analysis
       case Perspective.Results  =>
         compareLayout(trail) match

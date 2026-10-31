@@ -47,7 +47,7 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
   /** A window at t2 in Explore with the trials and displays read. */
   private def ready(fx: FxStage): StudioWindow =
     assumeFullStage(fx)
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+    val w = boot(fx, StoryModels.t2DataTrials, StoryMoment.T2)
     eventually(fx, "the navigator's trials and displays") {
       val s = w.navigator.state
       s.entries.toOption.isDefined && s.displays.toOption.isDefined
@@ -137,7 +137,8 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
     runOnFx(v.rows.getSelectionModel.select(ret09))
     press(fx, v, KeyCode.ENTER)
     val m = runOnFx(w.runtime.model)
-    assertEquals(m.perspective, Perspective.Results)
+    // Data › Trials drills in Data (overhaul v4).
+    assertEquals(m.perspective, Perspective.Data)
     assertEquals(m.location.trail.lastOption, Some(Place.At(StudioRef.Trial(p17ret09))))
     // The selection follows Explore's trial; the retrieval phase opens on it.
     assertEquals(

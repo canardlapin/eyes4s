@@ -323,6 +323,12 @@ final class SourcesPaneHost(
     project: Option[ProjectPort]
 ):
 
+  /** Data's navigator switch, Setup | Trials, in this pane's header
+    * (overhaul v4): its Trials half is the keyboard's way to the trials.
+    */
+  val dataSwitch: eyes4s.studio.desktop.explore.DataSwitch =
+    eyes4s.studio.desktop.explore.DataSwitch(model, app)
+
   private var pane     = SourcesPane.empty
   private var disposed = false
 
@@ -353,7 +359,9 @@ final class SourcesPaneHost(
     */
   def focusStops: Vector[FocusStop] =
     val v = vm
-    v.sources.flatMap(_.repair).map((text, _) => FocusStop(A11yRole.Button, text)) ++
+    dataSwitch.focusStops ++ v.sources
+      .flatMap(_.repair)
+      .map((text, _) => FocusStop(A11yRole.Button, text)) ++
       Option
         .when(v.retry)(FocusStop(A11yRole.Button, SourcesText(SourcesTextId.RetryRead)))
         .toVector ++
@@ -363,6 +371,7 @@ final class SourcesPaneHost(
 
   def sync(m: AppModel): Unit =
     if !disposed then
+      dataSwitch.sync(m)
       val (next, effects) = SourcesPane.sync(pane, m)
       pane = next
       perform(effects)

@@ -1377,6 +1377,7 @@ object AppModel:
           case DataSection.TrialMetadata => StudioLayouts.trialMetadata
           case DataSection.Admission     => StudioLayouts.admission
           case DataSection.Geometry      => StudioLayouts.dataGeometry
+          case DataSection.Trials        => StudioLayouts.trials
         if m.layout.pane(pane).isDefined then focus(m, pane) else m
       case _ => m
 

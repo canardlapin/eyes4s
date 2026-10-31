@@ -23,6 +23,7 @@ package eyes4s.studio.app.text
 enum InspectorTextId derives CanEqual:
   case Title, ViewOnly
   case OnsetDuration, Milliseconds, ImagePx, ScreenRaw, Degrees, Window, Pair, Missing
+  case Onset, Duration, Ms, Admission
   case Inside, OutsideExcluded, OutsideFails, OffScreen, DroppedInitial, InsideTrialFails
   case FrameNote, ScaleOfRecipe, ScaleOfDataset
   case SourceTitle, File, Record, RecordOf, Digest, DigestShort, Ledger, Admitted, ShowRaw
@@ -42,25 +43,29 @@ object InspectorText:
     import InspectorTextId.*
     id match
       case Title            => "Fixation {0} of {1}"
-      case ViewOnly         => "View only"
+      case ViewOnly         => "read-only"
       case OnsetDuration    => "Onset · duration"
+      case Onset            => "Onset"
+      case Duration         => "Duration"
+      case Ms               => "{0} ms"
+      case Admission        => "Admission"
       case Milliseconds     => "{0} ms · {1} ms"
-      case ImagePx          => "Image frame px"
+      case ImagePx          => "Image px"
       case ScreenRaw        => "Screen px (raw)"
-      case Degrees          => "Degrees from centre"
-      case Window           => "Analysis window"
+      case Degrees          => "Degrees"
+      case Window           => "Window"
       case Pair             => "{0}, {1}"
       case Missing          => "—"
-      case Inside           => "Inside"
+      case Inside           => "inside"
       case OutsideExcluded  => "Outside · excluded from maps, reported"
       case OutsideFails     => "Outside · the trial fails"
       case InsideTrialFails =>
         "Inside · the trial fails ({0} of {1} fixations outside the window)"
       case OffScreen      => "Off screen"
       case DroppedInitial => "Dropped by the initial-fixation policy"
-      case FrameNote      => "Degrees from image centre, x right, y up; {0} px/°, {1}."
-      case ScaleOfRecipe  => "the recipe's scale"
-      case ScaleOfDataset => "the dataset's declared scale"
+      case FrameNote      => "Degrees from the image centre, x right, y up, at {0}."
+      case ScaleOfRecipe  => "the recipe's {0} px/°"
+      case ScaleOfDataset => "a declared {0} px/° (not calibrated)"
       case SourceTitle    => "Source"
       case File           => "File"
       case Record         => "Record"
@@ -68,15 +73,15 @@ object InspectorText:
       case Digest         => "Digest"
       case DigestShort    => "sha256:{0}…{1}"
       case Ledger         => "Ledger"
-      case Admitted       => "Admitted · dataset {0}"
+      case Admitted       => "admitted · dataset {0}"
       case ShowRaw        => "Show raw record"
       case ShowRawName    => "Show raw record in the inspector"
-      case UsedByTitle    => "Used by (run {0}, {1})"
+      case UsedByTitle    => "Used by run {0} at {1}"
       case UsedByNoScale  => "Used by (run {0}): its scales are not in the project"
       case UsedByNoRun    => "Used by (no run shown)"
-      case MatchedOne     => "{0} contrast (matched reference)"
+      case MatchedOne     => "{0} · matched reference"
       case MatchedMany    => "{0} queries (matched reference)"
-      case AsControl      => "{0} pairs (as a control)"
+      case AsControl      => "{0} pairs as a control"
       case AsQuery        => "its own contrast ({0} pairs as the query)"
       case UsedByNone     => "No pair of the run uses this trial"
       case TrialTitle     => "Trial"

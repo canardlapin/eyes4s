@@ -257,13 +257,12 @@ class SourceRecordsSuite extends munit.FunSuite:
       SourceRecords.cellsOf(row(7214)),
       Vector(
         "7,214",
-        "enc_03",
         "6",
         "2,160",
         "412",
-        "1148.0,456.0",
-        "700,300",
-        "+5.4°,+2.4°",
+        "1148.0, 456.0",
+        "700, 300",
+        "+5.4°, +2.4°",
         "206",
         "inside"
       )
@@ -272,20 +271,19 @@ class SourceRecordsSuite extends munit.FunSuite:
       SourceRecords.headers,
       Vector(
         "Record",
-        "Trial",
-        "Ordinal",
+        "Fixation",
         "Onset ms",
         "Dur ms",
-        "Screen x,y",
-        "Image x,y",
-        "Degrees x,y",
+        "Screen px",
+        "Image px",
+        "Degrees",
         "Samples",
         "Window"
       )
     )
     val unplaced =
       row(1).copy(image = None, degrees = None, samples = None, place = RecordPlace.NotAdmitted)
-    assertEquals(SourceRecords.cellsOf(unplaced).drop(6), Vector("—", "—", "—", "not admitted"))
+    assertEquals(SourceRecords.cellsOf(unplaced).drop(5), Vector("—", "—", "—", "not admitted"))
   }
 
   test("at t2 the story's selected fixation puts the cursor on record 7,214") {
@@ -385,13 +383,12 @@ class SourceRecordsSuite extends munit.FunSuite:
             SourceRecords.cellsOf(r),
             Vector(
               "7,214",
-              "enc_03",
               "6",
               "2,160",
               "412",
-              "1148.0,456.0",
-              "700,300",
-              "+5.4°,+2.4°",
+              "1148.0, 456.0",
+              "700, 300",
+              "+5.4°, +2.4°",
               "206",
               "inside"
             )

@@ -225,25 +225,15 @@ class ExploreLinkedSuite extends munit.FunSuite:
     }
   }
 
-  test("the focus stops: Prev and Next while each can step, then the marks") {
+  test("the focus stops: the header's toggles, then the marks (no Prev and Next stops)") {
     import eyes4s.studio.app.vm.{A11yRole, FocusStop}
     val m = StoryModels.t2Explore
     view(m).map { v =>
       val toggles = ExploreTrialViewVM.focusStops(ExploreTrialViewVM.of(v, m))
-      val stops   = ExploreLinked.focusStops(v, m, Some("marks"))
-      assertEquals(stops.take(toggles.size), toggles)
+      assert(toggles.forall(_.role == A11yRole.CheckBox), toggles)
       assertEquals(
-        stops.drop(toggles.size),
-        Vector(
-          FocusStop(A11yRole.Button, "Previous fixation"),
-          FocusStop(A11yRole.Button, "Next fixation"),
-          FocusStop(A11yRole.Region, "marks")
-        )
-      )
-      val last = selecting(m, "explore.timeline", fixation(13))
-      assertEquals(
-        ExploreLinked.focusStops(v, last, None).drop(toggles.size),
-        Vector(FocusStop(A11yRole.Button, "Previous fixation"))
+        ExploreLinked.focusStops(v, m, Some("marks")),
+        toggles :+ FocusStop(A11yRole.Region, "marks")
       )
     }
   }

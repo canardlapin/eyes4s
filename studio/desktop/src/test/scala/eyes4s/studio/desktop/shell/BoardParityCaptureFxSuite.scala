@@ -80,10 +80,29 @@ class BoardParityCaptureFxSuite extends StoryCaptureFixture:
     ),
     Board(
       "Explore",
-      StoryModels.t2Explore,
+      at(
+        StoryModels.t2Explore,
+        Intent.Dispatch(
+          eyes4s.studio.core.command.Command
+            .SetStage(eyes4s.studio.core.document.StageAppearance.Theme)
+        )
+      ),
       StoryMoment.T2,
       StudioTheme.Light,
       Some(RestingFocus.Board.Explore)
+    ),
+    Board(
+      "DataTrials",
+      at(
+        StoryModels.t2DataTrials,
+        Intent.Dispatch(
+          eyes4s.studio.core.command.Command
+            .SetStage(eyes4s.studio.core.document.StageAppearance.Theme)
+        )
+      ),
+      StoryMoment.T2,
+      StudioTheme.Light,
+      None
     ),
     Board(
       "Results",
@@ -147,7 +166,7 @@ class BoardParityCaptureFxSuite extends StoryCaptureFixture:
           eventually(fx, "the counted preview") {
             w.resolvedDesign.state.preview.receipt.isDefined
           }
-        case "Explore" =>
+        case "Explore" | "DataTrials" =>
           eventually(fx, "the preview map, stored image and timeline") {
             (w.explore.trialView.status.get match
               case TrialViewStatus.Shown(s) =>

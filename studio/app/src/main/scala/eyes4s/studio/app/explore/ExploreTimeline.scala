@@ -214,7 +214,21 @@ final case class ExploreTimelineVM(
     skipped: Vector[String],
     enabled: Boolean,
     extentNote: Option[String]
-) derives CanEqual
+) derives CanEqual:
+
+  /** The pane header's subtitle (overhaul v4): the fixations and the brush. */
+  def subtitle: String =
+    source.fold("") { src =>
+      val n = src.rows.size.toString
+      brush.fold(ExploreText(ExploreTextId.TimelineSubtitle, n))(b =>
+        ExploreText(
+          ExploreTextId.TimelineSubtitleBrushed,
+          n,
+          ExploreTimelineVM.seconds(b.from),
+          ExploreTimelineVM.seconds(b.until)
+        )
+      )
+    }
 
 object ExploreTimelineVM:
   import ExploreTextId.*

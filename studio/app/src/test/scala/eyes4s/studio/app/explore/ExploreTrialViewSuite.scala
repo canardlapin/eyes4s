@@ -93,12 +93,12 @@ class ExploreTrialViewSuite extends munit.FunSuite:
     served(enc03).map { answers =>
       val view = loaded(model, answers, displays(model))
       val vm   = ExploreTrialViewVM.of(view, model)
-      assertEquals(vm.title, "P17 · enc_03 · beach-042")
+      assertEquals(vm.title, "P17 · enc_03")
       assertEquals(
         vm.toggles.map(t => (t.label, t.on, t.enabled)),
         Vector(("Points", true, true), ("Order", true, true), ("Map", true, true))
       )
-      assertEquals(vm.mapLabel, Some("Map: preview · σ 2° · not a result"))
+      assertEquals(vm.mapLabel, Some("Map is a preview, not a result"))
       assertEquals(vm.hint, "Canvas focused · arrows move · Enter selects · Esc clears")
       val shown = vm.shown.getOrElse(fail("nothing shown"))
       assertEquals((shown.trial, shown.display.kind), (enc03, DisplayKind.Image))
@@ -120,9 +120,9 @@ class ExploreTrialViewSuite extends munit.FunSuite:
       assertEquals(
         vm.legend.map(_.label),
         Vector(
-          "Fixation · marker area ∝ duration",
-          "Outside the analysis window · excluded from the map",
-          "Order between fixation centres, not measured saccades",
+          "fixation, area shows duration",
+          "outside window",
+          "order, not saccades",
           "Image",
           "Preview density · σ 2° · not a result"
         )

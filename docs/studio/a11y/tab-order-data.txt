@@ -5,6 +5,8 @@ button: Back (⌘[)
 button: Dataset r3 (draft)
 button: Admission, current location
 list: Sources
+toggle-button: Setup
+toggle-button: Trials
 button: Repair…
 button: Show 4 trials
 region: Admission

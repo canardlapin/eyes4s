@@ -377,12 +377,13 @@ object SourceRecords:
       }
       .flatMap(p => p.rows.lift(index - p.from))
 
-  /** The columns' headers (Explore.dc.html, bottom). */
+  /** The columns' headers (overhaul v4, explore.html): the trial is the
+    * pane's subtitle, not a column.
+    */
   val headers: Vector[String] =
     import RecordTextId.*
     Vector(
       Record,
-      Trial,
       Ordinal,
       Onset,
       Duration,
@@ -407,7 +408,7 @@ object SourceRecords:
             cells,
             s.cursor.contains(index),
             selected,
-            RecordText(RecordTextId.RowName, cells(0), r.trial.trial, cells(2))
+            RecordText(RecordTextId.RowName, cells(0), r.trial.trial, cells(1))
           )
         }
 
@@ -418,7 +419,6 @@ object SourceRecords:
       p.fold(none)(q => RecordText(RecordTextId.Pair, f(q.x), f(q.y)))
     Vector(
       Format.count(r.record.value.toLong),
-      r.trial.trial,
       r.ordinal.fold(none)(_.toString),
       r.onsetMs.fold(none)(v => Format.count(math.round(v))),
       r.durationMs.fold(none)(v => Format.count(math.round(v))),

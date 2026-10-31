@@ -85,17 +85,19 @@ final class SourceRecordsHost(
   showRaw.setFocusTraversable(true)
   showRaw.setOnAction(_ => dispatch(SourceRecordsIntent.ShowRaw(showRaw.isSelected)))
 
-  // Column widths of Explore.dc.html (bottom), with Degrees added.
-  private val widths = Vector(70.0, 50.0, 50.0, 64.0, 56.0, 104.0, 74.0, 100.0, 60.0, 80.0)
+  // Column widths of the overhaul's records table (explore.html): numbers
+  // right-aligned in Plex Sans's tabular figures, the window at the left.
+  private val widths = Vector(60.0, 72.0, 72.0, 64.0, 120.0, 100.0, 104.0, 72.0, 72.0)
 
   private def cellsBox(texts: Vector[String], style: String): HBox =
-    val box = HBox(8.0)
-    texts.zip(widths).foreach { (t, w) =>
+    val box = HBox(10.0)
+    texts.zip(widths).zipWithIndex.foreach { case ((t, w), i) =>
       val l = Label(t)
-      l.getStyleClass.addAll("mono", "t11", style)
+      l.getStyleClass.addAll("t12", style)
       l.setMinWidth(w)
       l.setPrefWidth(w)
       l.setMaxWidth(w)
+      if i < widths.size - 1 then l.setAlignment(Pos.CENTER_RIGHT)
       box.getChildren.add(l)
     }
     box.setAlignment(Pos.CENTER_LEFT)
@@ -151,7 +153,10 @@ final class SourceRecordsHost(
 
   private val spacer = Region()
   HBox.setHgrow(spacer, Priority.ALWAYS)
-  private val toolbar = HBox(8.0, status, spacer, showRaw)
+  private val toolbar = HBox(8.0, status, spacer)
+
+  /** The pane header's control (overhaul v4): Show raw record. */
+  val headerControls: Vector[javafx.scene.Node] = Vector(showRaw)
   toolbar.setAlignment(Pos.CENTER_LEFT)
   toolbar.setPadding(javafx.geometry.Insets(2, 16, 2, 16))
 

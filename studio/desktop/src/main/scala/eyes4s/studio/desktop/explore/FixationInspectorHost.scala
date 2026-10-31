@@ -72,8 +72,20 @@ final class FixationInspectorHost(
   kind.setText(InspectorText(InspectorTextId.ViewOnly))
   private val spacer = Region()
   HBox.setHgrow(spacer, Priority.ALWAYS)
-  private val head = HBox(8.0, title, spacer, kind)
+  private val head = HBox(8.0, title, spacer)
   head.setAlignment(Pos.CENTER_LEFT)
+  // The pane header carries the title and "read-only" (overhaul v4).
+  head.setVisible(false)
+  head.setManaged(false)
+  kind.getStyleClass.add("t12")
+
+  /** The pane header's control: "read-only". */
+  val headerControls: Vector[javafx.scene.Node] = Vector(kind)
+
+  private var rendered: Vector[() => Unit] = Vector.empty
+
+  /** Call `f` after each render, as the pane header follows the fixation. */
+  def onRendered(f: () => Unit): Unit = rendered = rendered :+ f
 
   private def grid(): GridPane =
     val g = GridPane()
@@ -104,11 +116,14 @@ final class FixationInspectorHost(
     box.getStyleClass.add("sect")
     box
 
+  // Used by: the shown run's pairs, in Results' drill only; Data › Trials
+  // has no run's results (overhaul v4).
+  private val usedBySection = section(None, usedTitle, links, usedNote)
+
   private val content = VBox(
     VBox(8.0, status, head, fixation, frameNote),
     section(Some(InspectorText(InspectorTextId.SourceTitle)), source, showRaw, raw),
-    section(None, usedTitle, links, usedNote),
-    section(Some(InspectorText(InspectorTextId.TrialTitle)), trial)
+    usedBySection
   )
   content.setPadding(javafx.geometry.Insets(12, 14, 12, 14))
   content.setSpacing(10.0)
@@ -163,6 +178,9 @@ final class FixationInspectorHost(
         vm.usedBy.map(l => FocusStop(A11yRole.Link, l.label))
 
   def sync(m: AppModel): Unit = if !disposed then
+    val inData = m.perspective == eyes4s.studio.core.document.Perspective.Data
+    usedBySection.setVisible(!inData)
+    usedBySection.setManaged(!inData)
     val (next, effects) = FixationInspector.sync(state, m)
     state = next
     perform(effects)
@@ -202,7 +220,7 @@ final class FixationInspectorHost(
     g.getChildren.clear()
     lines.zipWithIndex.foreach { (l, i) =>
       val k = label("inspector-key"); k.setText(l.label)
-      val v = label("mono"); v.setText(l.value)
+      val v = label("inspector-value", "t12"); v.setText(l.value)
       v.setWrapText(true)
       v.setMinHeight(Region.USE_PREF_SIZE)
       k.setMinWidth(118.0)
@@ -235,7 +253,7 @@ final class FixationInspectorHost(
     usedNote.setText(v.usedByNote.getOrElse(""))
     usedNote.setVisible(v.usedByNote.isDefined)
     usedNote.setManaged(v.usedByNote.isDefined)
-    fill(trial, v.trial)
     content.setVisible(true)
+    rendered.foreach(_())
 
   def dispose(): Unit = disposed = true

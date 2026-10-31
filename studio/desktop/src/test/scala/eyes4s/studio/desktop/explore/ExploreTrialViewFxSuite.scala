@@ -33,7 +33,6 @@ import eyes4s.studio.viz.trial.{MarkStyle, TrialScene}
 import intaglio.{Grob, value}
 import javafx.scene.Node
 import javafx.scene.control.Labeled
-import javafx.scene.layout.BorderStrokeStyle
 
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.*
@@ -41,7 +40,7 @@ import scala.jdk.CollectionConverters.*
 /** Explore's trial view hosted in its pane (ticket S6.2; Explore.dc.html,
   * centre), in a studio window over the fake backend at story moment t2:
   * P17 enc_03 under rev 4 with neutral marks, fixation 10 flagged outside the
-  * analysis window, the preview map labelled "Map: preview · σ 2° · not a
+  * analysis window, the preview map tagged "Map is a preview, not a
   * result" in a dashed frame, the legend, and no score anywhere in Explore.
   *
   * Every interaction goes through the controls' own events, so no test
@@ -91,31 +90,23 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
       .getOrElse(fail("the trial view pane was not built"))
     assert(runOnFx(pane.getScene eq fx.scene))
     val p = w.explore.pane
-    assertEquals(runOnFx(p.title.getText), "P17 · enc_03 · beach-042")
+    assertEquals(runOnFx(p.title.getText), "P17 · enc_03")
     assertEquals(
       runOnFx(
         TrialToggle.values.toVector.map(t => (p.toggles(t).getText, p.toggles(t).isSelected))
       ),
       Vector(("Points", true), ("Order", true), ("Map", true))
     )
-    // The preview's label, in its dashed frame.
-    assertEquals(runOnFx(p.mapLabel.getText), "Map: preview · σ 2° · not a result")
+    // The preview's tag in the pane header (overhaul v4).
+    assertEquals(runOnFx(p.mapLabel.getText), "Map is a preview, not a result")
     assert(runOnFx(p.mapLabel.isVisible))
-    val dashed = runOnFx {
-      p.mapLabel.applyCss()
-      Option(p.mapLabel.getBorder).toVector
-        .flatMap(_.getStrokes.asScala)
-        .map(_.getTopStyle)
-    }
-    assert(
-      dashed.nonEmpty && dashed.forall(s =>
-        s != BorderStrokeStyle.SOLID && !s.getDashArray.isEmpty
-      ),
-      dashed
-    )
-    // The scene: neutral marks, the preview (not a run's map), fixation 10 flagged.
+    // The scene: the matched reference's marks (the drill is below its pair),
+    // the preview (not a run's map), fixation 10 flagged.
     val s = scene(w).get
-    assertEquals(runOnFx(w.explore.trialView.input.map(_.marks)), Some(MarkStyle.Neutral))
+    assertEquals(
+      runOnFx(w.explore.trialView.input.map(_.marks)),
+      Some(MarkStyle.Role(eyes4s.studio.viz.trial.TrialRole.Matched))
+    )
     assertEquals(s.map, Some(MapId.Preview(rev4, enc03)))
     assertEquals(s.marks.size, 13)
     assertEquals(
@@ -125,18 +116,17 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
       Vector((10, MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)))
     )
     assertEquals(
-      runOnFx(p.legend.lookupAll(".explore-legend-label").asScala.toVector.collect {
+      runOnFx(p.legend.lookupAll(".pair-legend-label").asScala.toVector.collect {
         case l: Labeled => l.getText
       }),
       Vector(
-        "Fixation · marker area ∝ duration",
-        "Outside the analysis window · excluded from the map",
-        "Order between fixation centres, not measured saccades",
-        "Image",
-        "Preview density · σ 2° · not a result",
+        "fixation, area shows duration",
+        "selected",
+        "outside window",
+        "order, not saccades",
         "0",
-        "max · fixation duration mass per cell",
-        "50% · 90% of mass"
+        "max density · photo in grey",
+        "50 · 90% of mass"
       )
     )
   }
@@ -179,7 +169,7 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
     )
     // Map comes back with its label.
     fire(fx, p.toggles(TrialToggle.Map))
-    assertEquals(runOnFx(p.mapLabel.getText), "Map: preview · σ 2° · not a result")
+    assertEquals(runOnFx(p.mapLabel.getText), "Map is a preview, not a result")
     eventually(fx, "the preview map again")(scene(w).exists(_.map.isDefined))
   }
 
@@ -194,14 +184,14 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
       assertEquals(runOnFx(trial.legendPlacement), MapLegendPlacement.InHostLegend)
       assert(!runOnFx(trial.legendPlotHost.isVisible), "a legend is drawn under the stage")
       assert(!runOnFx(trial.legendUnderTrial))
-      // The keys follow the preview map's entry, as Explore.dc.html has them.
+      // The keys stand for the preview map's entry, after order (overhaul v4).
       val row = runOnFx(p.legend.getChildren.asScala.toVector)
       val at  = row.indexWhere(n => n eq p.rampItem)
       assert(at > 0, "no ramp key in the legend row")
       assertEquals(row.lift(at + 1).map(_ eq p.isolineItem), Some(true))
       assertEquals(
         runOnFx(all(row(at - 1)).collect { case l: Labeled => l.getText }),
-        Vector("Preview density · σ 2° · not a result")
+        Vector("order, not saccades")
       )
       // Each key draws the legend's own pieces, at the key's size.
       eventually(fx, "the keys drawn")(runOnFx {

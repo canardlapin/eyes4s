@@ -26,7 +26,7 @@ import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.desktop.trial.TrialView
 import eyes4s.studio.viz.maps.{MapLegendKeys, MapLegendScene}
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, ButtonBase, Label, ToggleButton, Tooltip}
+import javafx.scene.control.{Button, ButtonBase, CheckBox, Label, Tooltip}
 import javafx.scene.input.{KeyEvent, MouseEvent}
 import javafx.scene.layout.*
 import javafx.scene.shape.{Circle, Line, Rectangle, Shape}
@@ -49,10 +49,11 @@ final class ExploreTrialViewPane(
 
   val title: Label = label("explore-title", "t12")
 
-  val toggles: Map[TrialToggle, ToggleButton] = TrialToggle.values.toVector.map { tg =>
-    val b = ToggleButton()
+  // The pane header's check boxes (overhaul v4), as the pair's.
+  val toggles: Map[TrialToggle, CheckBox] = TrialToggle.values.toVector.map { tg =>
+    val b = CheckBox()
     b.setMnemonicParsing(false)
-    b.getStyleClass.addAll("explore-toggle", "t12")
+    b.getStyleClass.add("pane-tog")
     b.setOnAction(_ => fire(TrialViewIntent.Switch(tg)))
     tg -> b
   }.toMap
@@ -100,12 +101,12 @@ final class ExploreTrialViewPane(
   stage.getStyleClass.add("explore-stage")
   VBox.setVgrow(stage, Priority.ALWAYS)
 
+  // The legend is one row under the stage, as the pair's (overhaul v4); its
+  // title stays for a reader.
   val legendTitle: Label = label("explore-legend-title", "t11")
-  val legend: FlowPane   = FlowPane()
-  legend.getStyleClass.add("explore-legend")
-  private val legendRow = HBox(legendTitle, legend)
-  legendRow.getStyleClass.add("explore-legend-row")
-  HBox.setHgrow(legend, Priority.ALWAYS)
+  val legend: HBox       = HBox()
+  legend.getStyleClass.add("pair-legend")
+  private val legendRow = legend
 
   /** The preview map's keys in the legend row (review ticket 17; Explore.dc.html):
     * "0", the ramp strip and its words, described with where the map fades
@@ -118,9 +119,10 @@ final class ExploreTrialViewPane(
     keyHost(MapLegendScene.IsolineKeyWidthPx, MapLegendScene.IsolineKeyHeightPx)
   private val described = MapLegendScene.describe(MapPalette.Mass, LimitsScope.PerPanel)
   val rampItem: HBox    = HBox(
-    text(TrialText(TrialTextId.MapLegendZero), "mono", "t11"),
+    6.0,
+    text(TrialText(TrialTextId.MapLegendZero), "t11"),
     rampKey,
-    text(TrialText(TrialTextId.MapLegendRamp), "t11")
+    text(ExploreText(ExploreTextId.RampKey), "t11")
   )
   rampItem.getStyleClass.addAll("explore-legend-item", "explore-map-key")
   rampItem.setAlignment(Pos.CENTER_LEFT)
@@ -129,14 +131,28 @@ final class ExploreTrialViewPane(
     Tooltip.install(rampItem, Tooltip(d))
   }
   val isolineItem: HBox =
-    HBox(isolineKey, text(TrialText(TrialTextId.MapLegendIsolines), "t11"))
+    HBox(6.0, isolineKey, text(ExploreText(ExploreTextId.IsolineKey), "t11"))
   isolineItem.getStyleClass.addAll("explore-legend-item", "explore-map-key")
   isolineItem.setAlignment(Pos.CENTER_LEFT)
 
-  val node: VBox = VBox(bar, status, stage, legendRow)
+  /** The pane header's controls (overhaul v4): the preview's tag, then
+    * Points, Order and Map.
+    */
+  val headerControls: Vector[javafx.scene.Node] =
+    mapLabel +: TrialToggle.values.toVector.map(toggles)
+  // The trial and its step buttons live in the header's title and the
+  // timeline now; the bar stays for the keyboard's Prev and Next.
+  bar.setVisible(false)
+  bar.setManaged(false)
+
+  val node: VBox = VBox(status, stage, legendRow)
   node.getStyleClass.add("explore-panel")
-  // The legend's display glyphs are the navigator's.
-  Vector(stylesheetResource, TrialsNavigatorView.stylesheetResource).foreach(r =>
+  // The legend's display glyphs are the navigator's; its marks the pair's.
+  Vector(
+    stylesheetResource,
+    TrialsNavigatorView.stylesheetResource,
+    s"${TokenFiles.resourceDirectory}/studio-plot.css"
+  ).foreach(r =>
     Option(getClass.getClassLoader.getResource(r))
       .foreach(url => node.getStylesheets.add(url.toExternalForm))
   )
@@ -180,20 +196,50 @@ final class ExploreTrialViewPane(
         rampKey.show(k.ramp)
         isolineKey.show(k.isoline)
       }
+      val role = vm.shown.flatMap(_.role)
       legend.getChildren.setAll(vm.legend.flatMap { e =>
-        val text = label("explore-legend-label", "t11")
+        val text = label("pair-legend-label", "t11")
         text.setText(e.label)
-        val item = HBox(swatch(e.swatch), text)
-        item.setAlignment(Pos.CENTER_LEFT)
-        item.getStyleClass.add("explore-legend-item")
-        if e.swatch == LegendSwatch.PreviewMap && shownKeys.isDefined then
-          Vector(item, rampItem, isolineItem)
-        else Vector(item)
+        text.setMinWidth(Region.USE_PREF_SIZE)
+        def item(nodes: javafx.scene.Node*) =
+          val h = HBox(6.0, nodes*)
+          h.setAlignment(Pos.CENTER_LEFT)
+          h.getStyleClass.addAll("explore-legend-item", "pair-legend-item")
+          h
+        e.swatch match
+          case LegendSwatch.PreviewMap =>
+            if shownKeys.isDefined then Vector(rampItem, isolineItem) else Vector(item(text))
+          case LegendSwatch.Fixation =>
+            val selected = label("pair-legend-label", "t11")
+            selected.setText(ExploreText(ExploreTextId.SelectedKey))
+            selected.setMinWidth(Region.USE_PREF_SIZE)
+            Vector(
+              item(markGlyph(role), text),
+              item(glyph("explore-selected-glyph"), selected)
+            )
+          case LegendSwatch.OutsideWindow => Vector(item(glyph("pair-outside"), text))
+          case LegendSwatch.OrderLine     => Vector(item(glyph("pair-order"), text))
+          // The display's kind is the navigator's glyph, not the stage's key.
+          case LegendSwatch.Display(_) => Vector.empty
+          case other                   => Vector(item(swatch(other), text))
       }*)
       visible(legendRow, vm.legend.nonEmpty)
     finally rendering = false
 
 object ExploreTrialViewPane:
+
+  // A pair legend glyph (studio-plot.css).
+  private def glyph(style: String): Region =
+    val r = Region()
+    r.getStyleClass.addAll("pair-glyph", style)
+    r
+
+  /** The fixation key in the trial's role: the pair's pill, or a neutral dot. */
+  def markGlyph(role: Option[ExploreRole]): Region = glyph(role match
+    case Some(ExploreRole.Query)   => "pill-query"
+    case Some(ExploreRole.Matched) => "pill-matched"
+    case Some(ExploreRole.Control) => "pill-control"
+    case None                      => "explore-neutral-glyph")
 
   /** Call `f` on each action of `b` with what pressed it: a pointer, a key
     * (Space or Enter), or neither (a programmatic `fire`). The press that
@@ -226,8 +272,9 @@ object ExploreTrialViewPane:
     host
 
   private def text(words: String, styles: String*): Label =
-    val l = label(("explore-legend-label" +: styles)*)
+    val l = label(("pair-legend-label" +: styles)*)
     l.setText(words)
+    l.setMinWidth(Region.USE_PREF_SIZE)
     l
 
   def label(classes: String*): Label =

@@ -127,7 +127,14 @@ object TrialsNavigator:
     * (a trial, or a fixation or record within one).
     */
   def selected(model: AppModel): Option[TrialKey] =
-    model.navigation.trail(Perspective.Results).reverseIterator.collectFirst {
+    // Data › Trials drills on Data's own trail; Results' drill on Results'.
+    val dataTrail = model.navigation.trail(Perspective.Data)
+    val trail     =
+      if model.perspective == Perspective.Data &&
+        eyes4s.studio.app.layout.StudioLayouts.dataTrialsAt(dataTrail)
+      then dataTrail
+      else model.navigation.trail(Perspective.Results)
+    trail.reverseIterator.collectFirst {
       Function.unlift {
         case Place.At(ref) =>
           (ref +: Lineage.structural.ancestors(ref)).collectFirst { case StudioRef.Trial(k) =>

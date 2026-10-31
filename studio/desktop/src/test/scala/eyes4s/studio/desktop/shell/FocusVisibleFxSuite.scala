@@ -385,7 +385,8 @@ class FocusVisibleFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("a composite pane draws no ring while its rows carry the cursor") { fx =>
-    val w     = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+    // Data › Trials holds both composites: the records and the trials tree.
+    val w     = boot(fx, StoryModels.t2DataTrials, StoryMoment.T2)
     val pane  = runOnFx(w.host.node(StudioLayouts.sourceRecords).get.asInstanceOf[Region])
     val trial = runOnFx(w.host.node(StudioLayouts.trials).get.asInstanceOf[Region])
     eventually(fx, "the records are read") {

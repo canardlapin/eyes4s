@@ -100,7 +100,8 @@ final class Labels(model: AppModel, messages: Messages):
     case DataSection.ColumnMapping => SectionColumnMapping
     case DataSection.TrialMetadata => SectionTrialMetadata
     case DataSection.Admission     => SectionAdmission
-    case DataSection.Geometry      => SectionGeometry)
+    case DataSection.Geometry      => SectionGeometry
+    case DataSection.Trials        => SectionTrials)
 
   /** A recipe field as a form label ("Scales"). */
   def field(f: RecipeField): String =
