@@ -1,0 +1,583 @@
+{
+  "schema_version": 1,
+  "description": "Optional memory eye-tracking datasets. Data, conversion products and run receipts remain outside Git. Unimplemented checks are BLOCKED, never successful by discovery alone.",
+  "datasets": [
+    {
+      "id": "figrim",
+      "title": "FIGRIM target-image fixation locations and recognition responses",
+      "paper_url": "https://doi.org/10.1016/j.visres.2015.03.005",
+      "repository_url": "https://github.com/cvzoya/figrim",
+      "related_urls": [
+        "https://figrim.mit.edu/index_eyetracking.html",
+        "https://github.com/cvzoya/figrim/blob/725dc8b77dd780850ca1197b6db12c8fc7c5f024/targetData/README.md",
+        "https://github.com/cvzoya/figrim/blob/725dc8b77dd780850ca1197b6db12c8fc7c5f024/compMapsLocsForImage.m"
+      ],
+      "license": {
+        "status": "restricted_use",
+        "name": "Academic research only",
+        "url": "https://figrim.mit.edu/index_eyetracking.html"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Downloaded the published target MATLAB file; inspected Nx2 location arrays and SDT vectors. Source commit is pinned.",
+      "caveats": [
+        "No fixation durations or onsets: spatial occupancy only.",
+        "Observer slot j is preserved across images as documented; slots are not asserted to be unique people across recording sessions.",
+        "Missing phases and out-of-frame points are reported, not silently omitted.",
+        "Known duplicate images are excluded from control identities."
+      ],
+      "acquisition": {
+        "kind": "http",
+        "files": [
+          {
+            "path": "allImages_release.mat",
+            "url": "https://raw.githubusercontent.com/cvzoya/figrim/725dc8b77dd780850ca1197b6db12c8fc7c5f024/targetData/allImages_release.mat",
+            "size_bytes": 3249502,
+            "sha256": "ace56229d1cd7b4d7d886f5e24553fc8b23cc902016a99ecd12164d428fd7c82"
+          }
+        ]
+      },
+      "analysis": {
+        "adapter": "figrim_locations",
+        "reason": "Run a location-only spatial check through eyes4s and an independent NumPy oracle.",
+        "duplicate_image_pairs": [
+          [
+            "sun_bnjxztsvnercygxn.jpg",
+            "sun_bdwttbytrbnqyqsk.jpg"
+          ],
+          [
+            "sun_awjucfvtjllxrtkv.jpg",
+            "sun_abpqxslcljhrwmck.jpg"
+          ],
+          [
+            "sun_byoonkqxghujgvkh.jpg",
+            "sun_bjitfqyiepkgfkks.jpg"
+          ],
+          [
+            "sun_bwrlzawyknljbhcb.jpg",
+            "sun_auwrraazjwdcjcjg.jpg"
+          ],
+          [
+            "sun_boskvwzgsvsyuhll.jpg",
+            "sun_bgdykfpjgudqpzlu.jpg"
+          ],
+          [
+            "sun_bzagimnxconenicn.jpg",
+            "sun_bsccnfecifucnavf.jpg"
+          ]
+        ],
+        "geometry": {
+          "width_px": 1000,
+          "height_px": 1000,
+          "x": "right",
+          "y": "down",
+          "input_origin": "MATLAB one-based image pixels",
+          "conversion": "round as in author code, filter to 1..1000, subtract one"
+        },
+        "weighting": "uniform locations",
+        "grid": [
+          10,
+          10
+        ]
+      }
+    },
+    {
+      "id": "wang2021",
+      "title": "Wang-Holmqvist-Alexa 2021 looking-at-nothing",
+      "paper_url": "https://doi.org/10.3758/s13428-020-01513-1",
+      "repository_url": "http://cybertron.cg.tu-berlin.de/xiwang/mental_imagery/em.html",
+      "related_urls": [],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses."
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Paper Open Practices statement says data/materials for all experiments are at the TU Berlin project page; study has 28 observers and encoding/recall eye movements.",
+      "caveats": [
+        "Format and dataset-specific license not stated; paper is CC BY 4.0. Legacy HTTP host may be unavailable."
+      ],
+      "acquisition": {
+        "kind": "unavailable",
+        "instructions": "Legacy source host availability and release file inventory unresolved; paired gaze format/event markers need inspection."
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Legacy source host availability and release file inventory unresolved; paired gaze format/event markers need inspection."
+      },
+      "access_observation": {
+        "date": "2026-10-29",
+        "request": "HEAD http://cybertron.cg.tu-berlin.de/xiwang/mental_imagery/em.html",
+        "status": 404
+      }
+    },
+    {
+      "id": "sherlock2025",
+      "title": "Neural and behavioral reinstatement jointly reflect retrieval of narrative events (Sherlock, 2025)",
+      "paper_url": "https://doi.org/10.1038/s41467-025-62375-9",
+      "repository_url": "https://openneuro.org/datasets/ds001132",
+      "related_urls": [
+        "https://osf.io/baw39/",
+        "https://osf.io/mrhk9/"
+      ],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses. OSF license lookup: 'license'"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "OpenNeuro ds001132 supplies fMRI/spoken recall (n=16); OSF baw39 supplies MRI eye tracking (n=13), desktop eye tracking (availability statement n=23; methods n=21), preprocessed eye-voxel data, transcripts and code; OSF mrhk9 supplies DeepMReye weights.",
+      "caveats": [
+        "ds001132 is BIDS/NIfTI plus behavior. Camera eye tracking is viewing-only; no in-scanner camera tracking during recall and desktop recall tracking was largely unusable. DeepMReye recall is MRI eye-signal inference, not camera recall data."
+      ],
+      "acquisition": {
+        "kind": "osf",
+        "node": "baw39"
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Needs separate camera-viewing and DeepMReye-recall adapters plus narrative-event alignment; cannot qualify as paired camera gaze."
+      }
+    },
+    {
+      "id": "johansson2022",
+      "title": "Johansson et al. 2022 eye-movement replay",
+      "paper_url": "https://doi.org/10.1098/rspb.2022.0964",
+      "repository_url": "https://osf.io/d9zng/",
+      "related_urls": [
+        "https://doi.org/10.6084/m9.figshare.c.6035691",
+        "https://osf.io/g72qb/",
+        "https://api.figshare.com/v2/articles/20025825"
+      ],
+      "license": {
+        "status": "repository_declared",
+        "name": "No license",
+        "url": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e965/",
+        "scope": "OSF project; third-party stimuli may have separate terms"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Paper states data/materials are on OSF; object-arrangement stimuli are available there. 60 analyzed adults; SMI RED-M at 120 Hz. Scene stimuli came from MIT CAT2000: http://saliency.mit.edu/datasets.html. Inspected the downloaded workbook container and shared-string schema: figure/table sheets contain derived replay, MultiMatch, AOI, rating and response measures; no individual fixation-coordinate fields were found.",
+      "caveats": [
+        "Raw format and data license not specified; mixed stimulus provenance/rights.",
+        "Root OSF d9zng contains stimuli; child g72qb contains Source data_for_DOI_10.1098_rspb.2022.0964.xlsx. Figshare 20025825 contains a supplementary DOCX, not a verified raw-gaze archive."
+      ],
+      "acquisition": {
+        "kind": "osf",
+        "node": "g72qb"
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Available source workbook contains derived measures and figure/table data; individual encoding/recall fixation sequences have not been located. Needs the actual sequence release before a new eyes4s replay analysis."
+      },
+      "inspection": {
+        "file": "Source data_for_DOI_10.1098_rspb.2022.0964.xlsx",
+        "sha256": "cedf0afd08346b928ccd2c5315e137a05f1690a7b10881c0e6566459bed1043c",
+        "method": "OOXML workbook sheet names and complete shared-string inventory",
+        "scope": "metadata inspection, not full cell-level spreadsheet review",
+        "date": "2026-10-29"
+      }
+    },
+    {
+      "id": "brooks2024",
+      "title": "Brooks et al. 2024 emotional-memory reinstatement",
+      "paper_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11101026/",
+      "repository_url": "https://osf.io/uh7y5/",
+      "related_urls": [],
+      "license": {
+        "status": "repository_declared",
+        "name": "MIT License",
+        "url": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e972/",
+        "scope": "OSF project; third-party stimuli may have separate terms"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "PLOS Data Availability states data files are on OSF. Two experiments, n=24 analyzed each; eye tracking, behavior and recognition measures.",
+      "caveats": [
+        "OSF formats/license not established from paper. Stimuli include internet-sourced images; third-party rights may apply."
+      ],
+      "acquisition": {
+        "kind": "osf",
+        "node": "uh7y5"
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "OSF release accessible; fixation format, trial keys, scene regions and retrieval phases need a dataset-specific adapter."
+      }
+    },
+    {
+      "id": "bhanap2025",
+      "title": "Bhanap et al. 2025 associative recognition/LAN",
+      "paper_url": "https://doi.org/10.1016/j.cognition.2025.106199",
+      "repository_url": "https://osf.io/786er/",
+      "related_urls": [],
+      "license": {
+        "status": "repository_declared",
+        "name": "CC-By Attribution 4.0 International",
+        "url": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e96a/",
+        "scope": "OSF project; third-party stimuli may have separate terms"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Paper states all data, analysis scripts and supplementary materials are on OSF; five experiments using eye tracking and four-word-pair associative recognition.",
+      "caveats": [
+        "File formats and license not stated."
+      ],
+      "acquisition": {
+        "kind": "osf",
+        "node": "786er"
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Needs per-experiment adapter, auditory probe timing, former-word-pair AOIs and immediate-retrieval alignment."
+      }
+    },
+    {
+      "id": "bhanap2026",
+      "title": "Bhanap et al. 2026 eye movements/covert attention retrieval",
+      "paper_url": "https://doi.org/10.3758/s13423-026-02945-0",
+      "repository_url": "https://osf.io/3gz8q/",
+      "related_urls": [],
+      "license": {
+        "status": "repository_declared",
+        "name": "CC-By Attribution 4.0 International",
+        "url": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e96a/",
+        "scope": "OSF project; third-party stimuli may have separate terms"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "PMC Data Availability states data and analysis scripts are on OSF; eye-movement and covert-attention working/long-term retrieval experiments.",
+      "caveats": [
+        "Formats/license not stated; distinct from 2025 OSF 786er."
+      ],
+      "acquisition": {
+        "kind": "osf",
+        "node": "3gz8q"
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Needs per-experiment adapter separating working-memory, delayed retrieval, gaze manipulation and covert-attention conditions."
+      }
+    },
+    {
+      "id": "chiquet2022",
+      "title": "Chiquet et al. 2022 imagery-related eye movements in 3D",
+      "paper_url": "https://doi.org/10.1038/s41598-022-18080-4",
+      "repository_url": "https://osf.io/w75qn/",
+      "related_urls": [
+        "https://osf.io/fu25r/",
+        "https://osf.io/xnq3f/"
+      ],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses."
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Paper Data availability gives OSF encoding and recall links. 78 participants analyzed (7 excluded); immersive VR; 90 Hz binocular gaze-origin/direction vectors and AOI intersections.",
+      "caveats": [
+        "Article CC BY 4.0; OSF file formats/license not verified.",
+        "w75qn and fu25r are file GUIDs, not project nodes; resolved through OSF guids API. Recall CSV exceeds the default 256 MiB download budget."
+      ],
+      "acquisition": {
+        "kind": "http",
+        "files": [
+          {
+            "path": "df_encoding.csv",
+            "url": "https://osf.io/download/w75qn/",
+            "size_bytes": 148414649,
+            "md5": "3d40e187d16837f21a9c936cb84ea4f5",
+            "sha256": "6cefa68fd920d802fe481ea05098ca6d39969f1beac4d0db31be87d09eaed22c"
+          },
+          {
+            "path": "df_recall.csv",
+            "url": "https://osf.io/download/fu25r/",
+            "size_bytes": 360435221,
+            "md5": "eb0feab3afd78dfe54695c52799ea14a",
+            "sha256": "e07198a8cb3eafb534df303cc01a664fe321a237a662d1e31ea8e9a52c01b35b"
+          }
+        ]
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "3D gaze/AOI CSVs require typed 3D-to-surface projection or an AOI-only analysis; do not reinterpret vectors as screen pixels."
+      }
+    },
+    {
+      "id": "wynn2020",
+      "title": "Wynn-Ryan-Buchsbaum 2020 pattern completion",
+      "paper_url": "https://doi.org/10.1073/pnas.1917586117",
+      "repository_url": "https://github.com/bbuchsbaum/eyesim",
+      "related_urls": [
+        "https://github.com/bbuchsbaum/eyesim/tree/b6ccc1bc9967d32ab548db136a27d10dbaa0fd48/data",
+        "https://github.com/bbuchsbaum/eyesim/blob/b6ccc1bc9967d32ab548db136a27d10dbaa0fd48/man/wynn_study.Rd"
+      ],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses."
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "PNAS Data deposition says data and analysis code are available on GitHub. 57 analyzed participants; EyeLink II 500 Hz; 240 images/120 similar pairs with degradation.",
+      "caveats": [
+        "Current repository contents and data license require inspection before redistribution; paper does not state a dataset license."
+      ],
+      "acquisition": {
+        "kind": "http",
+        "files": [
+          {
+            "path": "wynn_study.rda",
+            "url": "https://raw.githubusercontent.com/bbuchsbaum/eyesim/b6ccc1bc9967d32ab548db136a27d10dbaa0fd48/data/wynn_study.rda",
+            "size_bytes": 2871665
+          },
+          {
+            "path": "wynn_test.rda",
+            "url": "https://raw.githubusercontent.com/bbuchsbaum/eyesim/b6ccc1bc9967d32ab548db136a27d10dbaa0fd48/data/wynn_test.rda",
+            "size_bytes": 687327
+          }
+        ]
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "R serialized fixation groups need conversion; study rows pool four presentations whose onsets restart, so temporal analysis must recover original trial boundaries."
+      }
+    },
+    {
+      "id": "helbing2026",
+      "title": "Helbing-Draschkow-Vo 2026 Search Superiority Recollection Familiarity",
+      "paper_url": "https://doi.org/10.82901/nemar.on005189",
+      "repository_url": "https://openneuro.org/datasets/ds005189/versions/1.0.1/metadata",
+      "related_urls": [
+        "https://nemar.org/dataset/on005189",
+        "https://data.nemar.org/on005189/v1.0.0/"
+      ],
+      "license": {
+        "status": "repository_declared",
+        "name": "CC0-1.0",
+        "url": "https://nemar.org/dataset/on005189"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "NEMAR reports 30 participants, BEH+EEG, BIDS beh/eeg, 61 channels, 17.0 GB, CC0; OpenNeuro DOI 10.18112/openneuro.ds005189.v1.0.1.",
+      "caveats": [
+        "Git-annex/NEMAR download; stimuli/ and derivatives/ skipped unless explicitly requested."
+      ],
+      "acquisition": {
+        "kind": "manual",
+        "instructions": "Use the pinned OpenNeuro 1.0.1 or NEMAR v1.0.0 release; select gaze/behavior files after inventory inspection. Do not download the 17 GB EEG dataset implicitly."
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Confirm individual eye traces and encoding/retrieval coverage in release; EEG/behavior availability alone is insufficient."
+      }
+    },
+    {
+      "id": "wilming2017",
+      "title": "Wilming Memory I/II (Dryad complex-image eye movements)",
+      "paper_url": "https://doi.org/10.5061/dryad.9pf75",
+      "repository_url": "https://datadryad.org/dataset/doi:10.5061/dryad.9pf75",
+      "related_urls": [
+        "https://datadryad.org/api/v2/versions/1920/files"
+      ],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses."
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Dryad inventory lists additional_samples/Memory_I_raw.hdf (115.49 MB), Memory_II_raw.hdf (68.50 MB), meta.csv, fixmat.py/get_fixmat.m and many other HDF/HDF5 experiment files; stimuli are separate ZIPs.",
+      "caveats": [
+        "Dataset-specific license not exposed in retrieved metadata; broad multi-experiment collection, not only Memory I/II."
+      ],
+      "acquisition": {
+        "kind": "http",
+        "files": [
+          {
+            "path": "Memory_I_raw.hdf",
+            "url": "https://datadryad.org/api/v2/files/11861/download",
+            "size_bytes": 115485953,
+            "md5": "fa694e51baa66f6cc9794dfe0fc5ac95"
+          },
+          {
+            "path": "Memory_II_raw.hdf",
+            "url": "https://datadryad.org/api/v2/files/11862/download",
+            "size_bytes": 68495647,
+            "md5": "ed3d0873011ebb3fa9c27d146e9b3404"
+          }
+        ]
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "HDF sample adapter, geometry, event/subject keys and memory-response metadata are unverified."
+      }
+    },
+    {
+      "id": "wynn2025",
+      "title": "Wynn et al. 2025 Decoding memory function through naturalistic gaze patterns",
+      "paper_url": "https://www.wynnlab.org/_files/ugd/cdb642_41a12323938d4eef99b38a59532e0fb1.pdf",
+      "repository_url": "https://osf.io/GKNVQ/",
+      "related_urls": [],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses. OSF license lookup: 'license'"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Paper states anonymized fixation reports (CSV), subject demographics and model tables were deposited on OSF; naturalistic gaze study includes older-adult/MCI cohort.",
+      "caveats": [
+        "Deposit is summarized/anonymized CSV plus demographics/model tables, not necessarily raw eye-tracker streams; license beyond stated CSV deposit unclear."
+      ],
+      "acquisition": {
+        "kind": "osf",
+        "node": "gknvq"
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Fixation-report CSV adapter needed; repeated viewing without explicit recognition/cued recall is a separate scientific scope."
+      }
+    },
+    {
+      "id": "chakravarthula2025",
+      "title": "Chakravarthula-Suffridge-Wang 2025 natural-scene gaze dynamics",
+      "paper_url": "https://doi.org/10.1016/j.cognition.2025.106098",
+      "repository_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12831477/",
+      "related_urls": [],
+      "license": {
+        "status": "unverified",
+        "note": "No dataset-specific license verified; article licenses are not dataset licenses."
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Article reports 20 participants, 200 natural images, 350 trials, EyeLink 1000 at 500 Hz; article is CC BY-NC-ND 4.0.",
+      "caveats": [
+        "No public data repository/download link was located in article/search evidence; raw gaze and stimuli availability unresolved."
+      ],
+      "acquisition": {
+        "kind": "unavailable",
+        "instructions": "No public individual-recording release located; article availability is not data availability."
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "No public individual-recording release located; article availability is not data availability."
+      }
+    },
+    {
+      "id": "momoview",
+      "title": "MoMoView Study Dataset",
+      "paper_url": "https://doi.org/10.5281/zenodo.22808357",
+      "repository_url": "https://zenodo.org/records/22808357",
+      "related_urls": [],
+      "license": {
+        "status": "repository_declared",
+        "name": "CC-BY-4.0",
+        "url": "https://zenodo.org/api/records/22808357"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Zenodo record: N=179 ages 5-79, naturalistic scenes and degraded recognition; total 745.2 MB; CC BY 4.0.",
+      "caveats": [
+        "Record exposes derived MultiMatch/DeepGaze CSVs and stimuli, not clearly raw per-sample eye-tracker streams."
+      ],
+      "acquisition": {
+        "kind": "http",
+        "files": [
+          {
+            "path": "d_prime_momoview.csv",
+            "url": "https://zenodo.org/api/records/22808357/files/d_prime_momoview.csv/content",
+            "size_bytes": 16654,
+            "md5": "9440a571aee7cb4832a0e93418e72405"
+          },
+          {
+            "path": "df_for_multimatch_datadict_between_subject_and_deepgaze3_clip13_with_centerbias.csv",
+            "url": "https://zenodo.org/api/records/22808357/files/df_for_multimatch_datadict_between_subject_and_deepgaze3_clip13_with_centerbias.csv/content",
+            "size_bytes": 260061853,
+            "md5": "af41efc534f952c9e3ba56e7f16bf61f"
+          },
+          {
+            "path": "00_Stimuli.zip",
+            "url": "https://zenodo.org/api/records/22808357/files/00_Stimuli.zip/content",
+            "size_bytes": 4414920,
+            "md5": "3efa486c28d1a88804f58e9680110bd9"
+          },
+          {
+            "path": "df_for_multimatch_datadict_between_deepgaze3_and_deepgaze3_clip13_with_centerbias.csv",
+            "url": "https://zenodo.org/api/records/22808357/files/df_for_multimatch_datadict_between_deepgaze3_and_deepgaze3_clip13_with_centerbias.csv/content",
+            "size_bytes": 230961472,
+            "md5": "4e9515978f90a109be77b711da4f8f05"
+          },
+          {
+            "path": "df_for_multimatch_datadict_between_subjects.csv",
+            "url": "https://zenodo.org/api/records/22808357/files/df_for_multimatch_datadict_between_subjects.csv/content",
+            "size_bytes": 249751823,
+            "md5": "c5eff5bcceae7061d8e97109f09a5792"
+          }
+        ]
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "Current inventory provides derived scanpath-comparison tables and stimuli, not individual fixation sequences for a new reinstatement analysis."
+      }
+    },
+    {
+      "id": "kragel2021",
+      "title": "Kragel et al. (2021): Rapid coordination of effective learning by the human hippocampus",
+      "paper_url": "https://doi.org/10.1126/sciadv.abf7144",
+      "repository_url": "https://zenodo.org/records/4728229",
+      "related_urls": [
+        "https://nemar.org/dataset/nm000379",
+        "https://data.nemar.org/nm000379/v1.0.0/",
+        "https://github.com/nemarDatasets/nm000379"
+      ],
+      "verified_on": "2026-10-29",
+      "source_evidence": "Zenodo inventory and NEMAR README verified; six participants, EyeLink 500 Hz with hippocampal recordings.",
+      "caveats": [
+        "EDF needs licensed vendor edf2asc conversion; eyes4s accepts ASC, not binary EDF.",
+        "NEMAR has no aligned events.tsv; reconstruct events using behavioral arrays, EyeLink messages and sync pulses.",
+        "Original ZIP is 9.16 GB; metadata readme can be fetched independently."
+      ],
+      "analysis": {
+        "adapter": null,
+        "reason": "EDF conversion and source-specific trial alignment required before eyes4s admission; no verified adapter yet."
+      },
+      "acquisition": {
+        "kind": "http",
+        "files": [
+          {
+            "path": "KragelEtal21_SciAdv.zip",
+            "url": "https://zenodo.org/api/records/4728229/files/KragelEtal21_SciAdv.zip/content",
+            "size_bytes": 9162066810,
+            "md5": "f8442679b462693476a199b9e6dfac8d"
+          },
+          {
+            "path": "readme.txt",
+            "url": "https://zenodo.org/api/records/4728229/files/readme.txt/content",
+            "size_bytes": 2874,
+            "md5": "90e4dd6a0f73799589a0e60eaa3ac481"
+          }
+        ]
+      },
+      "license": {
+        "status": "repository_declared",
+        "name": "CC-BY-4.0",
+        "url": "https://zenodo.org/api/records/4728229"
+      }
+    },
+    {
+      "id": "cneuromod-things",
+      "title": "CNeuroMod-THINGS (2026)",
+      "paper_url": "https://doi.org/10.1038/s41597-026-06591-y",
+      "repository_url": "https://github.com/courtois-neuromod/cneuromod-things",
+      "related_urls": [
+        "https://pmc.ncbi.nlm.nih.gov/articles/PMC12858831/",
+        "https://docs.cneuromod.ca/datasets/things.html"
+      ],
+      "license": {
+        "status": "paper_declared",
+        "name": "CC0",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12858831/",
+        "scope": "Open paper release; do not substitute the separately registered-access Courtois dataset"
+      },
+      "verified_on": "2026-10-29",
+      "source_evidence": "Paper data-availability and release repository verified. Nested DataLad repositories reference eye-tracking TSV.gz plus sidecars and events.",
+      "caveats": [
+        "Central-fixation instructions make free-viewing scanpath reinstatement inappropriate.",
+        "Git checkout or Zenodo source archive alone does not materialize annex data.",
+        "Select gaze, sidecar and event files; the fMRI corpus is not needed for the gaze check."
+      ],
+      "acquisition": {
+        "kind": "manual",
+        "instructions": "Install DataLad and clone https://github.com/courtois-neuromod/cneuromod-things into the external dataset cache. Pin the clone and nested THINGS/fmriprep/sourcedata/things revisions before requesting selected *_eyetrack.tsv.gz, their JSON sidecars and *_events.tsv with datalad get. No recursive content fetch."
+      },
+      "analysis": {
+        "adapter": null,
+        "reason": "DataLad materialization and TSV/JSON/events clock/frame adapter are not implemented; qualification limited to recognition and fixation compliance when added."
+      }
+    }
+  ]
+}
