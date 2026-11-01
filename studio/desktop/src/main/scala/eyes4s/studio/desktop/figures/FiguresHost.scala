@@ -876,7 +876,7 @@ final class FiguresHost(
         tableNote.setText("")
         table.clear()
       case Some(p) =>
-        exportFigure.setDisable(false)
+        exportFigure.setDisable(v.bundle.forall(_.written.isEmpty))
         exportFigure.setText(FiguresHost.exportName(p.title))
         exportFigure.setAccessibleText(exportFigure.getText)
         greyscale.setAccessibleText(FiguresHost.greyscaleName(p.greyscale))
@@ -1339,7 +1339,11 @@ final class FiguresHost(
             FocusStop(A11yRole.MenuButton, p.addPanel.label)
           )
           .toVector ++
-        Vector(FocusStop(A11yRole.Button, FiguresHost.exportName(p.title))) ++
+        Option
+          .when(v.bundle.exists(_.written.nonEmpty))(
+            FocusStop(A11yRole.Button, FiguresHost.exportName(p.title))
+          )
+          .toVector ++
         Vector(
           Option.when(p.panelEditing.canMoveEarlier)(
             FocusStop(A11yRole.Button, PanelEditing.Earlier)

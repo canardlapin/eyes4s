@@ -17,8 +17,10 @@
 package eyes4s.studio.app.data
 
 import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.app.geometry.GeometryPanel
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.app.text.Messages
+import eyes4s.studio.core.assets.{SourceBlock, SourceState}
 import eyes4s.studio.core.document.Perspective
 
 /** The words of Data's setup steps (overhaul v4, `data.html`). */
@@ -84,11 +86,24 @@ object DataSteps:
     }
 
   def vm(m: AppModel, sources: SourcesVM): Vector[DataStepVM] =
-    val dataset = m.document.datasets.lastOption
+    val dataset = GeometryPanel.selected(m)
     dataset.toVector.flatMap { d =>
-      val current  = section(m)
-      val missing  = sources.missing.map(_.files.size).getOrElse(0)
-      val admitted = d.decision.isAdmitted
+      val current     = section(m)
+      val missing     = sources.missing.map(_.files.size).getOrElse(0)
+      val admitted    = d.decision.isAdmitted
+      val block       = m.sources.block(d.id)
+      val failedCheck = block.exists {
+        case SourceBlock.CheckFailed(_) => true
+        case _                          => false
+      }
+      val problems =
+        missing + m.sources.blocking(d.id).count(_.state != SourceState.Unchecked) +
+          (if failedCheck then 1 else 0) + (if sources.retry then 1 else 0)
+      val sourcesState =
+        if problems > 0 then StepState.Problems(problems)
+        else if block.nonEmpty || m.checks.outstanding || sources.empty.nonEmpty || sources.status.nonEmpty
+        then StepState.Open
+        else StepState.Done
       def step(
           s: DataSection,
           n: Int,
@@ -113,9 +128,17 @@ object DataSteps:
             Location(Perspective.Data, Vector(Place.Dataset(d.id), Place.DataView(s)))
           )
         )
-      val inputs     = sources.sources.size.toString
-      val sourcesSub = sources.missing.fold(DataStepsText(SourcesSub, inputs))(mv =>
-        DataStepsText(SourcesMissingSub, inputs, mv.title.toLowerCase)
+      val inputs       = sources.sources.size.toString
+      val sourceDetail = sources.check
+        .orElse(sources.status)
+        .orElse(
+          sources.sources.iterator
+            .flatMap(row => row.problem.map(p => s"${row.name}: $p"))
+            .nextOption()
+        )
+        .orElse(sources.missing.map(_.title.toLowerCase))
+      val sourcesSub = sourceDetail.fold(DataStepsText(SourcesSub, inputs))(detail =>
+        DataStepsText(SourcesMissingSub, inputs, detail)
       )
       Vector(
         step(
@@ -123,7 +146,7 @@ object DataSteps:
           1,
           Sources,
           sourcesSub,
-          if missing > 0 then StepState.Problems(missing) else StepState.Done
+          sourcesState
         ),
         step(DataSection.ColumnMapping, 2, Columns, DataStepsText(ColumnsSub), StepState.Done),
         step(
