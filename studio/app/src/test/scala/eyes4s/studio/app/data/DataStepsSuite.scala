@@ -16,8 +16,12 @@
 
 package eyes4s.studio.app.data
 
-import eyes4s.studio.app.{Intent, StoryModels}
+import eyes4s.codec.ByteDigest
+import eyes4s.studio.app.{AppModel, Intent, StoryModels}
+import eyes4s.studio.app.explore.DisplaySource
+import eyes4s.studio.app.geometry.{GeometryPanel, Loading}
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
+import eyes4s.studio.core.bundle.{InputEntry, InputKind, InputStatus}
 import eyes4s.studio.core.document.Perspective
 import munit.FunSuite
 
@@ -27,6 +31,25 @@ import munit.FunSuite
 class DataStepsSuite extends FunSuite:
   private val m  = StoryModels.t1Data
   private val vm = SourcesVM.of(SourcesPane.empty, m)
+
+  private def sourceStep(
+      model: AppModel,
+      read: Loading[DisplaySource] = Loading.Ready(DisplaySource.NotServed)
+  ): DataStepVM =
+    val pane = SourcesPane.sync(SourcesPane.empty, model)._1.copy(registry = read)
+    DataSteps.vm(model, SourcesVM.of(pane, model)).head
+
+  private def present(model: AppModel): Vector[InputStatus] =
+    model.document.datasets.flatMap(_.sources.entries).distinct.map { s =>
+      val entry = InputEntry
+        .of(InputKind.Source(s.role), s.path.value.split('/').last, s.bytes, 1L)
+        .fold(e => fail(e.message), identity)
+      InputStatus.Present(entry)
+    }
+
+  private def checked(model: AppModel, statuses: Vector[InputStatus]): AppModel =
+    val asked = AppModel.update(model, Intent.CheckInputs)._1
+    AppModel.update(asked, Intent.InputsChecked(asked.checks.asked, statuses))._1
 
   test("five steps in the golden's order, the trail's Admission current") {
     val steps = DataSteps.vm(m, vm)
@@ -56,4 +79,69 @@ class DataStepsSuite extends FunSuite:
         )
       )
     )
+  }
+
+  test("all setup steps retain the Data perspective's selected older revision") {
+    val initial = StoryModels.t2Figures
+    val older   = initial.document.datasets.head
+    assertNotEquals(older.id, initial.document.datasets.last.id)
+    val selected = AppModel
+      .update(
+        initial,
+        Intent.Navigate(
+          Location(
+            Perspective.Data,
+            Vector(Place.Dataset(older.id), Place.DataView(DataSection.Sources))
+          )
+        )
+      )
+      ._1
+    assertEquals(GeometryPanel.selected(selected).map(_.id), Some(older.id))
+    val pane  = SourcesPane.sync(SourcesPane.empty, selected)._1
+    val steps = DataSteps.vm(selected, SourcesVM.of(pane, selected))
+    steps.foreach { step =>
+      val target = AppModel.update(selected, step.open)._1
+      assertEquals(GeometryPanel.selected(target).map(_.id), Some(older.id))
+    }
+    assert(steps.last.sub.contains(older.id.label))
+    assertEquals(steps.last.state, StepState.Done)
+  }
+
+  test("missing and changed CSVs are repair problems even without missing images") {
+    val missing = checked(m, Vector.empty)
+    assertEquals(sourceStep(missing).state, StepState.Problems(2))
+    assert(sourceStep(missing).sub.contains("missing"))
+    val source  = m.document.datasets.last.sources.entries.head
+    val changed = present(m).map { status =>
+      if status.entry.sha256 == source.bytes then
+        InputStatus.Changed(status.entry, ByteDigest.sha256(IArray.from(Array[Byte](1, 2, 3))))
+      else status
+    }
+    val damaged = sourceStep(checked(m, changed))
+    assertEquals(damaged.state, StepState.Problems(1))
+    assert(damaged.sub.contains("changed"))
+  }
+
+  test("pending checks stay open, failed checks report a problem, successful checks finish") {
+    val pending = AppModel.update(m, Intent.CheckInputs)._1
+    assertEquals(sourceStep(pending).state, StepState.Open)
+    val failed = AppModel
+      .update(
+        pending,
+        Intent.InputsCheckFailed(pending.checks.asked, "project store unavailable")
+      )
+      ._1
+    assertEquals(sourceStep(failed).state, StepState.Problems(1))
+    assert(sourceStep(failed).sub.contains("project store unavailable"))
+    val ready = checked(m, present(m))
+    assertEquals(sourceStep(ready).state, StepState.Done)
+    val rechecking = AppModel.update(ready, Intent.CheckInputs)._1
+    assertEquals(sourceStep(rechecking).state, StepState.Open)
+  }
+
+  test("pending and failed trial-display reads cannot mark Sources done") {
+    assertEquals(sourceStep(m, Loading.Waiting).state, StepState.Open)
+    val failed = sourceStep(m, Loading.Failed("trial inventory unreadable"))
+    assertEquals(failed.state, StepState.Problems(1))
+    assert(failed.sub.contains("trial inventory unreadable"))
   }

@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.figures
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.figures.{
   AddPanelText,
+  BundleItem,
   ComposerIntent,
   FigureIntent,
   PageWidth,
@@ -82,6 +83,34 @@ class FigureComposerFxSuite extends ShellFxSuite:
         .plot(figure1, letter("D"))
         .exists(_.status.get.isInstanceOf[PlotTwinStatus.Shown])
     }
+
+  fxStage.test(
+    "header bundle export follows the selected files and has an action when enabled"
+  ) { fx =>
+    var asked = 0
+    val w     = boot(
+      fx,
+      StoryModels.t2Figures,
+      StoryMoment.T2,
+      chooseFolder = (_, _) => { asked += 1; None }
+    )
+    loaded(fx, w)
+    runOnFx {
+      w.figures.vm.bundle.get.rows
+        .filter(r => r.chosen && r.unavailable.isEmpty)
+        .foreach(r => w.figures.dispatch(ComposerIntent.ToggleBundle(r.item)))
+      assert(w.figures.vm.bundle.get.written.isEmpty)
+      assert(w.figures.exportFigure.isDisabled)
+      assert(!w.figures.pageStops.exists(_.name == w.figures.exportFigure.getAccessibleText))
+      w.figures.exportFigure.fire()
+      assertEquals(asked, 0)
+      w.figures.dispatch(ComposerIntent.ToggleBundle(BundleItem.Figure))
+      assert(!w.figures.exportFigure.isDisabled)
+      assert(w.figures.pageStops.exists(_.name == w.figures.exportFigure.getAccessibleText))
+      w.figures.exportFigure.fire()
+      assertEquals(asked, 1)
+    }
+  }
 
   fxStage.test("183 mm paper places two 89 mm panels beside one another with a 5 mm gutter") {
     fx =>
