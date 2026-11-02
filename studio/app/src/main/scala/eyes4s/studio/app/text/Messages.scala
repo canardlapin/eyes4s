@@ -77,6 +77,7 @@ enum MessageId derives CanEqual:
 
   /** Data › Trials' hint (overhaul v4). */
   case HintDataTrials
+  case HintSpatialData, HintSpatialAnalysis, HintSpatialResults, HintSpatialReport
 
   // --- Commands --------------------------------------------------------------------
   case CommandUndo, CommandRedo, CommandUndoView, CommandRedoView, CommandNextPane
@@ -109,7 +110,7 @@ enum MessageId derives CanEqual:
   case StateAnalysis, StateAnalysisQualified, StateNoAnalysis, StateNotRun, StateRunningAs
   case StateJob, StateAccessible, StateCancelAccessible, StateDatasetHead, StateAdmitted
   case StateNotAdmitted, StateVerifying, StateNotInRun, StateJobsHead, StateJobsNone
-  case StateFactAnalysis, StateFactData, OpenInData
+  case StateFactAnalysis, StateFactData, StateResultNotStored, OpenInData
   case CancelRunEllipsis, ConfirmCancelRun, ConfirmCancelRunDone, ConfirmCancelRunShown
   case CancelRunConfirm, KeepRunning, StateMenuTitle, CommandInspector
 
@@ -148,22 +149,24 @@ object Catalogue:
       case StateJobsNone          => "None running"
       case StateFactAnalysis      => "Analysis"
       case StateFactData          => "Data"
-      case OpenInData             => "Open in Data"
-      case CancelRunEllipsis      => "Cancel run {0}…"
-      case ConfirmCancelRun       => "Cancel run {0}?"
-      case ConfirmCancelRunDone   => "{0} of {1} pairs are done."
-      case ConfirmCancelRunShown  => "Run {0} stays shown."
-      case CancelRunConfirm       => "Cancel run"
-      case KeepRunning            => "Keep running"
-      case StateMenuTitle         => "Study state"
-      case CommandInspector       => "Inspector"
-      case Workspace              => "Workspace"
-      case UntitledProject        => "Untitled project"
-      case WindowTitle            => "{0}.eyes"
-      case PerspectiveData        => "Data"
-      case PerspectiveAnalysis    => "Analysis"
-      case PerspectiveResults     => "Results"
-      case PerspectiveReport      => "Report"
+      case StateResultNotStored   =>
+        "Computation finished; result storage is not yet confirmed. Keep the project open until its results are stored."
+      case OpenInData            => "Open in Data"
+      case CancelRunEllipsis     => "Cancel run {0}…"
+      case ConfirmCancelRun      => "Cancel run {0}?"
+      case ConfirmCancelRunDone  => "{0} of {1} pairs are done."
+      case ConfirmCancelRunShown => "Run {0} stays shown."
+      case CancelRunConfirm      => "Cancel run"
+      case KeepRunning           => "Keep running"
+      case StateMenuTitle        => "Study state"
+      case CommandInspector      => "Inspector"
+      case Workspace             => "Workspace"
+      case UntitledProject       => "Untitled project"
+      case WindowTitle           => "{0}.eyes"
+      case PerspectiveData       => "Data"
+      case PerspectiveAnalysis   => "Analysis"
+      case PerspectiveResults    => "Results"
+      case PerspectiveReport     => "Report"
 
       case JobsIdle             => "No jobs"
       case JobsIdleAccessible   => "Jobs: none running"
@@ -273,25 +276,30 @@ object Catalogue:
       case ShowRunWhenFinished   => "Show run {0} · when finished"
       case OpenAnalysis          => "Open Analysis"
 
-      case SelectedLabel          => "Selected:"
-      case NoSelection            => "No selection"
-      case SelectedMore           => "{0} (+{1} more)"
-      case Saved                  => "Saved {0}"
-      case NotSaved               => "Not saved"
-      case PathSeparator          => " › "
-      case PathDetail             => "{0} · {1}"
-      case PathPair               => "{0} › {1} × {2} ({3}) · {4}"
-      case PathFixation           => "fixation {0}"
-      case PathRecord             => "{0} record {1}"
-      case PathMap                => "{0} map"
-      case PathReduction          => "{0} {1} reduction"
-      case PathSummary            => "{0} · {1} · {2}"
-      case PathSummaryGroup       => "{0} · {1} › {2} · {3}"
-      case PathGroupCell          => "{0} · {1} · {2}"
-      case PathPanel              => "{0} › Panel {1} ({2} · {3})"
-      case PathPanelUnscaled      => "{0} › Panel {1} ({2})"
-      case AllScales              => "all scales"
-      case ScaleNumber            => "scale {0}"
+      case SelectedLabel       => "Selected:"
+      case NoSelection         => "No selection"
+      case SelectedMore        => "{0} (+{1} more)"
+      case Saved               => "Saved {0}"
+      case NotSaved            => "Not saved"
+      case PathSeparator       => " › "
+      case PathDetail          => "{0} · {1}"
+      case PathPair            => "{0} › {1} × {2} ({3}) · {4}"
+      case PathFixation        => "fixation {0}"
+      case PathRecord          => "{0} record {1}"
+      case PathMap             => "{0} map"
+      case PathReduction       => "{0} {1} reduction"
+      case PathSummary         => "{0} · {1} · {2}"
+      case PathSummaryGroup    => "{0} · {1} › {2} · {3}"
+      case PathGroupCell       => "{0} · {1} · {2}"
+      case PathPanel           => "{0} › Panel {1} ({2} · {3})"
+      case PathPanelUnscaled   => "{0} › Panel {1} ({2})"
+      case AllScales           => "all scales"
+      case ScaleNumber         => "scale {0}"
+      case HintSpatialData     => "Source ledgers retain missing phases and excluded locations"
+      case HintSpatialAnalysis =>
+        "Save an analysis before running the declared spatial comparison"
+      case HintSpatialResults     => "Query scores retain focal, matched and control identities"
+      case HintSpatialReport      => "Export includes query scores, source ledgers and methods"
       case HintDataFirstRun       => "Drop files anywhere in this window"
       case HintDataVerify         => "Mapping and geometry changes make a new dataset revision"
       case HintDataPending        => "Mapping and geometry changes apply when {0} is admitted"

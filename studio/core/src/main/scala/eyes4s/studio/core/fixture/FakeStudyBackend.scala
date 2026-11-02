@@ -331,9 +331,11 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         document <- StoryMoments.t2.left.map(reason =>
           BackendError.RegistryRefused(DiagnosticLocus.Dataset(request.dataset), reason)
         )
-        spec <- document.datasets
+        spec <- document.timedDatasets
           .find(_.id == request.dataset)
-          .toRight(BackendError.UnknownDataset(request.dataset, document.datasets.map(_.id)))
+          .toRight(
+            BackendError.UnknownDataset(request.dataset, document.timedDatasets.map(_.id))
+          )
         screen <- eyes4s.kernel.Frame
           .screen("screen", spec.geometry.screen.width, spec.geometry.screen.height)
           .left
@@ -423,7 +425,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         PreviewRow(
           q.key,
           q.item,
-          q.response,
+          Some(q.response),
           Option.when(eligibility(q) == Eligibility.Eligible)(q.matchedKey),
           q.controls,
           eligibility(q),
@@ -1002,7 +1004,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         QueryRow(
           q.key,
           q.item,
-          q.response,
+          Some(q.response),
           Option.when(q.status != NoMatchStatus && q.status != QueryNotAdmitted)(q.matchedKey),
           q.controls,
           status(q),
@@ -1275,8 +1277,9 @@ object FakeStudyBackend:
     case _                    => false
 
   private def progressOf(s: JobState): Option[JobProgress] = s match
-    case JobState.Running(p)  => Some(p)
-    case JobState.Finished(o) => o.progress
+    case JobState.Running(p: JobProgress)         => Some(p)
+    case JobState.Running(_: LocationJobProgress) => None
+    case JobState.Finished(o) => o.progress.collect { case p: JobProgress => p }
     case JobState.Queued      => None
 
   private def slice[A](all: Vector[A], page: PageRequest): Vector[A] =
@@ -1323,7 +1326,7 @@ object FakeStudyBackend:
     val held = StorySeed
       .document(moment)
       .flatMap(
-        _.datasets.traverse(s =>
+        _.timedDatasets.traverse(s =>
           DatasetRevisionSpec.contentDigest(s).left.map(_.message).map(s.id -> _)
         )
       )

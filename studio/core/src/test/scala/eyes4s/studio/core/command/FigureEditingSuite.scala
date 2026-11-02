@@ -137,7 +137,7 @@ class FigureEditingSuite extends munit.FunSuite:
     assertEquals(StudioDocument.encode(restored), Right(before))
     assertEquals(StudioDocument.scienceDigest(restored), StudioDocument.scienceDigest(base))
     assertNotEquals(StudioDocument.scienceDigest(withDraft), StudioDocument.scienceDigest(base))
-    assertEquals(withDraft.analyses, base.analyses)
+    assertEquals(withDraft.timedAnalyses, base.timedAnalyses)
     assertEquals(withDraft.runs, base.runs)
     assertEquals(withDraft.presentation, base.presentation)
     assertEquals(SetFigureMethods(id, Some(draft)).kind, ChangeKind.ReportingNoRerun)

@@ -292,9 +292,9 @@ class ExportBundleSuite extends munit.FunSuite:
 
   /** results.csv's table digest for the fixture, recorded when its label
     * domain was settled (S9.5): pair absences must not change it. Re-recorded
-    * when the fixture's scores became SCORES.json's.
+    * when response became nullable, with an explicit CSV validity column.
     */
-  private val ResultsDigest = "d2e21f7f9a9dcf1707c11798e3f4c7b522476ec62424e116d1a0ecedfffca97a"
+  private val ResultsDigest = "6866404f62c963a3c05205071a636bee4530e3bbe7d9d7d902149984c3acc02f"
 
   test(
     "results.csv pins explicit missing references; comparisons.csv has its own absence labels"
@@ -547,6 +547,18 @@ class ExportBundleSuite extends munit.FunSuite:
           assertEquals(r(s"${name}__valid"), "false")
           assertEquals(r(s"${name}_absence"), "by-design")
         }
+      }
+    }
+  }
+
+  test("results.csv retains an undeclared response as a nullable cell") {
+    served.map { s =>
+      val row  = s.rows.head.copy(response = None)
+      val rows = csv(files(s.copy(rows = Vector(row)))("results.csv"))
+      assertEquals(rows.size, s.summary.scaleLabels.size)
+      rows.foreach { exported =>
+        assertEquals(exported("response"), "")
+        assertEquals(exported("response__valid"), "false")
       }
     }
   }

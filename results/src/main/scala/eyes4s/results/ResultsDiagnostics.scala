@@ -106,9 +106,29 @@ object ResultsDiagnosticCatalog:
     "UnlistedParticipant"
   )
 
+  val locationReport: DiagnosticFamily = error("location-report")(
+    "InputHash",
+    "PlanHash",
+    "Grid",
+    "MapTrials",
+    "OutcomeQueries",
+    "MissingMetadata",
+    "DuplicateMetadata",
+    "SurplusMetadata",
+    "Table"
+  )
+
   /** Every family, in the order documented. */
   val families: Vector[DiagnosticFamily] =
-    Vector(report, reportError, reportSpec, covariate, resultTable, reportNavigation)
+    Vector(
+      report,
+      reportError,
+      reportSpec,
+      covariate,
+      resultTable,
+      reportNavigation,
+      locationReport
+    )
 
   /** Every stable code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
@@ -164,6 +184,9 @@ object ResultsDiagnostics:
     Diagnose.derived[ReportNavigationError[K], K](C.reportNavigation, navigationSubject[K])(
       _.message
     )
+
+  given locationReport: Diagnose[LocationReportError, Nothing] =
+    Diagnose.derived[LocationReportError, Nothing](C.locationReport)(_.message)
 
   private def navigationSubject[K](error: ReportNavigationError[K]): Vector[Locus[K]] =
     error match

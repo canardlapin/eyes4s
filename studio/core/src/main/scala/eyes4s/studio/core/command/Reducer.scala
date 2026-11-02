@@ -453,6 +453,251 @@ object Reducer:
         next <- rebuild(d, c)(analyses = d.analyses.map(a => if a.id == id then bound else a))
       yield Outcome(next, Vector(Effect.Persist), Recording.Unrecorded)
 
+    case BindLocationCompletedArtifacts(facts) =>
+      def mismatch(field: String, recorded: String, prepared: String) =
+        ArtifactBindingMismatch(facts.run, field, recorded, prepared)
+      def binding[A](recorded: CoreBinding[A], prepared: CoreBinding[A], field: String) =
+        Either.cond(
+          recorded == prepared || recorded == CoreBinding.unbound[A],
+          (),
+          mismatch(field, recorded.render, prepared.render)
+        )
+      for
+        run <- d.run(facts.run).toRight(UnknownRun(facts.run))
+        _   <- Either.cond(
+          run.state == RunLifecycle.Completed,
+          (),
+          RunNotCompleted(run.id, run.state)
+        )
+        _ <- Either.cond(
+          run.analysis == facts.analysis.id && run.dataset == facts.dataset.id,
+          (),
+          mismatch(
+            "spatial run identities",
+            s"${run.analysis.label}/${run.dataset.label}",
+            s"${facts.analysis.id.label}/${facts.dataset.id.label}"
+          )
+        )
+        data <- d
+          .datasetDefinition(run.dataset)
+          .collect { case value: LocationDatasetRevision => value }
+          .toRight(UnknownDataset(run.dataset))
+        _ <- Either.cond(
+          data == facts.dataset,
+          (),
+          mismatch("spatial dataset definition", data.toString, facts.dataset.toString)
+        )
+        analysis <- d
+          .analysisDefinition(run.analysis)
+          .collect { case value: LocationAnalysisRevision => value }
+          .toRight(UnknownAnalysis(run.analysis))
+        _ <- Either.cond(
+          analysis.dataset == facts.analysis.dataset && analysis.recipe.profile == facts.analysis.recipe.profile,
+          (),
+          mismatch("spatial recipe", analysis.recipe.toString, facts.analysis.recipe.toString)
+        )
+        _ <- binding(analysis.plan, facts.analysis.plan, "spatial plan")
+        _ <- binding(analysis.recipe.input, facts.analysis.recipe.input, "spatial input")
+        _ <- binding(run.archive, CoreBinding.Bound(facts.result), "spatial result")
+        bound = analysis.copy(plan = facts.analysis.plan, recipe = facts.analysis.recipe)
+        next <- rebuild(d, c)(
+          analyses = d.analyses.map(a => if a.id == bound.id then bound else a),
+          runs = d.runs.map(r =>
+            if r.id == run.id then r.copy(archive = CoreBinding.Bound(facts.result)) else r
+          )
+        )
+      yield Outcome(next, Vector(Effect.Persist), Recording.Unrecorded)
+
+    case AppendLocationDataset(parent, sources, profile, input) =>
+      val id = DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1))
+      for
+        _ <- parent.traverse { previous =>
+          d.datasetDefinition(previous)
+            .toRight(UnknownDataset(previous))
+            .flatMap(value =>
+              Either.cond(
+                value.kind == StudyKind.Locations,
+                (),
+                Refused(
+                  c.name,
+                  targetOf(d, c),
+                  DocumentError.KindMismatch(id.label, StudyKind.Locations, value.kind)
+                )
+              )
+            )
+        }
+        revision = LocationDatasetRevision(
+          id,
+          parent,
+          sources,
+          profile,
+          LocationAdmissionDecision.Admitted(input)
+        )
+        next <- rebuild(d, c)(datasets = d.datasets :+ revision)
+      yield reversible(next, DiscardLocationDataset(id))
+
+    case DiscardLocationDataset(id) =>
+      for
+        revision <- d
+          .datasetDefinition(id)
+          .collect { case value: LocationDatasetRevision => value }
+          .toRight(UnknownDataset(id))
+        next <- rebuild(d, c)(datasets = d.datasets.filterNot(_.id == id))
+      yield reversible(next, RestoreLocationDataset(revision))
+
+    case RestoreLocationDataset(revision) =>
+      for
+        _ <- Either.cond(
+          d.datasetDefinition(revision.id).isEmpty,
+          (),
+          DatasetExists(revision.id)
+        )
+        next <- rebuild(d, c)(datasets = (d.datasets :+ revision).sortBy(_.id.number))
+      yield reversible(next, DiscardLocationDataset(revision.id))
+
+    case SaveLocationAnalysis(family, dataset, plan, name, description) =>
+      for
+        data <- d
+          .datasetDefinition(dataset)
+          .collect { case value: LocationDatasetRevision => value }
+          .toRight(UnknownDataset(dataset))
+        input <- data.decision match
+          case LocationAdmissionDecision.Admitted(value) => Right(value)
+          case LocationAdmissionDecision.Pending         => Left(DatasetNotAdmitted(dataset))
+        id       <- d.nextAnalysisId.left.map(refused(d, c))
+        families <- locationFamilies(d, c, family, id)
+        revision = LocationAnalysisRevision(
+          id,
+          dataset,
+          CoreBinding.Bound(plan),
+          LocationRecipe(data.profile, CoreBinding.Bound(input)),
+          name,
+          description
+        )
+        next <- rebuild(d, c)(
+          analyses = d.analyses :+ revision,
+          analysisFamilies = Some(families)
+        )
+      yield reversible(
+        next,
+        RemoveLocationAnalysis(id, next.analysisFamilies, d.analysisFamilies)
+      )
+
+    case DiscardLocationAnalysis(id) =>
+      for
+        revision <- d
+          .analysisDefinition(id)
+          .collect { case value: LocationAnalysisRevision => value }
+          .toRight(UnknownAnalysis(id))
+        originalFamilies = d.analysisFamilies
+        families <- removeLocationFamily(d, c, id)
+        next     <- rebuild(d, c)(
+          analyses = d.analyses.filterNot(_.id == id),
+          analysisFamilies = families
+        )
+      yield reversible(
+        next,
+        RestoreLocationAnalysis(revision, originalFamilies, next.analysisFamilies)
+      )
+
+    case RestoreLocationAnalysis(revision, originalFamilies, expectedFamilies) =>
+      for
+        _ <- Either.cond(
+          d.analysisDefinition(revision.id).isEmpty,
+          (),
+          Refused(
+            c.name,
+            targetOf(d, c),
+            DocumentError.BadDefinition("location analysis", revision.id.number)
+          )
+        )
+        _ <- Either.cond(
+          d.analysisFamilies == expectedFamilies,
+          (),
+          Refused(
+            c.name,
+            targetOf(d, c),
+            DocumentError.BadDefinition("analysis family restore", revision.id.number)
+          )
+        )
+        next <- rebuild(d, c)(
+          analyses = (d.analyses :+ revision).sortBy(_.id.number),
+          analysisFamilies = originalFamilies
+        )
+      yield reversible(
+        next,
+        RemoveLocationAnalysis(revision.id, originalFamilies, expectedFamilies)
+      )
+
+    case RemoveLocationAnalysis(id, expectedFamilies, restoredFamilies) =>
+      for
+        revision <- d
+          .analysisDefinition(id)
+          .collect { case value: LocationAnalysisRevision => value }
+          .toRight(UnknownAnalysis(id))
+        _ <- Either.cond(
+          d.analysisFamilies == expectedFamilies,
+          (),
+          Refused(
+            c.name,
+            targetOf(d, c),
+            DocumentError.BadDefinition("analysis family removal", id.number)
+          )
+        )
+        next <- rebuild(d, c)(
+          analyses = d.analyses.filterNot(_.id == id),
+          analysisFamilies = restoredFamilies
+        )
+      yield reversible(
+        next,
+        RestoreLocationAnalysis(revision, d.analysisFamilies, next.analysisFamilies)
+      )
+
+    case ReserveLocationRun(analysisId) =>
+      for
+        analysis <- d
+          .analysisDefinition(analysisId)
+          .collect { case value: LocationAnalysisRevision => value }
+          .toRight(UnknownAnalysis(analysisId))
+        data <- d
+          .datasetDefinition(analysis.dataset)
+          .collect { case value: LocationDatasetRevision => value }
+          .toRight(UnknownDataset(analysis.dataset))
+        input <- data.decision match
+          case LocationAdmissionDecision.Admitted(value) => Right(value)
+          case LocationAdmissionDecision.Pending         => Left(DatasetNotAdmitted(data.id))
+        _ <- Either.cond(
+          analysis.recipe.profile == data.profile,
+          (),
+          Refused(
+            c.name,
+            targetOf(d, c),
+            DocumentError.KindMismatch(analysis.id.label, data.kind, analysis.kind)
+          )
+        )
+        _ <- Either.cond(
+          analysis.recipe.input == CoreBinding.Bound(input),
+          (),
+          Refused(
+            c.name,
+            targetOf(d, c),
+            DocumentError.LocationInputMismatch(
+              analysis.id,
+              data.id,
+              input.display,
+              analysis.recipe.input.render
+            )
+          )
+        )
+        run     = RunId(d.runs.lastOption.fold(1)(_.id.number + 1))
+        started = RunRef(run, analysis.id, data.id, RunLifecycle.Running, CoreBinding.unbound)
+        next <- rebuild(d, c)(runs = d.runs :+ started)
+      yield Outcome(
+        next,
+        Vector(Effect.RequestRun(run, analysis.id, data.id), Effect.Persist),
+        Recording.Barrier(HistoryBarrier.RunRequested(analysis.id, run))
+      )
+
     // Storage acknowledged these exact native bytes first (bead q-native-stored-completion).
     case BindCompletedArtifacts(facts) =>
       def binding[A](recorded: CoreBinding[A], prepared: CoreBinding[A], field: String) =
@@ -731,8 +976,8 @@ object Reducer:
 
   /** The document with some science replaced, checked as a whole. */
   private def rebuild(d: StudioDocument, c: Command)(
-      datasets: Vector[DatasetRevisionSpec] = d.datasets,
-      analyses: Vector[AnalysisRevisionSpec] = d.analyses,
+      datasets: Vector[DatasetDefinition] = d.datasets,
+      analyses: Vector[AnalysisDefinition] = d.analyses,
       draft: Option[Draft] = d.draft,
       runs: Vector[RunRef] = d.runs,
       reporting: Vector[ReportingSpec] = d.reporting,
@@ -772,7 +1017,7 @@ object Reducer:
       val registry = d.analysisFamilies.fold {
         for
           legacy <- d.analyses.headOption.traverse(saved =>
-            AnalysisFamily.of(AnalysisFamilyId.Legacy, saved.studio.name.value)
+            AnalysisFamily.of(AnalysisFamilyId.Legacy, saved.revisionName.value)
           )
           owners <- d.analyses.traverse(saved =>
             AnalysisFamilyOwner.of(saved.id, AnalysisFamilyId.Legacy)
@@ -811,6 +1056,96 @@ object Reducer:
             .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
         yield next
       }
+
+  /** Spatial revisions use the same nominal family registry as timed ones,
+    * but a family cannot silently mix scientific kinds. A legacy document is
+    * materialised exactly as the timed save path does before adding its first
+    * explicit spatial family.
+    */
+  private def locationFamilies(
+      d: StudioDocument,
+      c: Command,
+      family: AnalysisFamily,
+      revision: AnalysisRevision
+  ): Either[CommandError, AnalysisFamilyRegistry] =
+    val held = d.analysisFamilies.fold {
+      for
+        legacy <- d.analyses.headOption.traverse(saved =>
+          AnalysisFamily.of(AnalysisFamilyId.Legacy, saved.revisionName.value)
+        )
+        owners <- d.analyses.traverse(saved =>
+          AnalysisFamilyOwner.of(saved.id, AnalysisFamilyId.Legacy)
+        )
+        registry <- AnalysisFamilyRegistry.of(legacy.toVector, owners, d.analyses.map(_.id))
+      yield registry
+    }(Right(_))
+    for
+      registry <- held.left.map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+      existing = registry.family(family.id)
+      _ <- existing match
+        case Some(value) if value == family => Right(())
+        case Some(value)                    =>
+          Left(
+            refused(d, c)(
+              DocumentError.FamilyOwnership(
+                AnalysisFamilyError.Wire(
+                  family.id.label,
+                  s"names ${value.name} and ${family.name} disagree"
+                )
+              )
+            )
+          )
+        case None =>
+          registry.nextId
+            .leftMap(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+            .flatMap(expected =>
+              Either.cond(
+                family.id == expected,
+                (),
+                refused(d, c)(DocumentError.FamilyDraftIdentity(family.id, expected))
+              )
+            )
+      _ <- registry.owners
+        .filter(_.family == family.id)
+        .flatMap(owner => d.analysisDefinition(owner.revision))
+        .find(_.kind != StudyKind.Locations)
+        .map(other =>
+          refused(
+            d,
+            c
+          )(DocumentError.KindMismatch(family.id.label, StudyKind.Locations, other.kind))
+        )
+        .toLeft(())
+      owner <- AnalysisFamilyOwner
+        .of(revision, family.id)
+        .leftMap(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+      next <- AnalysisFamilyRegistry
+        .of(
+          existing.fold(registry.families :+ family)(_ => registry.families),
+          registry.owners :+ owner,
+          d.analyses.map(_.id) :+ revision
+        )
+        .leftMap(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+    yield next
+
+  private def removeLocationFamily(
+      d: StudioDocument,
+      c: Command,
+      revision: AnalysisRevision
+  ): Either[CommandError, Option[AnalysisFamilyRegistry]] =
+    d.analysisFamilies match
+      case None           => Right(None)
+      case Some(registry) =>
+        val keptOwners   = registry.owners.filterNot(_.revision == revision)
+        val heldIds      = keptOwners.map(_.family).toSet
+        val keptFamilies = registry.families.filter(family => heldIds.contains(family.id))
+        val remaining    = d.analyses.filterNot(_.id == revision).map(_.id)
+        if remaining.isEmpty then Right(None)
+        else
+          AnalysisFamilyRegistry
+            .of(keptFamilies, keptOwners, remaining)
+            .leftMap(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+            .map(Some(_))
 
   private def refused(d: StudioDocument, c: Command)(error: DocumentError): CommandError =
     Refused(c.name, targetOf(d, c), error)
@@ -938,21 +1273,31 @@ object Reducer:
     case WithdrawVerification(id)        => Target.OnDataset(id)
     case ResumeVerification(id, _)       => Target.OnDataset(id)
     case Admit(id, _, _, _, _)           => Target.OnDataset(id)
-    case RestoreDraft(draft)             => Target.OnDraft(Some(draft.id))
-    case _: StartAnalysis                => Target.OnDraft(Some(AnalysisRevision(1)))
-    case _: StartFamily                  => Target.OnDraft(d.nextAnalysisId.toOption)
+    case _: AppendLocationDataset        =>
+      Target.OnDataset(DatasetRevision(d.datasets.lastOption.fold(1)(_.id.number + 1)))
+    case DiscardLocationDataset(id)                => Target.OnDataset(id)
+    case RestoreLocationDataset(dataset)           => Target.OnDataset(dataset.id)
+    case SaveLocationAnalysis(_, dataset, _, _, _) => Target.OnDataset(dataset)
+    case DiscardLocationAnalysis(analysis)         => Target.OnAnalysis(analysis)
+    case RestoreLocationAnalysis(analysis, _, _)   => Target.OnAnalysis(analysis.id)
+    case RemoveLocationAnalysis(analysis, _, _)    => Target.OnAnalysis(analysis)
+    case ReserveLocationRun(analysis)              => Target.OnAnalysis(analysis)
+    case RestoreDraft(draft)                       => Target.OnDraft(Some(draft.id))
+    case _: StartAnalysis                          => Target.OnDraft(Some(AnalysisRevision(1)))
+    case _: StartFamily                            => Target.OnDraft(d.nextAnalysisId.toOption)
     case _: (StartDraft | ChangeRecipe | ChangeRecipes | RebaseDraft | SaveAndRun) |
         DiscardDraft =>
       Target.OnDraft(
         d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))
       )
-    case RecordRunOutcome(run, _, _)   => Target.OnRun(run)
-    case CancelRun(run)                => Target.OnRun(run)
-    case BindPlan(revision, _, _)      => Target.OnAnalysis(revision)
-    case BindCompletedArtifacts(facts) => Target.OnRun(facts.run)
-    case PutReporting(spec)            => Target.OnReporting(spec.id)
-    case RemoveReporting(id)           => Target.OnReporting(id)
-    case CreateFigure(_, _, _)         =>
+    case RecordRunOutcome(run, _, _)           => Target.OnRun(run)
+    case CancelRun(run)                        => Target.OnRun(run)
+    case BindPlan(revision, _, _)              => Target.OnAnalysis(revision)
+    case BindCompletedArtifacts(facts)         => Target.OnRun(facts.run)
+    case BindLocationCompletedArtifacts(facts) => Target.OnRun(facts.run)
+    case PutReporting(spec)                    => Target.OnReporting(spec.id)
+    case RemoveReporting(id)                   => Target.OnReporting(id)
+    case CreateFigure(_, _, _)                 =>
       d.nextFigureId.fold(_ => Target.OnPresentation, Target.OnFigure(_))
     case RestoreFigure(spec)              => Target.OnFigure(spec.id)
     case DeleteFigure(id)                 => Target.OnFigure(id)

@@ -134,6 +134,8 @@ final class DiagnosticAlignment(
     case (v: StudyKey, Operand.Key(x))                  => x == v
     case (v: DefinitionId, Operand.Definition(x))       => x == v
     case (v: ArtifactRef[?], Operand.Artifact(x))       => x == v.digest
+    case (v: LocationTrialId, Operand.Name(x))          => x == v.value
+    case (v: LocationSourceId, Operand.Name(x))         => x == v.value
     case (v: FrameId, Operand.Name(x))                  => x == v.name
     case (v: ClockId, Operand.Name(x))                  => x == v.name
     case (v: GridId, Operand.Name(x))                   => x == v.name

@@ -28,7 +28,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private val legacy   = get(Reducer.run(DocumentSamples.t2, Command.DiscardDraft)).document
   private val explicit = FamilySamples.document()
-  private val saved    = legacy.analyses.last
+  private val saved    = legacy.timedAnalyses.last
   private val studio   = saved.studio.copy(preset = Preset.Custom)
   private val start    =
     new Command.StartFamily("Independent", saved.dataset, saved.recipe, studio)
@@ -37,7 +37,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
   ).document
   private def empty = get(
     StudioDocument.of(
-      legacy.datasets,
+      legacy.timedDatasets,
       Vector.empty,
       None,
       Vector.empty,
@@ -50,8 +50,8 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
 
   private def explicitEmpty = get(
     StudioDocument.of(
-      empty.datasets,
-      empty.analyses,
+      empty.timedDatasets,
+      empty.timedAnalyses,
       None,
       empty.runs,
       empty.reporting,
@@ -71,7 +71,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
       assert(!draft.isInitial)
       assertEquals(draft.savedBase, None)
       assertEquals(draft.changes, Vector.empty)
-      assertEquals(started.analyses, base.analyses)
+      assertEquals(started.timedAnalyses, base.timedAnalyses)
       assertEquals(started.runs, base.runs)
       assertEquals(started.analysisFamilies, base.analysisFamilies)
       assertEquals(started.familyOf(draft.id), Some(get(base.nextFamilyId)))
@@ -93,7 +93,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
     assertEquals(reverted.document.draft, initial.document.draft)
     assertEquals(get(edited.undo).history.document, initial.document)
     assertEquals(get(get(initial.undo).history.redo).history.document, initial.document)
-    val data    = legacy.datasets.head.id
+    val data    = legacy.timedDatasets.head.id
     val rebased = get(initial.apply(Command.RebaseDraft(data))).history
     assertEquals(
       get(rebased.apply(Command.RebaseDraft(saved.dataset))).history.document.draft,
@@ -114,16 +114,16 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
       val renamed  = studio.copy(name = get(RevisionName.of("Revision override")))
       val result   = get(Reducer.run(started, Command.SaveAndRun(Some(renamed))))
       val doc      = result.document
-      assertEquals(doc.analyses.dropRight(1), base.analyses)
-      assertEquals(doc.analyses.last.id, draft.id)
-      assertEquals(doc.analyses.last.studio, renamed)
+      assertEquals(doc.timedAnalyses.dropRight(1), base.timedAnalyses)
+      assertEquals(doc.timedAnalyses.last.id, draft.id)
+      assertEquals(doc.timedAnalyses.last.studio, renamed)
       assertEquals(doc.familyOf(draft.id), Some(familyId))
       assertEquals(
         doc.analysisFamilies.flatMap(_.family(familyId)).map(_.name),
         Some("Independent")
       )
-      base.analyses.foreach(a => assertEquals(doc.familyOf(a.id), base.familyOf(a.id)))
-      assertEquals(doc.analysisFamilies.get.owners.size, doc.analyses.size)
+      base.timedAnalyses.foreach(a => assertEquals(doc.familyOf(a.id), base.familyOf(a.id)))
+      assertEquals(doc.analysisFamilies.get.owners.size, doc.timedAnalyses.size)
       assertEquals(doc.draft, None)
       assertEquals(doc.runs.last.analysis, draft.id)
       assert(
@@ -137,7 +137,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
       apply(apply(legacy, start), Command.SaveAndRun(None)).analysisFamilies.get
     assertEquals(
       materialized.family(AnalysisFamilyId.Legacy).map(_.name),
-      Some(legacy.analyses.head.studio.name.value)
+      Some(legacy.timedAnalyses.head.studio.name.value)
     )
   }
 
@@ -236,7 +236,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
       Vector.fill(3)("Same name")
     )
     assertEquals(
-      persisted.familyOf(persisted.analyses.last.id),
+      persisted.familyOf(persisted.timedAnalyses.last.id),
       Some(get(AnalysisFamilyId.of(3)))
     )
 
@@ -246,7 +246,7 @@ class SeededFamilyDraftSuite extends munit.FunSuite:
     ) =
       get(
         StudioDocument.of(
-          legacy.datasets,
+          legacy.timedDatasets,
           Vector(revision),
           None,
           Vector.empty,

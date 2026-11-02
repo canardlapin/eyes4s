@@ -22,7 +22,10 @@ import scala.collection.mutable.ArrayBuffer
   * number of records, including quoted records containing embedded newlines.
   */
 private[io] final case class CsvCursor private (contents: String, index: Int):
-  def advance(recordBudget: Int): Either[TidyCsvError, CsvPage] =
+  /** Decode RFC-4180 records with the requested field separator.  The quoting
+    * rules are identical for CSV and tab-separated exports.
+    */
+  def advance(recordBudget: Int, delimiter: Char = ','): Either[TidyCsvError, CsvPage] =
     val rows                          = ArrayBuffer.empty[Vector[String]]
     val fields                        = ArrayBuffer.empty[String]
     val field                         = new java.lang.StringBuilder
@@ -51,7 +54,7 @@ private[io] final case class CsvCursor private (contents: String, index: Int):
         else field.append(character)
       else if closed then
         character match
-          case ',' => finishField()
+          case value if value == delimiter => finishField()
           case '\r' if offset + 1 < contents.length && contents.charAt(offset + 1) == '\n' =>
             finishRow()
             offset += 1
@@ -59,8 +62,8 @@ private[io] final case class CsvCursor private (contents: String, index: Int):
           case other => failure = Some(TidyCsvError.MalformedCsv(offset, other))
       else
         character match
-          case ','                      => finishField()
-          case '"' if field.length == 0 => quoted = true
+          case value if value == delimiter => finishField()
+          case '"' if field.length == 0    => quoted = true
           case '"' => failure = Some(TidyCsvError.MalformedCsv(offset, character))
           case '\r' if offset + 1 < contents.length && contents.charAt(offset + 1) == '\n' =>
             finishRow()

@@ -435,7 +435,7 @@ class PresetSuite extends munit.ScalaCheckSuite:
 
   test("the picker offers a genuine first recipe only after a dataset is admitted") {
     val sample = ok(eyes4s.studio.core.fixture.StoryMoments.t2)
-    val data   = sample.datasets.last
+    val data   = sample.timedDatasets.last
       .copy(id = eyes4s.studio.core.backend.DatasetRevision(1), parent = None)
     val document = ok(
       StudioDocument.of(
@@ -454,7 +454,7 @@ class PresetSuite extends munit.ScalaCheckSuite:
     assert(options.forall(_.choose.isDefined))
     val first = AppModel.update(model, Intent.ChoosePreset(Preset.EncodingRetrieval))._1
     assertEquals(first.notice, None)
-    assertEquals(first.document.analyses, Vector.empty)
+    assertEquals(first.document.timedAnalyses, Vector.empty)
     assertEquals(first.document.draft.flatMap(_.savedBase), None)
     assertEquals(first.document.draftContext.map(_.dataset), Some(data.id))
     assertEquals(PresetPicker.selected(first.document), Some(Preset.EncodingRetrieval))

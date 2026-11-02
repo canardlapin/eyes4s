@@ -199,14 +199,14 @@ class ImportWizardSuite extends munit.FunSuite:
         assertEquals(sources.trials.map(_.path.value), Some("session2/trials.csv"))
         assertEquals(mapping.column(ColumnRole.Onset), Some(col("onset_ms")))
         assertEquals(units, DeclaredUnits(Some(TimeUnit.Milliseconds)))
-        assertEquals(geometry, t2.datasets.last.geometry)
+        assertEquals(geometry, t2.timedDatasets.last.geometry)
         assertEquals(attrs, DeclaredAttributes.empty)
       case other => fail(s"expected one ImportSources, got $other")
     // The app applies it: a new pending dataset r4.
     val app        = AppModel.open(t2, None)
     val (next, fx) = AppModel.run(app, WizardEffect.appIntents(effects))
-    assertEquals(next.document.datasets.last.id, DatasetRevision(4))
-    assertEquals(next.document.datasets.last.decision, AdmissionDecision.Pending)
+    assertEquals(next.document.timedDatasets.last.id, DatasetRevision(4))
+    assertEquals(next.document.timedDatasets.last.decision, AdmissionDecision.Pending)
     assert(fx.exists { case AppEffect.Persist(_) => true; case _ => false })
     assertEquals(ImportWizardVM.of(w, t2).commit, "Import as r4")
   }
@@ -452,7 +452,7 @@ class ImportWizardSuite extends munit.FunSuite:
   test("a new import re-imports the latest revision at commit time, not at open") {
     // Opened on t1 (latest r3, pending); r4 arrives before the commit.
     val w0    = ImportWizard.newImport(t1, ImportPresets.empty)
-    val r3    = t1.datasets.last
+    val r3    = t1.timedDatasets.last
     val later = AppModel
       .run(
         AppModel.open(t1, None),
@@ -473,7 +473,7 @@ class ImportWizardSuite extends munit.FunSuite:
       )
       ._1
       .document
-    assertEquals(later.datasets.last.id, DatasetRevision(4))
+    assertEquals(later.timedDatasets.last.id, DatasetRevision(4))
     val (_, fx) = run(
       w0,
       later,
@@ -535,7 +535,7 @@ class ImportWizardSuite extends munit.FunSuite:
       case other => fail(s"expected one ImportSources, got $other")
     val next = AppModel.run(AppModel.open(t2, None), WizardEffect.appIntents(fx))._1
     assertEquals(
-      next.document.datasets.last.attributes.columns.map(_.value),
+      next.document.timedDatasets.last.attributes.columns.map(_.value),
       Vector("Pupil", "Notes")
     )
   }
@@ -599,8 +599,8 @@ class ImportWizardSuite extends munit.FunSuite:
   private def storedAs(f: DatasetRevisionSpec => DatasetRevisionSpec): StudioDocument =
     ok(
       StudioDocument.of(
-        t1.datasets.map(d => if d.id == DatasetRevision(3) then f(d) else d),
-        t1.analyses,
+        t1.timedDatasets.map(d => if d.id == DatasetRevision(3) then f(d) else d),
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,
@@ -699,7 +699,7 @@ class ImportWizardSuite extends munit.FunSuite:
       case other => fail(s"expected a re-import without trials, got $other")
     // Applied, the new revision is pending and its inventory no longer keeps it from admission.
     val applied = AppModel.run(AppModel.open(unmapped, None), WizardEffect.appIntents(fx))._1
-    val r4      = applied.document.datasets.last
+    val r4      = applied.document.timedDatasets.last
     assertEquals((r4.parent, r4.sources.trials, r4.inventory), (Some(r3), None, None))
     assertEquals(r4.decision, AdmissionDecision.Pending)
     val verified = AppModel.update(applied, Intent.Dispatch(Command.VerifyDataset(r4.id)))._1

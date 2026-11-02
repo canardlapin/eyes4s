@@ -188,7 +188,7 @@ class CommandLawsSuite extends munit.ScalaCheckSuite:
 
   test("every command case applies in some session, and undo covers every reversible one") {
     val traces = (0L until 1200L).flatMap(seed =>
-      Vector(legacySession(16), firstStudySession(16)).flatMap(
+      Vector(legacySession(16), firstStudySession(16), spatialSession).flatMap(
         _.pureApply(Gen.Parameters.default, Seed(seed))._2
       )
     )
@@ -201,4 +201,37 @@ class CommandLawsSuite extends munit.ScalaCheckSuite:
     }.toSet
     assertEquals(allCommands.filterNot(applied), Vector.empty)
     assertEquals(allCommands.filterNot(irreversible).filterNot(undone), Vector.empty)
+  }
+
+  test("the spatial lifecycle applies, undoes its reversible edits, and round-trips") {
+    val traces   = spatialSession.pureApply(Gen.Parameters.default, Seed(0L))._2
+    val commands = traces.collect { case Trace(_, JournalEntry.Apply(command), Right(_)) =>
+      command
+    }
+    assertEquals(
+      commands.map(_.name).toSet,
+      Set(
+        "AppendLocationDataset",
+        "DiscardLocationDataset",
+        "RestoreLocationDataset",
+        "SaveLocationAnalysis",
+        "DiscardLocationAnalysis",
+        "RestoreLocationAnalysis",
+        "RemoveLocationAnalysis",
+        "ReserveLocationRun",
+        "BindLocationCompletedArtifacts",
+        "RecordRunOutcome"
+      )
+    )
+    traces.foreach { trace =>
+      applied(trace).foreach { (command, step) =>
+        if !irreversible(command.name) then
+          val stack = History.stackOf(command)
+          assertEquals(
+            step.history.undoOn(stack).map(_.history.document),
+            Right(trace.before.document)
+          )
+        assertEquals(io.circe.parser.decode[Command](command.asJson.noSpaces), Right(command))
+      }
+    }
   }

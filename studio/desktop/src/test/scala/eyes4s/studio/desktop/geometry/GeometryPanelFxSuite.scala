@@ -353,7 +353,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     val rig = mount(fx, t2, StoryMoment.T2)
     loaded(fx, rig)
     redraw(fx, rig, 0)
-    assertEquals(rig.model.document.datasets.map(_.id), Vector(r2, r3))
+    assertEquals(rig.model.document.timedDatasets.map(_.id), Vector(r2, r3))
 
     // A geometry edit on admitted r3 creates draft r4, which the selection follows.
     runOnFx {
@@ -379,7 +379,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       ppd.fireEvent(ActionEvent())
     }
     val second = redraw(fx, rig, 2)
-    assertEquals(rig.model.document.datasets.map(_.id), Vector(r2, r3, r4))
+    assertEquals(rig.model.document.timedDatasets.map(_.id), Vector(r2, r3, r4))
     assertEquals(
       rig.model.document.dataset(r4).map(_.geometry.pixelsPerDegree.value),
       Some(36.0)

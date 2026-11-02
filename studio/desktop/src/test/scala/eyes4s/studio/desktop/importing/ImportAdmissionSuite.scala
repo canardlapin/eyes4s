@@ -159,6 +159,7 @@ class ImportAdmissionSuite extends munit.FunSuite:
         val text = source.role match
           case SourceRole.Fixations => GoldenCsv.fixations
           case SourceRole.Trials    => GoldenCsv.trials
+          case other                => fail(s"Unexpected source role in timed fixture: $other")
         IO.pure(Some(IArray.from(text.getBytes(UTF_8))))
       def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
         IO.pure(GoldenAssets.registry(dataset).toOption)
@@ -202,7 +203,7 @@ class ImportAdmissionSuite extends munit.FunSuite:
     val displays =
       DisplayColumns(ok(ColumnName.of("presentation")), Some(ok(ColumnName.of("asset_path"))))
     val geometry =
-      eyes4s.studio.core.importing.GeometryFields.of(StoryModels.t2.datasets.last.geometry)
+      eyes4s.studio.core.importing.GeometryFields.of(StoryModels.t2.timedDatasets.last.geometry)
     val initial = eyes4s.studio.core.importing.GeometryField.values
       .foldLeft(ImportWizard.newImport(document, ImportPresets.empty)) { (w, f) =>
         ImportWizard.update(w, WizardIntent.EditGeometry(f, geometry.field(f)), document)._1
@@ -268,7 +269,7 @@ class ImportAdmissionSuite extends munit.FunSuite:
       val port     = SessionPort.start(reopened)
       try
         val saved = reopened.document.unsafeRunSync()
-        val spec  = saved.datasets.last
+        val spec  = saved.timedDatasets.last
         assertEquals(spec.inventory.flatMap(_.displays), Some(displays))
         assert(!eyes4s.studio.core.fixture.GoldenAssets.describes(spec))
         val registry = DatasetSourceHosts

@@ -64,6 +64,12 @@ object ProtocolSamples:
   private def right[E, A](e: Either[E, A]): A =
     e.fold(l => throw new AssertionError(l), identity)
 
+  /** Existing protocol fixtures exercise the timed grammar explicitly. */
+  def timed(value: JobProgressValue): JobProgress = value match
+    case progress: JobProgress      => progress
+    case other: LocationJobProgress =>
+      throw AssertionError(s"expected timed progress, got $other")
+
   val query: TrialKey   = TrialKey("P17", Phase.Retrieval, "ret_07", 1)
   val matched: TrialKey = TrialKey("P17", Phase.Encoding, "enc_03", 1)
   val job: JobId        = JobId(1)
@@ -212,8 +218,11 @@ object ProtocolSamples:
     BackendError.ResultRecomputationCancelled(run, job),
     BackendError.ResultRecomputationFailed(run, job, Vector(diagnostic)),
     BackendError.ResultReadClosed(run, Some(job)),
+    BackendError.ResultArchiveUnavailable(run),
     BackendError
       .RegistryRefused(DiagnosticLocus.Revision(AnalysisRevision(4)), "Saved recipe changed."),
+    BackendError.NoExecutablePairs(AnalysisRevision(4), "Retrieval1", 0, 0L, 0L),
+    BackendError.ArchiveDensityCapacity(AnalysisRevision(4), 100L, 400, 20000L),
     BackendError.UnknownReference(RunId(7), address),
     BackendError.AlreadyRunning(AnalysisRevision(5), job),
     BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0)),
@@ -908,7 +917,7 @@ object ProtocolSamples:
       Sigma
     }
     eyes4s.studio.core.document.DocumentSamples.t2
-      .analyses(1)
+      .timedAnalyses(1)
       .recipe
       .copy(
         window = Some(right(AnalysisWindow.of(448.5, 156.5, 1472.5, 924.5))),

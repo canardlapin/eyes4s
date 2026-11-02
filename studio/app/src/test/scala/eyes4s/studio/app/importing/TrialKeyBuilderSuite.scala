@@ -470,9 +470,12 @@ class TrialKeyBuilderSuite extends munit.FunSuite:
         assertEquals(attrs.columns, Vector(col("occurrence")))
       case other => fail(s"expected a re-import, got $other")
     val applied = AppModel.run(AppModel.open(t2, None), WizardEffect.appIntents(fx))._1
-    assertEquals(applied.document.datasets.last.id, DatasetRevision(4))
-    assertEquals(applied.document.datasets.last.decision, AdmissionDecision.Pending)
-    assertEquals(applied.document.datasets.last.mapping.column(ColumnRole.Occurrence), None)
+    assertEquals(applied.document.timedDatasets.last.id, DatasetRevision(4))
+    assertEquals(applied.document.timedDatasets.last.decision, AdmissionDecision.Pending)
+    assertEquals(
+      applied.document.timedDatasets.last.mapping.column(ColumnRole.Occurrence),
+      None
+    )
   }
 
   test("changing a pending revision's key is one ReviseDataset") {

@@ -219,8 +219,12 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       Some("Run 8 is not ready to show; no run is ready.")
     )
     // A notice for another stamp is not the one requested: the shelf ignores it.
-    val other = RunReady(done.id, done.run, done.stamp.copy(dataset = DatasetRevision(9)))
-    val m1    = AppModel.update(m0, Intent.Execution(ExecutionEvent.Ready(other)))._1
+    val other = RunReady(
+      done.id,
+      done.run,
+      eyes4s.studio.app.StoryModels.timedStamp(done.stamp).copy(dataset = DatasetRevision(9))
+    )
+    val m1 = AppModel.update(m0, Intent.Execution(ExecutionEvent.Ready(other)))._1
     assertEquals(m1.jobs.ready, None)
     val notice = RunReady(done.id, done.run, done.stamp)
     val ready  = AppModel.update(m0, Intent.Execution(ExecutionEvent.Ready(notice)))._1
@@ -276,8 +280,8 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
     val t2   = StoryModels.t2
     val none = ok(
       StudioDocument.of(
-        t2.datasets,
-        t2.analyses,
+        t2.timedDatasets,
+        t2.timedAnalyses,
         t2.draft,
         Vector.empty,
         t2.reporting,

@@ -82,8 +82,7 @@ object SourcesText:
     case MissingTitle    => "{0} image files missing"
     case MissingTitleOne => "1 image file missing"
     case MissingBody     =>
-      "{0}. Their {1} trials ({2}) are drawn as missing asset, never as blank. " +
-        "Gaze and scores are unaffected."
+      "Images are unavailable for {0} trials. Gaze and scores are unaffected."
     case MissingTrialsOf    => "{0} {1}"
     case Repair             => "Repair…"
     case ShowTrials         => "Show {0} trials"

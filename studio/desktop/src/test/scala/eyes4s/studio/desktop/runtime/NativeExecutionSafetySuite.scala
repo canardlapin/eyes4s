@@ -302,7 +302,7 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
               Intent.DesignPrepared(
                 PreparedDesign(
                   ready,
-                  f.document.draft.get.recipe(f.document.analyses.head.recipe)
+                  f.document.draft.get.recipe(f.document.timedAnalyses.head.recipe)
                 )
               )
             )
@@ -343,7 +343,7 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
       harness(f.document, f.sources).use { h =>
         for
           receipt <- h.prepared
-          recipe   = f.document.draft.get.recipe(f.document.analyses.head.recipe)
+          recipe   = f.document.draft.get.recipe(f.document.timedAnalyses.head.recipe)
           supplied =
             if kind == "tampered" then
               get(
@@ -486,7 +486,7 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
     harness(f.document, f.sources).use { h =>
       for
         ready <- h.prepared
-        recipe = f.document.draft.get.recipe(f.document.analyses.head.recipe)
+        recipe = f.document.draft.get.recipe(f.document.timedAnalyses.head.recipe)
         _ <- h.dispatch(Intent.DesignPrepared(PreparedDesign(ready, recipe)))
       yield
         val query = TrialKey("P1", Phase.Retrieval, "ret_1", 1)
@@ -531,7 +531,7 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         _ <- h.dispatch(Intent.ShowRun(first))
         _ <- h.dispatch(Intent.SwitchPerspective(Perspective.Results))
         shown = banner
-        saved = h.model.get().document.analyses.last.recipe
+        saved = h.model.get().document.timedAnalyses.last.recipe
         _ <- h.dispatch(
           Intent.Dispatch(
             Command.ChangeRecipe(RecipeChange.Grid(saved.grid, get(GridSize.of(48, 32))))
@@ -620,7 +620,7 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
           h.model.get().document.run(oldRun).map(_.state),
           Some(RunLifecycle.Running)
         )
-        saved = h.model.get().document.analyses.last.recipe
+        saved = h.model.get().document.timedAnalyses.last.recipe
         _ <- h.dispatch(
           Intent.Dispatch(
             Command.ChangeRecipe(RecipeChange.Grid(saved.grid, get(GridSize.of(48, 32))))

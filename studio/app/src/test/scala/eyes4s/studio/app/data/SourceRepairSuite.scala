@@ -338,7 +338,7 @@ class SourceRepairSuite extends munit.FunSuite:
     "an import after the last check checks again; until then its files are unchecked, not missing"
   ) {
     val m      = StoryModels.t2Explore
-    val all    = m.document.datasets.flatMap(_.sources.entries).distinct
+    val all    = m.document.timedDatasets.flatMap(_.sources.entries).distinct
     val clean  = answer(project(m), all.map(s => InputStatus.Present(entry(s))))
     val r3spec = m.document.dataset(r3).get
     val other  = bytes("participant,phase,trial\nanother\n")
@@ -366,7 +366,7 @@ class SourceRepairSuite extends munit.FunSuite:
       Vector(AppEffect.CheckInputs(imported.checks.asked))
     )
     assert(imported.checks.outstanding)
-    val r4 = imported.document.datasets.last.id
+    val r4 = imported.document.timedDatasets.last.id
     assertEquals(
       imported.sources.of(r4).map(f => (f.name, f.state)),
       Vector(("fixations.csv", SourceState.Unchecked), ("trials.csv", SourceState.Present))
@@ -391,7 +391,9 @@ class SourceRepairSuite extends munit.FunSuite:
     assertEquals(refused.collect { case e: DesignEffect.StartPreview => e }, Vector.empty)
     val present = answer(
       asked,
-      m.document.datasets.flatMap(_.sources.entries).map(s => InputStatus.Present(entry(s)))
+      m.document.timedDatasets
+        .flatMap(_.sources.entries)
+        .map(s => InputStatus.Present(entry(s)))
     )
     val (ready, start) = ResolvedDesign.sync(pane, present)
     assertEquals(start.collect { case e: DesignEffect.StartPreview => e.revision }.size, 1)
@@ -406,7 +408,9 @@ class SourceRepairSuite extends munit.FunSuite:
     val m       = StoryModels.t2Analysis
     val asked   = project(m) // round 1, asked when the window opened
     val present =
-      m.document.datasets.flatMap(_.sources.entries).map(s => InputStatus.Present(entry(s)))
+      m.document.timedDatasets
+        .flatMap(_.sources.entries)
+        .map(s => InputStatus.Present(entry(s)))
     val (waiting, ask) = AppModel.update(asked, Intent.Dispatch(Command.SaveAndRun(None)))
     assertEquals(ask, Vector(AppEffect.CheckInputs(2L)))
     // The open-time check (round 1) answers: the run still waits for round 2.
@@ -427,7 +431,9 @@ class SourceRepairSuite extends munit.FunSuite:
   test("an answer for a round never asked is ignored; the asked round still decides") {
     val m       = StoryModels.t2Analysis
     val present =
-      m.document.datasets.flatMap(_.sources.entries).map(s => InputStatus.Present(entry(s)))
+      m.document.timedDatasets
+        .flatMap(_.sources.entries)
+        .map(s => InputStatus.Present(entry(s)))
     val (waiting, _) = AppModel.update(project(m), Intent.Dispatch(Command.SaveAndRun(None)))
     val forged       = AppModel.update(waiting, Intent.InputsChecked(99L, present))._1
     assertEquals(forged, waiting)
@@ -438,7 +444,7 @@ class SourceRepairSuite extends munit.FunSuite:
 
   test("the same bytes imported under another name are checked again, never shown missing") {
     val m      = StoryModels.t2Explore
-    val all    = m.document.datasets.flatMap(_.sources.entries).distinct
+    val all    = m.document.timedDatasets.flatMap(_.sources.entries).distinct
     val clean  = answer(project(m), all.map(s => InputStatus.Present(entry(s))))
     val r3spec = m.document.dataset(r3).get
     val fix    = r3spec.sources.fixations.get
@@ -464,7 +470,7 @@ class SourceRepairSuite extends munit.FunSuite:
       )
     )
     assertEquals(effects.collect { case c: AppEffect.CheckInputs => c }.size, 1)
-    val r4 = imported.document.datasets.last.id
+    val r4 = imported.document.timedDatasets.last.id
     assertEquals(
       imported.sources.of(r4).find(_.name == "renamed.csv").map(_.state),
       Some(SourceState.Unchecked)
@@ -487,7 +493,9 @@ class SourceRepairSuite extends munit.FunSuite:
     assertEquals(cancelled.checks.runAfter, None)
     // Its check's answer then runs nothing.
     val present =
-      m.document.datasets.flatMap(_.sources.entries).map(s => InputStatus.Present(entry(s)))
+      m.document.timedDatasets
+        .flatMap(_.sources.entries)
+        .map(s => InputStatus.Present(entry(s)))
     val after =
       AppModel.update(cancelled, Intent.InputsChecked(waiting.checks.asked, present))._1
     assertEquals(after.document.runs.size, m.document.runs.size)

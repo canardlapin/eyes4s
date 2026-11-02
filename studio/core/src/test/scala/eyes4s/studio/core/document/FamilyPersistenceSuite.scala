@@ -45,8 +45,8 @@ class FamilyPersistenceSuite extends munit.FunSuite:
       )
     )
     val refused = StudioDocument.of(
-      value.datasets,
-      value.analyses,
+      value.timedDatasets,
+      value.timedAnalyses,
       value.draft,
       value.runs,
       value.reporting,
@@ -78,7 +78,7 @@ class FamilyPersistenceSuite extends munit.FunSuite:
     )
     val empty   = get(AnalysisFamilyRegistry.of(Vector.empty, Vector.empty, Vector.empty))
     val refused = StudioDocument.of(
-      value.datasets,
+      value.timedDatasets,
       Vector.empty,
       Some(initial),
       Vector.empty,
@@ -111,8 +111,8 @@ class FamilyPersistenceSuite extends munit.FunSuite:
     )
     val legacy = get(
       StudioDocument.of(
-        value.datasets,
-        value.analyses,
+        value.timedDatasets,
+        value.timedAnalyses,
         value.draft,
         value.runs,
         value.reporting,

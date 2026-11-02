@@ -229,8 +229,8 @@ class FigureBindingSuite extends munit.FunSuite:
     val later = AppModel.open(
       ok(
         eyes4s.studio.core.document.StudioDocument.of(
-          t3.datasets,
-          t3.analyses,
+          t3.timedDatasets,
+          t3.timedAnalyses,
           t3.draft,
           t3.runs.map(r =>
             if r.id == eyes4s.studio.core.fixture.StoryMoments.run8 then

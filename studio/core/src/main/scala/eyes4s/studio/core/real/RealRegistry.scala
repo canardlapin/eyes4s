@@ -25,24 +25,25 @@ import eyes4s.studio.core.document.*
   */
 private[real] final class RealRegistry private (
     val document: StudioDocument,
-    protectedDatasets: Map[DatasetRevision, DatasetRevisionSpec],
-    protectedRevisions: Map[AnalysisRevision, AnalysisRevisionSpec],
+    protectedDatasets: Map[DatasetRevision, DatasetDefinition],
+    protectedRevisions: Map[AnalysisRevision, AnalysisDefinition],
     protectedRuns: Map[RunId, RunRef],
     val reservations: Set[RunId]
 ):
   val datasets: Map[DatasetRevision, DatasetRevisionSpec] =
-    document.datasets.map(d => d.id -> d).toMap
+    document.timedDatasets.map(d => d.id -> d).toMap
   val revisions: Map[AnalysisRevision, (DatasetRevision, Recipe)] =
-    val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
+    val saved = document.timedAnalyses.map(a => a.id -> (a.dataset, a.recipe))
     val draft = document.draftContext.map(d => d.id -> (d.dataset, d.recipe))
     (saved ++ draft).toMap
   val planBindings: Map[AnalysisRevision, CoreBinding[StudyPlanArtifact]] =
-    document.analyses.map(a => a.id -> a.plan).toMap
+    document.timedAnalyses.map(a => a.id -> a.plan).toMap
   val documentRuns: Map[RunId, RunRef]                = document.runs.map(r => r.id -> r).toMap
   val reportingSpecs: Map[ReportingId, ReportingSpec] =
     document.reporting.map(s => s.id -> s).toMap
-  val knownDatasets: Vector[DatasetRevision]   = datasets.keys.toVector.sortBy(_.number)
-  val knownRevisions: Vector[AnalysisRevision] = revisions.keys.toVector.sortBy(_.number)
+  val knownDatasets: Vector[DatasetRevision]   = document.datasets.map(_.id).sortBy(_.number)
+  val knownRevisions: Vector[AnalysisRevision] =
+    (document.analyses.map(_.id) ++ revisions.keys).distinct.sortBy(_.number)
 
   private def refused(locus: DiagnosticLocus, reason: String) =
     BackendError.RegistryRefused(locus, reason)
@@ -82,38 +83,62 @@ private[real] final class RealRegistry private (
     for
       _ <- next.datasets.traverse_ { candidate =>
         protectedDatasets.get(candidate.id).traverse_ { saved =>
-          for
-            before <- DatasetRevisionSpec
-              .contentDigest(saved)
-              .leftMap(e => refused(DiagnosticLocus.Dataset(saved.id), e.message))
-            after <- DatasetRevisionSpec
-              .contentDigest(candidate)
-              .leftMap(e => refused(DiagnosticLocus.Dataset(candidate.id), e.message))
-            _ <- Either.cond(
-              before == after && saved.decision.admittedUnder == candidate.decision.admittedUnder,
-              (),
-              refused(
-                DiagnosticLocus.Dataset(candidate.id),
-                s"Admitted ${candidate.id.label} cannot change its content/policy: recorded ${before.display}, requested ${after.display}."
+          (saved, candidate) match
+            case (before: DatasetRevisionSpec, after: DatasetRevisionSpec) =>
+              for
+                first <- DatasetRevisionSpec
+                  .contentDigest(before)
+                  .leftMap(e => refused(DiagnosticLocus.Dataset(saved.id), e.message))
+                second <- DatasetRevisionSpec
+                  .contentDigest(after)
+                  .leftMap(e => refused(DiagnosticLocus.Dataset(candidate.id), e.message))
+                _ <- Either.cond(
+                  first == second && before.decision.admittedUnder == after.decision.admittedUnder,
+                  (),
+                  refused(
+                    DiagnosticLocus.Dataset(candidate.id),
+                    s"Admitted ${candidate.id.label} cannot change its content/policy: recorded ${first.display}, requested ${second.display}."
+                  )
+                )
+              yield ()
+            case (before: LocationDatasetRevision, after: LocationDatasetRevision) =>
+              Either.cond(
+                before == after,
+                (),
+                refused(
+                  DiagnosticLocus.Dataset(candidate.id),
+                  s"Admitted spatial ${candidate.id.label} cannot change its source bundle, profile or admission binding."
+                )
               )
-            )
-          yield ()
+            case _ =>
+              Left(
+                refused(
+                  DiagnosticLocus.Dataset(candidate.id),
+                  s"${candidate.id.label} cannot change study kind from ${saved.kind} to ${candidate.kind}."
+                )
+              )
         }
       }
       _ <- next.analyses.traverse_ { candidate =>
         protectedRevisions.get(candidate.id).traverse_ { saved =>
+          val agrees = (saved, candidate) match
+            case (before: AnalysisRevisionSpec, after: AnalysisRevisionSpec) =>
+              before.dataset == after.dataset && recipeBinding(
+                before.recipe,
+                after.recipe
+              ) && binding(before.plan, after.plan)
+            case (before: LocationAnalysisRevision, after: LocationAnalysisRevision) =>
+              before.dataset == after.dataset && before.recipe.profile == after.recipe.profile && binding(
+                before.recipe.input,
+                after.recipe.input
+              ) && binding(before.plan, after.plan)
+            case _ => false
           Either.cond(
-            saved.dataset == candidate.dataset && recipeBinding(
-              saved.recipe,
-              candidate.recipe
-            ) && binding(
-              saved.plan,
-              candidate.plan
-            ),
+            agrees,
             (),
             refused(
               DiagnosticLocus.Revision(candidate.id),
-              s"Saved ${candidate.id.label} cannot change its dataset/recipe/plan binding: recorded ${saved.dataset.label} (${saved.plan.render}), requested ${candidate.dataset.label} (${candidate.plan.render})."
+              s"Saved ${candidate.id.label} cannot change its dataset, kind, recipe or plan binding: recorded ${saved.dataset.label}/${saved.kind}, requested ${candidate.dataset.label}/${candidate.kind}."
             )
           )
         }
@@ -135,7 +160,7 @@ private[real] final class RealRegistry private (
       }
       made = new RealRegistry(
         next,
-        protectedDatasets ++ next.datasets.filter(_.decision.isAdmitted).map(d => d.id -> d),
+        protectedDatasets ++ next.datasets.filter(_.isAdmitted).map(d => d.id -> d),
         protectedRevisions ++ next.analyses.map(a => a.id -> a),
         protectedRuns ++ next.runs.map(r => r.id -> r),
         reservations.intersect(next.runs.map(_.id).toSet) ++ next.runs
@@ -163,7 +188,7 @@ private[real] object RealRegistry:
   )
   def of(document: StudioDocument): RealRegistry = new RealRegistry(
     document,
-    document.datasets.filter(_.decision.isAdmitted).map(d => d.id -> d).toMap,
+    document.datasets.filter(_.isAdmitted).map(d => d.id -> d).toMap,
     document.analyses.map(a => a.id -> a).toMap,
     document.runs.map(r => r.id -> r).toMap,
     Set.empty

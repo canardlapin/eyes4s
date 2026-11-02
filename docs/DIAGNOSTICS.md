@@ -1579,6 +1579,70 @@ fails after rewriting, so review the change and run it again.
 | `revisit.non-finite-distance` | `NonFiniteDistance` | `fixationIndex`, `otherIndex`, `reference`, `value` |
 | `revisit.work-limit` | `WorkLimit` | `fixations`, `referencePoints`, `required`, `maximum` |
 
+### `location-input` — `LocationInputError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-input.empty-trial-id` | `EmptyTrialId` | `value` |
+| `location-input.empty-source-id` | `EmptySourceId` | `value` |
+| `location-input.empty-input` | `EmptyInput` |  |
+| `location-input.empty-trial` | `EmptyTrial` | `trial` |
+| `location-input.non-positive-source-ordinal` | `NonPositiveSourceOrdinal` | `trial`, `source`, `value` |
+| `location-input.duplicate-trial` | `DuplicateTrial` | `trial` |
+| `location-input.non-finite-position` | `NonFinitePosition` | `trial`, `source`, `sourceOrdinal`, `x`, `y` |
+| `location-input.position-outside-frame` | `PositionOutsideFrame` | `trial`, `source`, `sourceOrdinal`, `x`, `y`, `frame` |
+| `location-input.duplicate-provenance` | `DuplicateProvenance` | `source`, `sourceOrdinal` |
+
+### `location-query` — `LocationQueryError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-query.empty-query-id` | `EmptyQueryId` | `value` |
+| `location-query.same-trial` | `SameTrial` | `id`, `leftRole`, `left`, `rightRole`, `right` |
+
+### `location-plan` — `LocationPlanError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-plan.grid` | `Grid` | `underlying` |
+| `location-plan.empty-input` | `EmptyInput` |  |
+| `location-plan.empty-queries` | `EmptyQueries` |  |
+| `location-plan.duplicate-query` | `DuplicateQuery` | `id` |
+| `location-plan.missing-trial` | `MissingTrial` | `query`, `role`, `trial` |
+
+### `location-map` — `LocationMapError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-map.measure` | `Measure` | `trial`, `underlying` |
+| `location-map.binning` | `Binning` | `trial`, `underlying` |
+| `location-map.surface` | `Surface` | `trial`, `underlying` |
+
+### `location-run` — `LocationRunError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-run.map` | `Map` | `query`, `role`, `trial`, `underlying` |
+| `location-run.comparison` | `Comparison` | `query`, `role`, `focal`, `reference`, `underlying` |
+
+### `location-restore` — `LocationRestoreError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-restore.map-trial-set` | `MapTrialSet` | `expected`, `found` |
+| `location-restore.input-hash` | `InputHash` | `expected`, `found` |
+| `location-restore.plan-hash` | `PlanHash` | `expected`, `found` |
+| `location-restore.map-failure-identity` | `MapFailureIdentity` | `entry`, `errorTrial` |
+| `location-restore.bin-length` | `BinLength` | `trial`, `expected`, `found` |
+| `location-restore.bin-value` | `BinValue` | `trial`, `index`, `value` |
+| `location-restore.bin-total` | `BinTotal` | `trial`, `expected`, `found` |
+| `location-restore.rebuild-map` | `RebuildMap` | `trial`, `underlying` |
+| `location-restore.outcome-query-set` | `OutcomeQuerySet` | `expected`, `found` |
+| `location-restore.score-without-map` | `ScoreWithoutMap` | `query`, `role`, `trial` |
+| `location-restore.invalid-score` | `InvalidScore` | `query`, `role`, `value` |
+| `location-restore.non-finite-difference` | `NonFiniteDifference` | `query`, `matched`, `control` |
+| `location-restore.failure-operands` | `FailureOperands` | `query`, `role`, `underlying` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
@@ -1842,6 +1906,20 @@ fails after rewriting, so review the change and run it again.
 | `report-navigation.not-a-member` | `NotAMember` | `key`, `group`, `role`, `component` |
 | `report-navigation.query-count` | `QueryCount` | `participant`, `listed`, `found`, `group`, `role`, `component` |
 | `report-navigation.unlisted-participant` | `UnlistedParticipant` | `key`, `participant`, `group`, `role`, `component` |
+
+### `location-report` — `LocationReportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-report.input-hash` | `InputHash` | `expected`, `found` |
+| `location-report.plan-hash` | `PlanHash` | `expected`, `found` |
+| `location-report.grid` | `Grid` | `expected`, `found` |
+| `location-report.map-trials` | `MapTrials` | `expected`, `found` |
+| `location-report.outcome-queries` | `OutcomeQueries` | `expected`, `found` |
+| `location-report.missing-metadata` | `MissingMetadata` | `trial` |
+| `location-report.duplicate-metadata` | `DuplicateMetadata` | `trial` |
+| `location-report.surplus-metadata` | `SurplusMetadata` | `trial` |
+| `location-report.table` | `Table` | `underlying` |
 
 ### `detector-validation` — `DetectorValidationError`
 
@@ -2130,6 +2208,26 @@ fails after rewriting, so review the change and run it again.
 | `ledger-verification.input-mismatch` | `InputMismatch` | `source`, `expected`, `actual` |
 | `ledger-verification.input-evidence-mismatch` | `InputEvidenceMismatch` | `source`, `component`, `trial`, `fixation`, `expected`, `actual` |
 | `ledger-verification.manifest-binding` | `ManifestBinding` | `ledger`, `kind`, `count` |
+
+### `location-import` — `LocationImportError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `location-import.csv` | `Csv` | `file`, `detail` |
+| `location-import.header` | `Header` | `file`, `expected`, `actual` |
+| `location-import.width` | `Width` | `file`, `record`, `expected`, `actual` |
+| `location-import.number` | `Number` | `file`, `field`, `value` |
+| `location-import.duplicate` | `Duplicate` | `file`, `key` |
+| `location-import.orphan-ledger` | `OrphanLedger` | `imageIndex`, `observerSlot`, `phase` |
+| `location-import.ledger-mismatch` | `LedgerMismatch` | `imageIndex`, `observerSlot`, `phase` |
+| `location-import.phase-state` | `PhaseState` | `imageIndex`, `observerSlot`, `phase`, `state` |
+| `location-import.metadata-mismatch` | `MetadataMismatch` |  |
+| `location-import.point-mismatch` | `PointMismatch` | `trialId` |
+| `location-import.unknown-trial` | `UnknownTrial` | `trialId` |
+| `location-import.pair-profile` | `PairProfile` | `pairId` |
+| `location-import.workload-mismatch` | `WorkloadMismatch` |  |
+| `location-import.plan` | `Plan` | `operand`, `detail` |
+| `location-import.image-identity` | `ImageIdentity` | `imageIndex`, `images`, `detail` |
 
 ### `arrow-export` — `ArrowExportError`
 

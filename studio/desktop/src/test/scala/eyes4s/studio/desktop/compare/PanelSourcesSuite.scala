@@ -29,7 +29,7 @@ import eyes4s.studio.desktop.trial.GoldenTrials
 class PanelSourcesSuite extends munit.FunSuite:
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private val revision                          = StoryMoments.rev4
-  private lazy val spec                         = get(StoryMoments.t2).datasets.last
+  private lazy val spec                         = get(StoryMoments.t2).timedDatasets.last
   private val trial                             = GoldenTrials.key("P17", "ret_07")
   private lazy val native                       = get(
     TrialFixations.of(

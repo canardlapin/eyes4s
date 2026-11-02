@@ -29,6 +29,16 @@ import eyes4s.studio.core.selection.*
   * shows them: the same intents a user (or the S3.6 driver) would dispatch.
   */
 object StoryModels:
+  def timedStamp(value: eyes4s.studio.core.execution.ExecutionStamp): RunStamp = value match
+    case timed: RunStamp => timed
+    case other           => sys.error(s"Expected timed fixture stamp, found $other")
+
+  def timedStampOf(
+      document: StudioDocument,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision
+  ): RunStamp =
+    timedStamp(AppModel.stampOf(document, revision, dataset))
 
   def ok[E, A](e: Either[E, A]): A = e.fold(err => sys.error(s"fixture: $err"), identity)
 
@@ -214,7 +224,7 @@ object StoryModels:
   )
 
   /** Run 8's stamp: rev 5 on r3, as t3 saves it. */
-  lazy val run8Stamp: RunStamp = AppModel.stampOf(t3, StoryMoments.rev5, StoryMoments.r3)
+  lazy val run8Stamp: RunStamp = timedStampOf(t3, StoryMoments.rev5, StoryMoments.r3)
 
   /** A progress report of run 8's job: `pairs` of 44,845 compared, or of a
     * total still being counted.

@@ -16,13 +16,13 @@
 
 package eyes4s.studio.core.command
 
-import eyes4s.codec.CanonicalDigest
+import eyes4s.codec.{ByteDigest, CanonicalDigest}
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
 import eyes4s.studio.core.fixture.StoryMoments
-import eyes4s.studio.core.artifacts.NativeBindingFacts
+import eyes4s.studio.core.artifacts.{LocationBindingFacts, NativeBindingFacts}
 import eyes4s.studio.core.execution.{RunStamp, StudyInputArtifact}
 
 /** A named sample of every command case and journal entry, pinned in
@@ -73,6 +73,52 @@ object CommandSamples:
       rev4Rec
     )
     .fold(error => throw new AssertionError(error.message), identity)
+
+  private val locationInput =
+    CanonicalDigest.parse[LocationInputArtifact]("1" * 64).toOption.get
+  private val locationPlan = CanonicalDigest.parse[LocationPlanArtifact]("2" * 64).toOption.get
+  private val locationResult =
+    CanonicalDigest.parse[ResultArchiveArtifact]("3" * 64).toOption.get
+  private val locationSources = LocationBundleSources
+    .of(LocationBundleSources.roles.map { role =>
+      Source(
+        role,
+        SourcePath.of(s"figrim/${role.label.replace(' ', '-')}.txt").toOption.get,
+        ByteDigest.sha256(IArray.from(role.label.getBytes)),
+        None
+      )
+    })
+    .toOption
+    .get
+  private val locationDataset = LocationDatasetRevision(
+    DatasetRevision(9),
+    None,
+    locationSources,
+    LocationProfile.FigrimV1,
+    LocationAdmissionDecision.Admitted(locationInput)
+  )
+  private val locationAnalysis = LocationAnalysisRevision(
+    AnalysisRevision(9),
+    locationDataset.id,
+    CoreBinding.Bound(locationPlan),
+    LocationRecipe(locationDataset.profile, CoreBinding.Bound(locationInput)),
+    RevisionName.of("FIGRIM spatial comparison").toOption.get,
+    "Fixed-profile location comparison"
+  )
+  private val locationFamily =
+    AnalysisFamily.of(AnalysisFamilyId.of(9).toOption.get, "FIGRIM map").toOption.get
+  private val locationFamilies = AnalysisFamilyRegistry
+    .of(
+      Vector(locationFamily),
+      Vector(AnalysisFamilyOwner.of(locationAnalysis.id, locationFamily.id).toOption.get),
+      Vector(locationAnalysis.id)
+    )
+    .toOption
+    .get
+  private val locationFacts = LocationBindingFacts
+    .of(RunId(9), locationDataset, locationAnalysis, locationResult)
+    .toOption
+    .get
 
   val commands: Vector[(String, Command)] = Vector(
     "ImportSources" -> ImportSources(
@@ -192,13 +238,41 @@ object CommandSamples:
       CanonicalDigest.parse[StudyPlanArtifact]("0123456789abcdef" * 4).toOption.get,
       right(SemanticIdentity.of("00112233445566ff"))
     ),
-    "BindCompletedArtifacts" -> BindCompletedArtifacts(nativeFacts),
-    "PutReporting"           -> PutReporting(spec),
-    "RemoveReporting"        -> RemoveReporting(spec.id),
-    "CreateFigure"           -> CreateFigure(run7, spec.id, figure1.panels.take(1)),
-    "RestoreFigure"          -> RestoreFigure(figure1),
-    "DeleteFigure"           -> DeleteFigure(figure1.id),
-    "BindFigure"             -> BindFigure(figure1.id, run5, spec.id),
+    "BindCompletedArtifacts"         -> BindCompletedArtifacts(nativeFacts),
+    "BindLocationCompletedArtifacts" -> BindLocationCompletedArtifacts(locationFacts),
+    "AppendLocationDataset"          -> AppendLocationDataset(
+      None,
+      locationSources,
+      LocationProfile.FigrimV1,
+      locationInput
+    ),
+    "DiscardLocationDataset" -> DiscardLocationDataset(locationDataset.id),
+    "RestoreLocationDataset" -> RestoreLocationDataset(locationDataset),
+    "SaveLocationAnalysis"   -> SaveLocationAnalysis(
+      locationFamily,
+      locationDataset.id,
+      locationPlan,
+      locationAnalysis.revisionName,
+      locationAnalysis.description
+    ),
+    "DiscardLocationAnalysis" -> DiscardLocationAnalysis(locationAnalysis.id),
+    "RestoreLocationAnalysis" -> RestoreLocationAnalysis(
+      locationAnalysis,
+      Some(locationFamilies),
+      None
+    ),
+    "RemoveLocationAnalysis" -> RemoveLocationAnalysis(
+      locationAnalysis.id,
+      Some(locationFamilies),
+      None
+    ),
+    "ReserveLocationRun" -> ReserveLocationRun(locationAnalysis.id),
+    "PutReporting"       -> PutReporting(spec),
+    "RemoveReporting"    -> RemoveReporting(spec.id),
+    "CreateFigure"       -> CreateFigure(run7, spec.id, figure1.panels.take(1)),
+    "RestoreFigure"      -> RestoreFigure(figure1),
+    "DeleteFigure"       -> DeleteFigure(figure1.id),
+    "BindFigure"         -> BindFigure(figure1.id, run5, spec.id),
     "SetPanelScale" -> SetPanelScale(figure1.id, panelA, PanelScale.At(right(Sigma.of(2.0)))),
     "SetPanelSelection" -> SetPanelSelection(figure1.id, panelA, PanelSelection.AllQueries),
     "AddPanel"          -> AddPanel(

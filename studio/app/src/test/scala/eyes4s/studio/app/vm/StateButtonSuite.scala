@@ -114,3 +114,33 @@ class StateButtonSuite extends munit.FunSuite:
     assert(asked.pending.exists(_.isInstanceOf[Confirmation.CancelRun]), asked.pending)
     assertEquals(CommandRegistry.cancelRun.intent(StoryModels.t2Compare), None)
   }
+
+  test("a completed run without stored bindings has a persistent storage notice") {
+    val model    = StoryModels.t2Compare
+    val shown    = model.document.presentation.shownRun.get
+    val saved    = model.document
+    val document = eyes4s.studio.core.document.StudioDocument
+      .of(
+        saved.timedDatasets,
+        saved.timedAnalyses,
+        saved.draft,
+        saved.runs.map(r =>
+          if r.id == shown then
+            r.copy(archive = eyes4s.studio.core.document.CoreBinding.unbound)
+          else r
+        ),
+        saved.reporting,
+        saved.figures,
+        saved.presentation,
+        saved.jobs,
+        saved.analysisFamilies
+      )
+      .fold(e => fail(e.message), identity)
+    val reopened = AppModel.open(document, None)
+    val section  = Shell.state(reopened).menu.head
+    assert(section.note.exists(_.contains("result storage is not yet confirmed")), section.note)
+    assertEquals(
+      Shell.state(AppModel.update(reopened, Intent.Dismiss)._1).menu.head.note,
+      section.note
+    )
+  }

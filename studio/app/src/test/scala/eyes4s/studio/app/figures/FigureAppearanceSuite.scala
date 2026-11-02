@@ -245,7 +245,7 @@ class FigureAppearanceSuite extends munit.FunSuite:
   }
 
   test("the caption names the run's comparison method, with a generic fallback") {
-    val cosine = t2.document.analyses.head.recipe.method
+    val cosine = t2.document.timedAnalyses.head.recipe.method
     assertEquals(FigureCaption.measure(cosine), "spatial similarity")
     val other = MethodSpec(ok(DefinitionRef.of("eyes4s.correlation", 1)), Vector.empty)
     assertEquals(FigureCaption.measure(other), "similarity by eyes4s.correlation@1")

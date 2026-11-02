@@ -210,7 +210,17 @@ object ResolvedDesign:
       DesignTarget(
         context.id,
         context.dataset,
-        AppModel.stampOf(model.document, context.id, context.dataset),
+        RunStamp(
+          context.id,
+          context.dataset,
+          model.document
+            .analysis(context.id)
+            .fold(
+              eyes4s.studio.core.document.CoreBinding
+                .unbound[eyes4s.studio.core.document.StudyPlanArtifact]
+            )(_.plan),
+          eyes4s.studio.core.document.CoreBinding.unbound
+        ),
         context.recipe
       )
     }

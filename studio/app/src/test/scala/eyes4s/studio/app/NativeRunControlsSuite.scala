@@ -29,8 +29,9 @@ class NativeRunControlsSuite extends munit.FunSuite:
     History.start(get(StoryMoments.t2)).apply(Command.SaveAndRun(None))
   ).history.document
   private lazy val run   = requested.running.last
-  private lazy val stamp = AppModel.stampOf(requested, run.analysis, run.dataset)
-  private val job        = JobId(37)
+  private lazy val stamp =
+    eyes4s.studio.app.StoryModels.timedStampOf(requested, run.analysis, run.dataset)
+  private val job = JobId(37)
   private def observe(
       phase: JobPhase,
       identity: eyes4s.studio.core.execution.RunStamp = stamp
@@ -134,7 +135,7 @@ class NativeRunControlsSuite extends munit.FunSuite:
     "newest completion retains its request and ready notice while an older run is still pending"
   ) {
     val original = StoryModels.t3Summary.document
-    val revision = original.analyses.last.copy(id = AnalysisRevision(6))
+    val revision = original.timedAnalyses.last.copy(id = AnalysisRevision(6))
     val newest   = eyes4s.studio.core.document.RunRef(
       eyes4s.studio.core.backend.RunId(9),
       revision.id,
@@ -144,8 +145,8 @@ class NativeRunControlsSuite extends munit.FunSuite:
     )
     val document = get(
       eyes4s.studio.core.document.StudioDocument.of(
-        original.datasets,
-        original.analyses :+ revision,
+        original.timedDatasets,
+        original.timedAnalyses :+ revision,
         original.draft,
         original.runs :+ newest,
         original.reporting,
@@ -154,8 +155,11 @@ class NativeRunControlsSuite extends munit.FunSuite:
         original.jobs
       )
     )
-    val identity = AppModel.stampOf(document, newest.analysis, newest.dataset)
-    val report   = StoryModels.run8Progress(44845L).report
+    val identity =
+      eyes4s.studio.app.StoryModels.timedStampOf(document, newest.analysis, newest.dataset)
+    val report = StoryModels.run8Progress(44845L).report match
+      case value: eyes4s.studio.core.backend.JobProgress     => value
+      case _: eyes4s.studio.core.backend.LocationJobProgress => fail("expected timed progress")
     val progress = eyes4s.studio.core.execution.ExecutionProgress(
       get(
         eyes4s.studio.core.backend.JobProgress
@@ -200,8 +204,8 @@ class NativeRunControlsSuite extends munit.FunSuite:
   private def nativeRequest(): (AppModel, eyes4s.studio.core.execution.RunStamp) =
     val base     = StoryModels.t2Analysis
     val recipe   = base.document.draftRecipe.getOrElse(fail("no fixture draft"))
-    val identity = AppModel
-      .stampOf(base.document, StoryMoments.rev5, StoryMoments.r3)
+    val identity = eyes4s.studio.app.StoryModels
+      .timedStampOf(base.document, StoryMoments.rev5, StoryMoments.r3)
       .copy(
         plan = eyes4s.studio.core.document.CoreBinding.Bound(
           get(
@@ -321,7 +325,8 @@ class NativeRunControlsSuite extends munit.FunSuite:
         )
       )
     )
-    val declared = AppModel.stampOf(changed.document, identity.revision, identity.dataset)
+    val declared = eyes4s.studio.app.StoryModels
+      .timedStampOf(changed.document, identity.revision, identity.dataset)
     assert(effects.contains(AppEffect.Execution(ExecutionEffect.Require(declared))))
     assertEquals(changed.jobs.shelf.required, Some(declared))
     assertEquals(changed.jobs.ready, None)

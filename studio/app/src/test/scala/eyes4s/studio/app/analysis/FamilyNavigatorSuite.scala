@@ -87,7 +87,7 @@ class FamilyNavigatorSuite extends munit.FunSuite:
     val (after, effects) = AppModel.update(before, intent)
     assertEquals(after.document.draft.map(_.origin), Some(DraftOrigin.Existing(a1.id)))
     assertEquals(after.document.familyOf(AnalysisRevision(5)), Some(a))
-    assertEquals(after.document.analyses, before.document.analyses)
+    assertEquals(after.document.timedAnalyses, before.document.timedAnalyses)
     assertEquals(after.document.runs, before.document.runs)
     assertEquals(after.document.presentation.shownRun, before.document.presentation.shownRun)
     assertEquals(AnalysesNavigator.selected(after), Some(AnalysisRevision(5)))
@@ -165,7 +165,7 @@ class FamilyNavigatorSuite extends munit.FunSuite:
     )
     assertEquals(AnalysesNavigator.vm(created).current, None)
     assertEquals(AnalysesNavigator.vm(created).create, None)
-    assertEquals(created.document.analyses, before.document.analyses)
+    assertEquals(created.document.timedAnalyses, before.document.timedAnalyses)
     noSubmit(effects)
     val reopenedDraft = AppModel.open(
       get(StudioDocument.decode(get(StudioDocument.encode(created.document)))),
@@ -216,8 +216,8 @@ class FamilyNavigatorSuite extends munit.FunSuite:
     )
     val next = get(
       StudioDocument.of(
-        before.datasets,
-        before.analyses,
+        before.timedDatasets,
+        before.timedAnalyses,
         before.draft,
         before.runs,
         before.reporting,
@@ -233,12 +233,12 @@ class FamilyNavigatorSuite extends munit.FunSuite:
     )
     assertEquals(AnalysisSelection.name(next, a), Some("Renamed"))
     val legacy  = eyes4s.studio.app.StoryModels.t2Analysis.document
-    val revised = legacy.analyses.map(value =>
+    val revised = legacy.timedAnalyses.map(value =>
       value.copy(studio = value.studio.copy(name = get(RevisionName.of(value.id.label))))
     )
     val renamedLegacy = get(
       StudioDocument.of(
-        legacy.datasets,
+        legacy.timedDatasets,
         revised,
         None,
         legacy.runs,

@@ -16,10 +16,16 @@
 
 package eyes4s.studio.app.explore
 
-import eyes4s.studio.app.geometry.Loading
+import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.plot.ViewSelection
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.core.backend.AnalysisRevision
+import eyes4s.plan.MapPlacement
+import eyes4s.studio.core.backend.{
+  AdmittedFixation,
+  AnalysisRevision,
+  DatasetRevision,
+  TrialFixations
+}
 import eyes4s.studio.core.document.SourceRole
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment}
 import eyes4s.studio.core.headless.HeadlessSession
@@ -98,6 +104,22 @@ class SourceRecordsSuite extends munit.FunSuite:
       )
     )
 
+  private def located(trial: eyes4s.studio.core.backend.TrialKey, record: Int): TrialFixations =
+    val fixations = Vector.tabulate(6) { i =>
+      right(
+        AdmittedFixation.of(
+          StudioRef.Fixation(trial, right(FixationIndex.of(i + 1))),
+          record + i,
+          1.0,
+          1.0,
+          0.0,
+          1.0,
+          MapPlacement.InWindow
+        )
+      )
+    }
+    right(TrialFixations.of(rev4, DatasetRevision(3), trial, fixations))
+
   private def start: (SourceRecords, Vector[SourceRecordsEffect]) =
     SourceRecords.sync(
       SourceRecords.initial(ViewSelection.initial(view, model.selection)),
@@ -110,21 +132,37 @@ class SourceRecordsSuite extends munit.FunSuite:
       case (acc, SourceRecordsEffect.RequestPage(_, page, _, _, _)) =>
         val (next, more) = SourceRecords.update(acc, answer(page), model)
         settle(next, more)
+      case (acc, SourceRecordsEffect.Locate(r, trial, ask)) =>
+        val record       = if trial == enc03 then 7209 else 1
+        val (next, more) = SourceRecords.update(
+          acc,
+          SourceRecordsIntent
+            .Located(r, trial, ask, Right(BackendAnswer.Answered(located(trial, record)))),
+          model
+        )
+        settle(next, more)
       case (acc, _) => acc
     }
 
   test("the first page is asked for under the shown revision, and gives the total") {
     val (s, effects) = start
     assertEquals(s.revision, Some(rev4))
+    assertEquals(effects, Vector(SourceRecordsEffect.Locate(rev4, enc03, 1)))
     assertEquals(
-      effects,
-      Vector(SourceRecordsEffect.RequestPage(rev4, 0, 0, SourceRecords.PageSize, 1))
+      SourceRecords.status(s),
+      Some("Reading the whole source file for trial P17 · enc_03…")
     )
-    assertEquals(SourceRecords.status(s), Some("Reading the source records…"))
     val read = settle(s, effects)
     assertEquals(read.total, Some(total))
-    assertEquals(SourceRecords.status(read), None)
-    assertEquals(SourceRecords.rowVM(read, 0).asInstanceOf[SourceRowVM.Shown].cells(0), "1")
+    assertEquals(
+      SourceRecords.status(read),
+      Some("Whole source file; following trial P17 · enc_03")
+    )
+    assertEquals(
+      SourceRecords.rowVM(read, 7208).asInstanceOf[SourceRowVM.Shown].cells(0),
+      "7,209"
+    )
+    assertEquals(SourceRecords.rowVM(read, 0), SourceRowVM.Reading)
     assertEquals(SourceRecords.rowVM(read, 500), SourceRowVM.Reading)
   }
 
@@ -174,49 +212,18 @@ class SourceRecordsSuite extends munit.FunSuite:
       .run(m, Vector(Intent.Select(SelectionInput(stamp, SelectionMode.Replace, refs))))
       ._1
 
-  test("the cursor follows a selected record, and a fixation through its trial's records") {
+  test("a later selection within the displayed trial moves the whole-source cursor") {
     val (s0, e0) = start
     val s        = settle(s0, e0)
     val record   =
       StudioRef.SourceRecord(enc03, None, SourceRole.Fixations, right(RecordNumber.of(7214)))
     val (onRecord, e1) = SourceRecords.sync(s, selecting(model, Vector(record)))
     assertEquals(onRecord.cursor, Some(7213))
-    assert(
-      e1.exists {
-        case SourceRecordsEffect.RequestPage(_, p, _, _, _) => p == 7213 / 128; case _ => false
-      },
-      e1
-    )
-    // A fixation: its record comes from the trial's admitted fixations.
-    val fixation     = StudioRef.Fixation(enc03, right(FixationIndex.of(6)))
-    val chosen       = selecting(model, Vector(fixation))
-    val (asking, e2) = SourceRecords.sync(s, chosen)
-    assertEquals(
-      e2.collect { case l @ SourceRecordsEffect.Locate(_, _) => l },
-      Vector(SourceRecordsEffect.Locate(rev4, enc03))
-    )
-    assertEquals(asking.cursor, None)
-    HeadlessSession
-      .open(StoryMoment.T2)
-      .flatMap { h =>
-        h.trialFixations(rev4, enc03).transformWith(x => h.close.transform(_ => x))
-      }
-      .map { fixations =>
-        val located = SourceRecords
-          .update(
-            asking,
-            SourceRecordsIntent
-              .Located(rev4, enc03, Right(BackendAnswer.Answered(right(fixations)))),
-            chosen
-          )
-          ._1
-        // FIXTURE.md: fixation 6 of enc_03 is record 7,214.
-        assertEquals(located.cursor, Some(7213))
-        assertEquals(
-          located.located.get(enc03).map(_.isInstanceOf[Loading.Ready[?]]),
-          Some(true)
-        )
-      }
+    assertEquals(e1, Vector.empty)
+    val fixation         = StudioRef.Fixation(enc03, right(FixationIndex.of(6)))
+    val (onFixation, e2) = SourceRecords.sync(s, selecting(model, Vector(fixation)))
+    assertEquals(onFixation.cursor, Some(7213))
+    assertEquals(e2, Vector.empty)
   }
 
   test("Enter selects the row's fixation; 'Show raw record' gives the verbatim line") {
@@ -225,18 +232,18 @@ class SourceRecordsSuite extends munit.FunSuite:
     val (first, _) = SourceRecords.update(s, SourceRecordsIntent.Move(RecordMove.Down), model)
     val (moved, _) =
       SourceRecords.update(first, SourceRecordsIntent.Move(RecordMove.Down), model)
-    assertEquals(moved.cursor, Some(1))
+    assertEquals(moved.cursor, Some(7210))
     val (_, effects) = SourceRecords.update(moved, SourceRecordsIntent.Activate, model)
     effects match
       case Vector(SourceRecordsEffect.App(Intent.Select(input))) =>
         assertEquals(
           input.refs,
-          Vector(StudioRef.Fixation(MockStudy.key("P01", "enc_01"), right(FixationIndex.of(1))))
+          Vector(StudioRef.Fixation(enc03, right(FixationIndex.of(3))))
         )
       case other => fail(s"expected one selection, got $other")
     assertEquals(SourceRecords.rawLine(moved), None)
     val raw = SourceRecords.update(moved, SourceRecordsIntent.ShowRaw(true), model)._1
-    assertEquals(SourceRecords.rawLine(raw), Some(row(2).raw))
+    assertEquals(SourceRecords.rawLine(raw), Some(row(7211).raw))
     // The ends and a page.
     assertEquals(
       SourceRecords.update(moved, SourceRecordsIntent.Move(RecordMove.Last), model)._1.cursor,
@@ -244,11 +251,11 @@ class SourceRecordsSuite extends munit.FunSuite:
     )
     assertEquals(
       SourceRecords.update(moved, SourceRecordsIntent.Move(RecordMove.Up), model)._1.cursor,
-      Some(0)
+      Some(7209)
     )
     assertEquals(
       SourceRecords.update(moved, SourceRecordsIntent.Move(RecordMove.Up), model)._1.cursor,
-      Some(0)
+      Some(7209)
     )
   }
 
@@ -286,19 +293,14 @@ class SourceRecordsSuite extends munit.FunSuite:
     assertEquals(SourceRecords.cellsOf(unplaced).drop(5), Vector("—", "—", "—", "not admitted"))
   }
 
-  test("at t2 the story's selected fixation puts the cursor on record 7,214") {
+  test("at t2 the displayed trial anchors the cursor at its first admitted source record") {
     val t2           = StoryModels.t2Explore
     val (s, effects) =
       SourceRecords.sync(SourceRecords.initial(ViewSelection.initial(view, t2.selection)), t2)
-    // The story selects record 7,214 (StoryModels.record), whose row is 7,213.
+    // Source-record selection does not redefine the table's displayed-trial context.
     assertEquals(t2.selection.selected, Vector(StoryModels.record))
-    assertEquals(s.cursor, Some(7213))
-    assert(
-      effects.contains(
-        SourceRecordsEffect.RequestPage(rev4, 7213 / 128, 7213 / 128 * 128, 128, 1)
-      ),
-      effects
-    )
+    assertEquals(s.cursor, None)
+    assertEquals(effects, Vector(SourceRecordsEffect.Locate(rev4, enc03, 1)))
   }
 
   test("a record of the trial inventory does not move the fixations cursor") {
@@ -309,23 +311,23 @@ class SourceRecordsSuite extends munit.FunSuite:
     val (after, effects) = SourceRecords.sync(s, selecting(model, Vector(trials)))
     assertEquals(after.cursor, s.cursor)
     assertEquals(
-      effects.collect { case l @ SourceRecordsEffect.Locate(_, _) => l },
+      effects.collect { case l @ SourceRecordsEffect.Locate(_, _, _) => l },
       Vector.empty
     )
   }
 
   test(
-    "a click is a pointer input; Enter a keyboard one; the first Down lands on the first row"
+    "a click is a pointer input; Enter a keyboard one; Down advances from the trial anchor"
   ) {
     val (s0, e0)  = start
     val s         = settle(s0, e0)
     val (down, _) = SourceRecords.update(s, SourceRecordsIntent.Move(RecordMove.Down), model)
-    assertEquals(down.cursor, Some(0))
+    assertEquals(down.cursor, Some(7209))
     def cause(effects: Vector[SourceRecordsEffect]) = effects.collect {
       case SourceRecordsEffect.App(Intent.Select(input)) => input.stamp.cause
     }
     assertEquals(
-      cause(SourceRecords.update(s, SourceRecordsIntent.Click(3), model)._2),
+      cause(SourceRecords.update(s, SourceRecordsIntent.Click(7208), model)._2),
       Vector(InputCause.Pointer)
     )
     assertEquals(
@@ -335,8 +337,10 @@ class SourceRecordsSuite extends munit.FunSuite:
   }
 
   test("an empty table says so; a misaligned page is refused by name") {
-    val (s0, e0) = start
-    val empty    = SourceRecords
+    val (unread, asks) = start
+    val read           = settle(unread, asks)
+    val (s0, _)        = SourceRecords.update(read, SourceRecordsIntent.Viewport(0, 1), model)
+    val empty          = SourceRecords
       .update(
         s0,
         SourceRecordsIntent.PageRead(
@@ -348,8 +352,10 @@ class SourceRecordsSuite extends munit.FunSuite:
         model
       )
       ._1
-    assertEquals(SourceRecords.status(empty), Some("The fixation table has no records"))
-    assertEquals(e0.size, 1)
+    assertEquals(
+      SourceRecords.status(empty),
+      Some("Whole source file; following trial P17 · enc_03. The fixation table has no records")
+    )
     val shifted = SourceRecords
       .update(
         s0,
@@ -365,6 +371,73 @@ class SourceRecordsSuite extends munit.FunSuite:
     assertEquals(
       SourceRecords.rowVM(shifted, 0),
       SourceRowVM.Failed("Page 0 of the source records starts at row 5, not row 0")
+    )
+  }
+
+  test("a trial switch clears old rows and fences a late locate reply") {
+    val (onEnc03, first) = start
+    assertEquals(first, Vector(SourceRecordsEffect.Locate(rev4, enc03, 1)))
+    val loaded = settle(onEnc03, first)
+    assert(loaded.pages.nonEmpty)
+    assertEquals(loaded.viewport, (7208, 1))
+    val ret07 = StoryModels.p17ret07
+    val other = AppModel.update(model, Intent.Explain(Place.At(StudioRef.Trial(ret07))))._1
+    val (onRet07, second) = SourceRecords.sync(loaded, other)
+    assertEquals(second, Vector(SourceRecordsEffect.Locate(rev4, ret07, 2)))
+    assertEquals(onRet07.pages, Map.empty)
+    assertEquals(onRet07.total, None)
+    assertEquals(onRet07.cursor, None)
+    val (backOnEnc03, third) = SourceRecords.sync(onRet07, model)
+    assertEquals(third, Vector(SourceRecordsEffect.Locate(rev4, enc03, 3)))
+    val (afterLate, lateEffects) = SourceRecords.update(
+      backOnEnc03,
+      SourceRecordsIntent.Located(rev4, enc03, 1, Left("late enc_03 response")),
+      model
+    )
+    assertEquals(afterLate, backOnEnc03)
+    assertEquals(lateEffects, Vector.empty)
+  }
+
+  test("a displayed trial without admitted fixations is named while the whole source loads") {
+    val (waiting, effects) = start
+    assertEquals(effects, Vector(SourceRecordsEffect.Locate(rev4, enc03, 1)))
+    val empty = right(TrialFixations.of(rev4, DatasetRevision(3), enc03, Vector.empty))
+    val (reading, pageEffects) = SourceRecords.update(
+      waiting,
+      SourceRecordsIntent.Located(rev4, enc03, 1, Right(BackendAnswer.Answered(empty))),
+      model
+    )
+    assertEquals(
+      SourceRecords.status(reading),
+      Some("Trial P17 · enc_03 has no admitted fixations; reading the whole source file…")
+    )
+    assertEquals(
+      pageEffects,
+      Vector(SourceRecordsEffect.RequestPage(rev4, 0, 0, SourceRecords.PageSize, 1))
+    )
+  }
+
+  test("a repeated sync leaves an in-flight locate waiting until its anchor arrives") {
+    val (waiting, effects) = start
+    assertEquals(effects, Vector(SourceRecordsEffect.Locate(rev4, enc03, 1)))
+    val (stillWaiting, more) = SourceRecords.sync(waiting, model)
+    assertEquals(stillWaiting, waiting)
+    assertEquals(more, Vector.empty)
+    val (anchored, pageEffects) = SourceRecords.update(
+      stillWaiting,
+      SourceRecordsIntent.Located(
+        rev4,
+        enc03,
+        1,
+        Right(BackendAnswer.Answered(located(enc03, 7209)))
+      ),
+      model
+    )
+    assertEquals(anchored.cursor, Some(7208))
+    assertEquals(anchored.viewport, (7208, 1))
+    assertEquals(
+      pageEffects,
+      Vector(SourceRecordsEffect.RequestPage(rev4, 7208 / SourceRecords.PageSize, 7168, 128, 1))
     )
   }
 

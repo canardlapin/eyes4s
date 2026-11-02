@@ -24,7 +24,7 @@ import eyes4s.studio.core.execution.{
   JobPhase,
   RunReady,
   RunShelf,
-  RunStamp
+  ExecutionStamp
 }
 
 /** What the jobs chip and the status bar's job slot show. */
@@ -81,14 +81,16 @@ sealed abstract case class JobBoard private (jobs: Vector[ExecutionJob], shelf: 
   def receive(event: ExecutionEvent): JobBoard = event match
     case ExecutionEvent.Changed(job) => copy(jobs = jobs.filterNot(_.id == job.id) :+ job)
     case ExecutionEvent.Ready(_)     => copy(shelf = shelf.receive(event))
-    case _: ExecutionEvent.ArtifactsStored | _: ExecutionEvent.ArtifactsRefused => this
+    case _: ExecutionEvent.ArtifactsStored | _: ExecutionEvent.LocationArtifactsStored |
+        _: ExecutionEvent.ArtifactsRefused =>
+      this
 
   /** Replace the jobs with a snapshot of the service's. */
   def withJobs(snapshot: Vector[ExecutionJob]): JobBoard = JobBoard.from(snapshot, shelf)
 
   def withShown(run: Option[RunId]): JobBoard = copy(shelf = shelf.withShown(run))
 
-  def require(stamp: RunStamp): JobBoard = copy(shelf = shelf.require(stamp))
+  def require(stamp: ExecutionStamp): JobBoard = copy(shelf = shelf.require(stamp))
 
   /** Show `run`: only the pending run can be shown (S8.8). */
   def show(run: RunId): Either[ExecutionError, JobBoard] =

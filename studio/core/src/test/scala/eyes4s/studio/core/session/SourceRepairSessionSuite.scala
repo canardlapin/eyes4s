@@ -39,7 +39,7 @@ class SourceRepairSessionSuite extends SessionConformance:
   private val fixations = bytes("participant,phase,trial,x,y\nP01,Encoding,enc_01,1,2\n")
   private val trials    = bytes("participant,phase,trial\nP01,Encoding,enc_01\n")
   private val document  = BundleSamples.withSources(withoutJobs(t1), fixations, trials)
-  private val revision  = document.datasets.last
+  private val revision  = document.timedDatasets.last
 
   private def source(role: SourceRole) = revision.sources.entries.find(_.role == role).get
 
@@ -186,7 +186,7 @@ class SourceRepairSessionSuite extends SessionConformance:
         )
       )
       .fold(e => fail(e.toString), _._1)
-    val r4                                                     = next.datasets.last.id
+    val r4                                                     = next.timedDatasets.last.id
     def entry(kind: InputKind, name: String, of: IArray[Byte]) =
       InputEntry
         .of(kind, name, ByteDigest.sha256(of), of.length.toLong)

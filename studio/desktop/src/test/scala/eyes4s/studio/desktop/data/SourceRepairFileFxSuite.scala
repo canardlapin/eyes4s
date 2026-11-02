@@ -129,13 +129,16 @@ class SourceRepairFileFxSuite extends ShellFxSuite:
       choices.next = Some(get(HostPath.of(altered.toString)))
       runOnFx(sourceButton(w).fire())
       eventually(fx, "replacement is a new pending revision") {
-        w.runtime.model.document.datasets.size == 2
+        w.runtime.model.document.timedDatasets.size == 2
       }
-      val next = runOnFx(w.runtime.model.document.datasets.last)
+      val next = runOnFx(w.runtime.model.document.timedDatasets.last)
       assertEquals(next.parent, Some(dataset))
       assertEquals(next.decision, AdmissionDecision.Pending)
       assertEquals(next.sources.fixations.map(_.bytes), Some(ByteDigest.sha256(replacement)))
-      assertEquals(runOnFx(w.runtime.model.document.datasets.head), ready.datasets.head)
+      assertEquals(
+        runOnFx(w.runtime.model.document.timedDatasets.head),
+        ready.timedDatasets.head
+      )
       assert(runOnFx(w.sources.view.note.getText.contains("must be admitted")))
       runOnFx(w.close())
       opened -= w
@@ -153,7 +156,7 @@ class SourceRepairFileFxSuite extends ShellFxSuite:
       val (port, release) = open(root).allocated.unsafeRunSync()
       try
         val document = port.session.document.unsafeRunSync()
-        val spec     = document.datasets.head
+        val spec     = document.timedDatasets.head
         val registry = DatasetSourceHosts
           .stored(port)
           .assets(spec)
@@ -269,7 +272,7 @@ class SourceRepairFileFxSuite extends ShellFxSuite:
         .use { reopened =>
           for
             document <- reopened.session.document
-            registry <- DatasetSourceHosts.stored(reopened).assets(document.datasets.head)
+            registry <- DatasetSourceHosts.stored(reopened).assets(document.timedDatasets.head)
           yield
             assertEquals(
               document.science,

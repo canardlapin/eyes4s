@@ -36,8 +36,8 @@ class RunStoragePanelSuite extends munit.FunSuite:
   /** t3 with run 8 completed: Figure 1 binds run 7 (shown), Figure 2 run 5. */
   private val document: StudioDocument = right(
     StudioDocument.of(
-      t3.datasets,
-      t3.analyses,
+      t3.timedDatasets,
+      t3.timedAnalyses,
       t3.draft,
       t3.runs.map(r => if r.id == run8 then r.copy(state = RunLifecycle.Completed) else r),
       t3.reporting,

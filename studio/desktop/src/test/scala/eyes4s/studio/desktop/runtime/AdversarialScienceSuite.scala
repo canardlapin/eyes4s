@@ -148,7 +148,7 @@ class AdversarialScienceSuite extends munit.CatsEffectSuite:
       for
         _     <- h.dispatch(Intent.SwitchPerspective(Perspective.Analysis))
         ready <- h.prepared
-        recipe = f.document.draft.get.recipe(f.document.analyses.head.recipe)
+        recipe = f.document.draft.get.recipe(f.document.timedAnalyses.head.recipe)
         _ <- h.dispatch(Intent.DesignPrepared(PreparedDesign(ready, recipe)))
         before = h.model.get()
         design = eyes4s.studio.app.analysis.ResolvedDesign.empty.copy(
@@ -288,7 +288,7 @@ class AdversarialScienceSuite extends munit.CatsEffectSuite:
           case other => fail(s"no started native job: $other")
         _    <- h.dispatch(Intent.CancelJob(job.id))
         held <- holdCancelled()
-        saved = h.model.get().document.analyses.last.recipe
+        saved = h.model.get().document.timedAnalyses.last.recipe
         _ <- h.dispatch(
           Intent.Dispatch(
             Command.ChangeRecipe(RecipeChange.Grid(saved.grid, get(GridSize.of(48, 32))))

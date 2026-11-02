@@ -202,6 +202,7 @@ final class RealPreview[F[_]] private (state: Ref[F, RealPreview.State])(using
                 .fold[Either[BackendError, RealPrepared]](Right(prepared)) { error =>
                   Left(RealPrepared.refused(prepared.revision, "preview submission")(error))
                 }
+                .flatMap(work => work.executionRefusal.toLeft(work))
           })
     }
 
@@ -363,7 +364,7 @@ object RealPreview:
         prepared.pairingRefusal.toVector.collect {
           case error: eyes4s.plan.PlanError.UnmatchedFocalRefused =>
             RealResults.diagnostic(Diagnostic.of(error))
-        }
+        } ++ prepared.executionRefusal.toVector.map(_.diagnostic)
       receipt <- PreviewReady
         .of(
           id,
@@ -539,13 +540,7 @@ object RealPreview:
                           )
               yield row
             case disposition => Right((None, None, Eligibility.QueryNotAdmitted(disposition)))
-        for
-          (reference, controls, eligibility) <- membership
-          response                           <- entry.response.toRight(
-            BackendError.Unavailable(
-              DiagnosticLocus.Artifact(s"${entry.trial.label} response is not declared.")
-            )
-          )
+        for (reference, controls, eligibility) <- membership
         yield
           val focalFindings = keys
             .get(entry.trial)
@@ -562,7 +557,7 @@ object RealPreview:
           PreviewRow(
             entry.trial,
             entry.item,
-            response,
+            entry.response,
             reference,
             controls,
             eligibility,

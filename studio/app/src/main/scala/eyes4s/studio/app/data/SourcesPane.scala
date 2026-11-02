@@ -430,6 +430,8 @@ object SourcesVM:
                 problem,
                 repair
               )
+            case other =>
+              SourceRowVM(name, other.label, t(Stored), None, Vector.empty, problem, repair)
         }
         val stimuli = SourceRowVM(
           t(Stimuli),
@@ -497,21 +499,10 @@ object SourcesVM:
           val absent = r.missing
           Option.when(absent.nonEmpty) {
             val trials = absent.flatMap(_.trials)
-            val byPart = trials
-              .groupBy(_.participant)
-              .toVector
-              .sortBy(_._1)
-              .map((p, ts) => t(MissingTrialsOf, p, ts.map(_.trial).sorted.mkString(", ")))
-            val phases = trials.map(_.phase).distinct
             MissingVM(
               if absent.size == 1 then t(MissingTitleOne)
               else t(MissingTitle, count(absent.size)),
-              t(
-                MissingBody,
-                absent.map(_.file.value).mkString(", "),
-                (count(trials.size) +: phases.map(_.label)).mkString(" "),
-                byPart.mkString("; ")
-              ),
+              t(MissingBody, count(trials.size)),
               t(Repair),
               t(ShowTrials, count(trials.size)),
               absent.map(_.file),

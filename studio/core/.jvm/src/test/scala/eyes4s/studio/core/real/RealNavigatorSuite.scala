@@ -47,8 +47,8 @@ class RealNavigatorSuite extends CatsEffectSuite:
   )
 
   test("native report membership and the full source chain agree with library navigation") {
-    RealStudyBackend
-      .resource[IO](document, RealBackendConformanceSuite.golden)
+    RealBackendConformanceSuite
+      .computedResource(document)
       .use { backend =>
         NativeReads.resource[IO](backend, backend.navigator).use { reads =>
           for
@@ -147,10 +147,10 @@ class RealNavigatorSuite extends CatsEffectSuite:
   }
 
   test("a retained native source context refuses an out-of-range fixation by its operands") {
-    RealStudyBackend
-      .resource[IO](document, RealBackendConformanceSuite.golden)
+    RealBackendConformanceSuite
+      .computedResource(document)
       .use { backend =>
-        val revision = document.analyses.last.id
+        val revision = document.timedAnalyses.last.id
         val trial    = TrialKey("P17", Phase.Encoding, "enc_03", 1)
         val beyond   = StudioRef.Fixation(trial, get(FixationIndex.of(10000)))
         for

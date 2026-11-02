@@ -26,7 +26,27 @@ trait NativeArtifactSink[F[_]]:
       artifacts: NativeArtifactPackage
   ): F[Either[NativeArtifactError, NativeBindingFacts]]
 
+  def storeCompletion(
+      artifacts: NativeCompletion
+  )(using F: cats.Applicative[F]): F[Either[NativeArtifactError, NativeCompletionFacts]] =
+    artifacts match
+      case NativeCompletion.Timed(value) =>
+        F.map(store(value))(_.map(NativeCompletionFacts.Timed.apply))
+      case NativeCompletion.Locations(value) =>
+        F.pure(
+          Left(
+            NativeArtifactError.persistence(
+              value.facts.run,
+              "store spatial completion",
+              "this host cannot store spatial run files"
+            )
+          )
+        )
+
 object NativeArtifactSink:
   def project[F[_]](session: ProjectSession[F]): NativeArtifactSink[F] =
     new NativeArtifactSink[F]:
       def store(artifacts: NativeArtifactPackage) = session.storeNativeArtifacts(artifacts)
+
+      override def storeCompletion(artifacts: NativeCompletion)(using cats.Applicative[F]) =
+        session.storeNativeCompletion(artifacts)

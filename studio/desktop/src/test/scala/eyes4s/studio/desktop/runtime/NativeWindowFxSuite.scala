@@ -16,11 +16,20 @@
 
 package eyes4s.studio.desktop.runtime
 
-import eyes4s.studio.app.StoryModels
+import cats.effect.unsafe.implicits.global
+import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.app.compare.ReportAnswer
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactBudget,
+  NativeArtifactError,
+  NativeArtifactPackage
+}
 import eyes4s.studio.core.backend.{PageRequest, QueryStatus, ReportRole}
-import eyes4s.studio.core.document.ReportingContrast
+import eyes4s.studio.core.command.{Command, JournalEntry, Reducer}
+import eyes4s.studio.core.document.{ReportingContrast, RunRef}
 import eyes4s.studio.core.fixture.StoryMoments
+import eyes4s.studio.core.real.RealBackendConformanceSuite
+import eyes4s.studio.core.session.SaveReceipt
 import eyes4s.studio.core.selection.ScaleIndex
 import eyes4s.studio.desktop.journey.FixtureDoc
 import eyes4s.studio.desktop.shell.ShellFxSuite
@@ -34,12 +43,52 @@ class NativeWindowFxSuite extends ShellFxSuite:
 
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
 
+  /** The desktop starts from a persisted native result, not an implicit
+    * recomputation of the story's historical run.
+    */
+  private final class ArchiveProject(pkg: NativeArtifactPackage) extends ProjectPort:
+    def journal(entry: JournalEntry): Unit                    = ()
+    def save(done: Either[String, SaveReceipt] => Unit): Unit = done(
+      Left("not saved in a test")
+    )
+    def close(): Unit = ()
+    override def loadNativeArtifacts(
+        ref: RunRef,
+        budget: NativeArtifactBudget,
+        done: Either[NativeArtifactError, Option[NativeArtifactPackage]] => Unit
+    ): Unit =
+      done(Right(if ref.id == StoryMoments.run7 then Some(pkg) else None))
+
+  private lazy val restored =
+    val document = get(RealBackendConformanceSuite.trialLayout)
+    RealBackendConformanceSuite
+      .computedResource(document)
+      .use { backend =>
+        backend.nativeArtifacts(StoryMoments.run7, NativeArtifactBudget.Default).map { pkg =>
+          val bound = get(
+            Reducer
+              .run(document, Command.BindCompletedArtifacts(get(pkg).facts))
+              .map(_.document)
+          )
+          bound -> get(pkg)
+        }
+      }
+      .unsafeRunSync()
+
   fxStage.test(
     "native startup and explicit contrast edits display native reports without rerunning"
   ) { fx =>
+    val (document, archive) = restored
+    val model               = AppModel
+      .update(
+        AppModel.open(document, StoryModels.t2Compare.project),
+        Intent.Navigate(StoryModels.t2Compare.location)
+      )
+      ._1
     val w = boot(
       fx,
-      StoryModels.t2Compare,
+      model,
+      project = Some(ArchiveProject(archive)),
       nativeSources =
         Some(DatasetSourceHosts.golden(FixtureDoc.root.resolve("fixtures/studio-golden")))
     )
@@ -66,7 +115,7 @@ class NativeWindowFxSuite extends ShellFxSuite:
     assertEquals(unadmitted.size, 14)
     assert(unadmitted.forall(_.matched.isEmpty))
     val before = w.session.await(w.session.backend.jobs)
-    assertEquals(before.size, 1)
+    assertEquals(before, Vector.empty)
 
     runOnFx(w.reporting.applyContrast("Remembered", "Forgotten"))
     eventually(fx, "the ordered operands in the document") {

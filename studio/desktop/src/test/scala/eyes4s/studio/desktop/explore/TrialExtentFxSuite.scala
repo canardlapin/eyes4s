@@ -48,8 +48,8 @@ class TrialExtentFxSuite extends ShellFxSuite:
     })))
     val document = ok(
       StudioDocument.of(
-        original.datasets.map(d => if d.id == spec.id then spec else d),
-        original.analyses.map(a =>
+        original.timedDatasets.map(d => if d.id == spec.id then spec else d),
+        original.timedAnalyses.map(a =>
           if a.id == TrialDurationNativeFixture.revision then
             a.copy(recipe = a.recipe.copy(input = None))
           else a
@@ -96,6 +96,7 @@ class TrialExtentFxSuite extends ShellFxSuite:
       val raw = source.role match
         case SourceRole.Fixations => fixes
         case SourceRole.Trials    => TrialDurationNativeFixture.trials(cell.getOrElse(""))
+        case other                => fail(s"Unexpected source role in timed fixture: $other")
       IO.pure(Some(IArray.from(raw.getBytes(UTF_8))))
     def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] = IO.pure(
       Some(

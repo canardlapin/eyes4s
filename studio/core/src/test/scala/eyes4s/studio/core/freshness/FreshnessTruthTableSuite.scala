@@ -38,8 +38,8 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
   private lazy val t3 = ok(StoryMoments.t3)
 
   private def rebuild(d: StudioDocument)(
-      datasets: Vector[DatasetRevisionSpec] = d.datasets,
-      analyses: Vector[AnalysisRevisionSpec] = d.analyses,
+      datasets: Vector[DatasetRevisionSpec] = d.timedDatasets,
+      analyses: Vector[AnalysisRevisionSpec] = d.timedAnalyses,
       draft: Option[Draft] = d.draft,
       runs: Vector[RunRef] = d.runs,
       figures: Vector[FigureSpec] = d.figures,
@@ -227,7 +227,7 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
 
   test("Stale (dataset moved): run 5 on r2 becomes stale once r3 is admitted") {
     val admittedR3 = rebuild(t1)(datasets =
-      t1.datasets.map(d => if d.id == r3 then d.copy(decision = admitted) else d)
+      t1.timedDatasets.map(d => if d.id == r3 then d.copy(decision = admitted) else d)
     )
     val f = Freshness.of(admittedR3, SessionFacts.empty)
     assertEquals(

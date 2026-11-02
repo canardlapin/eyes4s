@@ -53,6 +53,8 @@ object IoDiagnosticSamples:
     DiagnosticExample.of(seed => CsvLayoutError.Csv(TidyCsvError.MalformedCsv(seed, 'q')))
   given DiagnosticExample[SourceAdmissionError] =
     DiagnosticExample.of(seed => SourceAdmissionError.MissingItem(s"source-$seed"))
+  given DiagnosticExample[LocationImportError] =
+    DiagnosticExample.of(seed => LocationImportError.UnknownTrial(s"trial-$seed"))
   given DiagnosticExample[IdentityChanges] =
     DiagnosticExample.of(seed =>
       IdentityChanges.of(IdentityChange.values(seed % IdentityChange.values.length))
@@ -99,7 +101,8 @@ object IoDiagnosticSamples:
     generated[CsvLayoutError]("CsvLayoutError"),
     generated[SourceTextError[StudyKey]]("SourceTextError"),
     generated[SourceAdmissionError]("SourceAdmissionError"),
-    generated[LedgerVerificationError]("LedgerVerificationError")
+    generated[LedgerVerificationError]("LedgerVerificationError"),
+    generated[LocationImportError]("LocationImportError")
   )
 
   /** The retired families of io's test-scope EyeLink evidence apparatus

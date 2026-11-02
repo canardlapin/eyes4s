@@ -107,7 +107,8 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
       initialRecent: RecentProjects = RecentProjects.empty,
       newProjectTheme: () => Theme = () => Theme.Light,
       initialLayouts: Vector[eyes4s.studio.core.document.SavedLayout] = Vector.empty,
-      transform: Platform[IO] => Platform[IO] = identity
+      transform: Platform[IO] => Platform[IO] = identity,
+      examplePreparation: Option[ProjectSession[IO] => IO[Either[String, Unit]]] = None
   ): (InMemoryPlatform[IO], ProjectLifecycleHost) =
     val memory   = InMemoryPlatform.create[IO]().unsafeRunSync()
     val platform = transform(memory.platform.copy(files = files))
@@ -119,7 +120,8 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
         preferences = preferences,
         initialRecent = initialRecent,
         newProjectTheme = newProjectTheme,
-        initialLayouts = initialLayouts
+        initialLayouts = initialLayouts,
+        examplePreparation = examplePreparation
       )
     )
     runOnFx(host.start())
@@ -1185,13 +1187,34 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
           val project          = directory.resolve("Example copy.eyes")
           val (platform, host) = setup(fx, directory)
           try
-            runOnFx(host.request(ProjectOperation.OpenExample, Some(path(project))))
+            runOnFx {
+              host.request(ProjectOperation.OpenExample, Some(path(project)))
+              assert(fx.stage.getTitle.contains("Preparing example results"))
+            }
             def results(): Int =
-              eventually(fx, "example project opened") {
-                !host.busy && host.window.exists(_.runtime.model.project.nonEmpty)
-              }
+              // Explicit preparation now stores the native archive before opening.
+              val deadline = System.nanoTime() + 60.seconds.toNanos
+              while runOnFx(host.busy) && System.nanoTime() < deadline do
+                Thread.sleep(25)
+                fx.awaitLayout()
+              assert(
+                runOnFx(!host.busy && host.window.exists(_.runtime.model.project.nonEmpty)),
+                "example project did not finish preparation"
+              )
               val window = runOnFx(host.window.get)
               assert(runOnFx(window.session.fixture.isEmpty))
+              assert(!runOnFx(fx.stage.getTitle.contains("Preparing example results")))
+              assert(
+                runOnFx(
+                  window.runtime.model.document
+                    .run(
+                      eyes4s.studio.core.fixture.StoryMoments.run7
+                    )
+                    .exists(
+                      _.archive.isInstanceOf[eyes4s.studio.core.document.CoreBinding.Bound[?]]
+                    )
+                )
+              )
               eventually(fx, "example Compare query response") {
                 window.summary.summary.queries.nonEmpty
               }
@@ -1202,6 +1225,7 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
               eventually(fx, "example participant plot") {
                 window.summary.vm.participantPlot.exists(_.isRight)
               }
+              assertEquals(window.session.await(window.session.backend.jobs), Vector.empty)
               rows.size
             val before = results()
             fx.snapshot(StudioTheme.Light, List(eyes4s.studio.desktop.harness.SnapshotScale.X1))
@@ -1214,6 +1238,85 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
             assertEquals(results(), before)
           finally runOnFx(host.shutdown())
           assert(usable(project))
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "shutdown cancels suspended example preparation and releases the copied writer"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-example-cancel-")
+      .use { directory =>
+        IO.blocking {
+          val target    = directory.resolve("cancelled.eyes")
+          val entered   = Deferred[IO, Unit].unsafeRunSync()
+          val cancelled = Deferred[IO, Unit].unsafeRunSync()
+          val (_, host) = setup(
+            fx,
+            directory,
+            examplePreparation = Some(_ =>
+              (entered.complete(()).void >> IO.never[Either[String, Unit]])
+                .onCancel(cancelled.complete(()).void)
+            )
+          )
+          try
+            runOnFx(host.request(ProjectOperation.OpenExample, Some(path(target))))
+            entered.get.timeout(10.seconds).unsafeRunSync()
+            runOnFx(host.shutdown())
+            cancelled.get.timeout(10.seconds).unsafeRunSync()
+            val deadline = System.nanoTime() + 10.seconds.toNanos
+            var released = usable(target)
+            while !released && System.nanoTime() < deadline do
+              Thread.sleep(10)
+              released = usable(target)
+            assert(released, "cancelled example retained its writer lock")
+            assertEquals(runOnFx(host.window), None)
+          finally runOnFx(host.shutdown())
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "Quit then Keep open cancels example preparation and preserves the current window"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-example-cancel-")
+      .use { directory =>
+        IO.blocking {
+          val target    = directory.resolve("cancelled.eyes")
+          val entered   = Deferred[IO, Unit].unsafeRunSync()
+          val cancelled = Deferred[IO, Unit].unsafeRunSync()
+          val (_, host) = setup(
+            fx,
+            directory,
+            examplePreparation = Some(_ =>
+              (entered.complete(()).void >> IO.never[Either[String, Unit]])
+                .onCancel(cancelled.complete(()).void)
+            )
+          )
+          val original = runOnFx(host.window.get)
+          runOnFx(
+            original.runtime.dispatch(Intent.RenameProject(get(ProjectName.of("unsaved"))))
+          )
+          try
+            runOnFx(host.request(ProjectOperation.OpenExample, Some(path(target))))
+            entered.get.timeout(10.seconds).unsafeRunSync()
+            runOnFx(host.request(ProjectOperation.Quit))
+            press(fx, "Keep open")
+            cancelled.get.timeout(10.seconds).unsafeRunSync()
+            val deadline = System.nanoTime() + 10.seconds.toNanos
+            var released = usable(target)
+            while !released && System.nanoTime() < deadline do
+              Thread.sleep(10)
+              released = usable(target)
+            assert(released, "cancelled example retained its writer lock")
+            assertEquals(runOnFx(host.window), Some(original))
+            assert(!runOnFx(original.isClosed))
+            assert(!runOnFx(fx.stage.getTitle.contains("Preparing example results")))
+          finally runOnFx(host.shutdown())
         }
       }
       .unsafeRunSync()

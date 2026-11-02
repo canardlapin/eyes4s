@@ -30,7 +30,7 @@ import eyes4s.studio.core.artifacts.{
   NativeArtifactError,
   NativeArtifactSink,
   NativeArtifactSource,
-  NativeBindingFacts
+  NativeCompletionFacts
 }
 import eyes4s.studio.core.execution.{
   ExecutionError,
@@ -131,7 +131,8 @@ object StudioSession:
         .resource[IO](document, sources, artifactSource)
         .map { backend =>
           val completion = artifactSink.map(sink =>
-            (job: ExecutionJob) => NativeArtifactDelivery.store(backend, sink, job.run)
+            (job: ExecutionJob) =>
+              NativeArtifactDelivery.storeCompletion(backend, sink, job.run)
           )
           (
             backend: StudyBackend[IO],
@@ -153,7 +154,7 @@ object StudioSession:
             StudyNavigator[IO],
             Option[FakeStudyBackend[IO]],
             StudioDocument => IO[Either[BackendError, Unit]],
-            Option[ExecutionJob => IO[Either[NativeArtifactError, NativeBindingFacts]]],
+            Option[ExecutionJob => IO[Either[NativeArtifactError, NativeCompletionFacts]]],
             Option[RunId => IO[Either[BackendError, Unit]]]
         )
       ],
@@ -172,7 +173,7 @@ object StudioSession:
         )
       backend = new SynchronizedBackend[IO](raw, sync)
       reads   <- NativeReads.resource[IO](backend, navigator, sync, awaitRestore)
-      service <- ExecutionService.resource[IO](backend, artifacts = completion)
+      service <- ExecutionService.resource[IO](backend, completions = completion)
       events  <- service.subscribe
       _       <- events.evalMap(event => IO(deliver(event))).compile.drain.background
     yield (raw, backend, reads, synchronize, fixture, service)

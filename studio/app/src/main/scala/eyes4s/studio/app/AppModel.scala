@@ -43,7 +43,9 @@ import eyes4s.studio.core.execution.{
   ExecutionEvent,
   ExecutionJob,
   JobPhase,
-  RunStamp
+  RunStamp,
+  ExecutionStamp,
+  LocationRunStamp
 }
 import eyes4s.studio.core.command.{
   Command,
@@ -63,6 +65,7 @@ import eyes4s.studio.core.document.{
   PresentationState,
   Preset,
   Recipe,
+  ReportingSpec,
   RunLifecycle,
   SourceRole,
   StudioDocument,
@@ -245,7 +248,7 @@ enum Notice derives CanEqual:
 final case class InputChecks(
     asked: Long,
     answered: Long,
-    runAfter: Option[(Command.SaveAndRun, Long)]
+    runAfter: Option[(Command.SaveAndRun | Command.ReserveLocationRun, Long)]
 ) derives CanEqual:
   /** Whether a check newer than the last answer is outstanding. */
   def outstanding: Boolean = asked > answered
@@ -367,7 +370,7 @@ object AppEffect:
   */
 final case class PreparedDesign(ready: PreviewReady, recipe: Recipe) derives CanEqual:
   /** Whether a run of `stamp` in `document` runs this design. */
-  def prepares(document: StudioDocument, stamp: RunStamp): Boolean =
+  def prepares(document: StudioDocument, stamp: ExecutionStamp): Boolean =
     val identity = ready.stamp == stamp ||
       (ready.recipe.contains(recipe) && ready.stamp.agreesWithDeclarations(stamp))
     identity && ready.recipe.forall(_ == recipe) &&
@@ -656,7 +659,9 @@ sealed abstract case class AppModel private (
 
   /** The layout the current perspective shows. */
   def layout: PerspectiveLayout =
-    StudioLayouts.layoutFor(perspective, location.trail, document.datasets.nonEmpty)
+    if eyes4s.studio.app.locations.SpatialContext.active(this) then
+      StudioLayouts.spatial(perspective)
+    else StudioLayouts.layoutFor(perspective, location.trail, document.datasets.nonEmpty)
 
   /** The focused pane of the current layout: the one last focused, else the
     * first non-navigator group's first tab.
@@ -845,7 +850,7 @@ object AppModel:
     */
   private def sourcesOf(d: StudioDocument): Set[(SourceRole, eyes4s.codec.ByteDigest, String)] =
     d.datasets
-      .flatMap(_.sources.entries.map(s => (s.role, s.bytes, s.path.value.split('/').last)))
+      .flatMap(_.sourceFiles.map(s => (s.role, s.bytes, s.path.value.split('/').last)))
       .toSet
 
   private def step(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) = intent match
@@ -890,7 +895,8 @@ object AppModel:
         case None      => m.hover.filterNot(_.view == view)
       (m.copy(hover = next), none)
 
-    case Intent.Dispatch(run: Command.SaveAndRun) if m.inputs != InputCheck.NoProject =>
+    case Intent.Dispatch(run: (Command.SaveAndRun | Command.ReserveLocationRun))
+        if m.inputs != InputCheck.NoProject =>
       // Every Save & run of a project checks its stored inputs first, then
       // runs only if they are present as recorded (S2.5; fail closed).
       // A second one while the first waits is told so, not dropped silently.
@@ -1040,7 +1046,7 @@ object AppModel:
     case Intent.Execution(ExecutionEvent.ArtifactsStored(job, facts)) =>
       val observed = m.jobs.job(job)
       val valid    = observed.exists(j =>
-        j.phase.isInstanceOf[JobPhase.Succeeded] &&
+        j.phase.hasCompletedResult &&
           j.run == facts.run && facts.stamp.agreesWithDeclarations(j.stamp)
       )
       if valid then
@@ -1067,13 +1073,47 @@ object AppModel:
         val error = NativeArtifactError.persistence(
           facts.run,
           "accept stored binding",
-          s"Job ${job.number} must be observed succeeded for ${facts.run.label}/${facts.stamp.label}; found $found."
+          s"Job ${job.number} must be observed completed for ${facts.run.label}/${facts.stamp.label}; found $found."
+        )
+        (m.copy(notice = Some(Notice.ArtifactsRefused(job, facts.run, error.diagnostic))), none)
+    case Intent.Execution(ExecutionEvent.LocationArtifactsStored(job, facts)) =>
+      val stamp = LocationRunStamp(
+        facts.analysis.id,
+        facts.dataset.id,
+        facts.analysis.plan,
+        facts.analysis.recipe.input
+      )
+      val valid = m.jobs
+        .job(job)
+        .exists(j =>
+          j.phase.hasCompletedResult && j.run == facts.run && stamp
+            .agreesWithDeclarations(j.stamp)
+        )
+      if valid then
+        val command = Command.BindLocationCompletedArtifacts(facts)
+        m.history.apply(command) match
+          case Right(step) if step.history.document == m.document && step.effects.isEmpty =>
+            (m, none)
+          case success @ Right(_) =>
+            val (bound, effects) = applyHistory(m, JournalEntry.Apply(command), success)
+            (
+              bound.copy(jobs = m.jobs),
+              effects.filter {
+                case AppEffect.Execution(_: ExecutionEffect.Require) => false
+                case _                                               => true
+              }
+            )
+          case failure => applyHistory(m, JournalEntry.Apply(command), failure)
+      else
+        val error = NativeArtifactError.persistence(
+          facts.run,
+          "accept spatial binding",
+          s"Job ${job.number} has no matching completed spatial result."
         )
         (m.copy(notice = Some(Notice.ArtifactsRefused(job, facts.run, error.diagnostic))), none)
     case Intent.Execution(ExecutionEvent.ArtifactsRefused(job, run, diagnostic)) =>
       m.jobs.job(job) match
-        case Some(observed)
-            if observed.run == run && observed.phase.isInstanceOf[JobPhase.Succeeded] =>
+        case Some(observed) if observed.run == run && observed.phase.hasCompletedResult =>
           (m.copy(notice = Some(Notice.ArtifactsRefused(job, run, diagnostic))), none)
         case _ => (m, none)
     case Intent.Execution(event) =>
@@ -1268,18 +1308,21 @@ object AppModel:
       document: StudioDocument,
       analysis: AnalysisRevision,
       dataset: DatasetRevision
-  ): RunStamp =
-    RunStamp(
-      analysis,
-      dataset,
-      document.analysis(analysis).fold(CoreBinding.unbound)(_.plan),
-      CoreBinding.unbound
-    )
+  ): ExecutionStamp = document.analysisDefinition(analysis) match
+    case Some(value: eyes4s.studio.core.document.LocationAnalysisRevision) =>
+      LocationRunStamp(value.id, value.dataset, value.plan, value.recipe.input)
+    case _ =>
+      RunStamp(
+        analysis,
+        dataset,
+        document.analysis(analysis).fold(CoreBinding.unbound)(_.plan),
+        CoreBinding.unbound
+      )
 
   /** What the document last requested results for: its newest declared run.
     * Settling that request must not restore an older run's requirement.
     */
-  def requestedStamp(document: StudioDocument): Option[RunStamp] =
+  def requestedStamp(document: StudioDocument): Option[ExecutionStamp] =
     document.runs.lastOption.map(r => stampOf(document, r.analysis, r.dataset))
 
   /** When the shown run changes, the selection moves to a new context and
@@ -1307,7 +1350,8 @@ object AppModel:
         val lifecycle = job.phase match
           case JobPhase.Succeeded(_)    => Some(RunLifecycle.Completed)
           case JobPhase.Failed(_, _)    => Some(RunLifecycle.Failed)
-          case JobPhase.Cancelled(last) => Some(RunLifecycle.Cancelled(last.map(_.stage)))
+          case JobPhase.Cancelled(last) =>
+            Some(RunLifecycle.Cancelled(last.flatMap(_.timed.map(_.segment.kind))))
           case JobPhase.Superseded(_, Some(_)) => Some(RunLifecycle.Completed)
           case JobPhase.Superseded(_, None)    => Some(RunLifecycle.Cancelled(None))
           case JobPhase.Queued | JobPhase.Running(_) | JobPhase.Cancelling(_) => None
@@ -1353,17 +1397,43 @@ object AppModel:
     */
   private def checkedThenRun(
       next: AppModel,
-      run: Command.SaveAndRun
+      run: Command.SaveAndRun | Command.ReserveLocationRun
   ): (AppModel, Vector[AppEffect]) =
-    next.runBlock match
+    val block = run match
+      case Command.ReserveLocationRun(analysis) =>
+        next.document
+          .analysisDefinition(analysis)
+          .flatMap(a => next.sources.block(a.dataset).map(a.dataset -> _))
+      case _: Command.SaveAndRun => next.runBlock
+    block match
       case Some((dataset, block)) =>
         (next.copy(notice = Some(Notice.SourcesBlocked(dataset, block))), Vector.empty)
       case None =>
         applyHistory(next, JournalEntry.Apply(run), next.history.apply(run))
 
   private def navigate(m: AppModel, to: Location): (AppModel, Vector[AppEffect]) =
-    val (next, effects) = arrive(m, m.copy(navigation = m.navigation.go(m.location, to)), to)
-    (shownSection(next), effects)
+    // The first report must be reachable without entering an existing report's editor.
+    // Record its creation as an ordinary edit so it is saved, replayable and undoable.
+    val needsReport = !eyes4s.studio.app.locations.SpatialContext
+      .at(m, to.perspective) && m.document.reporting.isEmpty &&
+      (to.perspective == Perspective.Results || to.perspective == Perspective.Report)
+    val (ready, created) =
+      if needsReport then
+        val command = Command.PutReporting(ReportingSpec.overall)
+        applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
+      else (m, none)
+    val target =
+      if to.perspective == Perspective.Results && to.trail.isEmpty then
+        ready.document.reporting.headOption.fold(to)(r =>
+          to.copy(trail = Vector(Place.Summary(r.id)))
+        )
+      else to
+    val (next, effects) = arrive(
+      ready,
+      ready.copy(navigation = ready.navigation.go(ready.location, target)),
+      target
+    )
+    (shownSection(next), created ++ effects)
 
   /** A Data section's crumb shows its pane: the sections share one group
     * (overhaul v4), so the one the trail names comes forward.

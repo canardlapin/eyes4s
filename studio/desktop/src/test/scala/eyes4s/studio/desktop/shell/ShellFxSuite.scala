@@ -138,9 +138,12 @@ abstract class ShellFxSuite extends StudioFxSuite:
     runOnFx(w.runtime.dispatch(intent))
     fx.awaitLayout()
 
-  /** Wait (up to 20 s) until `cond` holds on the FX thread. */
-  protected def eventually(fx: FxStage, what: String)(cond: => Boolean): Unit =
-    val deadline = System.nanoTime + 20_000_000_000L
+  /** Wait until `cond` holds on the FX thread; ordinary UI transitions have 20 s. */
+  protected def eventually(fx: FxStage, what: String, timeoutSeconds: Int = 20)(
+      cond: => Boolean
+  ): Unit =
+    val deadline =
+      System.nanoTime + java.util.concurrent.TimeUnit.SECONDS.toNanos(timeoutSeconds.toLong)
     while !runOnFx(cond) do
       if System.nanoTime > deadline then fail(s"timed out waiting for $what")
       Thread.sleep(25)

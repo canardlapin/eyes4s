@@ -73,6 +73,9 @@ object ReportingId:
   private def apply(value: String): ReportingId =
     new ReportingId(value) {}
 
+  /** The initial ungrouped report in a project without reporting specifications. */
+  val overall: ReportingId = ReportingId("overall")
+
   def of(value: String): Either[DocumentError, ReportingId] =
     Checks.nonBlank("reporting id", value).map(ReportingId(_))
 
@@ -232,6 +235,18 @@ sealed abstract case class ReportingSpec private (
 ) derives CanEqual
 
 object ReportingSpec:
+  /** An explicit starting report: all queries, no filters or minimum, equal participant weight. */
+  val overall: ReportingSpec =
+    ReportingSpec(
+      ReportingId.overall,
+      "All queries",
+      None,
+      Vector.empty,
+      None,
+      ReportingWeight.ParticipantMeans,
+      None
+    )
+
   private def apply(
       id: ReportingId,
       name: String,

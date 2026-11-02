@@ -99,7 +99,7 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
     assertEquals(replay.map(_.history), Right(live))
     assertEquals(replay.map(_.entries), Right(CommandSamples.session))
     assertEquals(replay.map(_.torn), Right(None))
-    assertEquals(live.document.science.analyses, DocumentSamples.t3.science.analyses)
+    assertEquals(live.document.science.timedAnalyses, DocumentSamples.t3.science.timedAnalyses)
     assertEquals(live.document.presentation, t2.presentation)
   }
 
@@ -217,7 +217,7 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
     )
     assertEquals(
       CommandJournal.codec.map(c => (c.schema.name, c.schema.version)),
-      Right(("studio.journal", 9))
+      Right(("studio.journal", 11))
     )
   }
 
@@ -239,6 +239,27 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
     io.circe.parser
       .parse(text)
       .flatMap(_.hcursor.downField("schema").downField("version").as[Int])
+
+  test("spatial binding is version 10 and spatial workflow commands are version 11") {
+    val binding = JournalLine.Entry(
+      1,
+      JournalEntry.Apply(
+        CommandSamples.commands.find(_._1 == "BindLocationCompletedArtifacts").get._2
+      )
+    )
+    val workflow = JournalLine.Entry(
+      1,
+      JournalEntry.Apply(CommandSamples.commands.find(_._1 == "AppendLocationDataset").get._2)
+    )
+    assertEquals(CommandJournal.encode(binding).map(version), Right(Right(10)))
+    assertEquals(CommandJournal.encode(workflow).map(version), Right(Right(11)))
+    val version9  = ladder.versions.dropRight(2).last
+    val version10 = ladder.versions.dropRight(1).last
+    val v9        = ladder.upTo(version9).toOption.get
+    val v10       = ladder.upTo(version10).toOption.get
+    assert(v9.writeAt(version9, binding).isLeft)
+    assert(v10.writeAt(version10, workflow).isLeft)
+  }
 
   test("a line naming the PerceptionImagery preset is version 2 and round-trips") {
     val line    = imageryRun(Preset.PerceptionImagery)

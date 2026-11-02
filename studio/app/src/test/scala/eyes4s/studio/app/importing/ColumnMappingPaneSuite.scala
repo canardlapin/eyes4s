@@ -436,7 +436,7 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       case other => fail(s"expected one ReviseDataset, got $other")
     val after = AppModel.run(m, WizardEffect.appIntents(fx))._1
     assertEquals(after.history.science.done.size, m.history.science.done.size + 1)
-    assertEquals(after.document.datasets.map(_.id), m.document.datasets.map(_.id))
+    assertEquals(after.document.timedDatasets.map(_.id), m.document.timedDatasets.map(_.id))
     assertEquals(
       AppModel.update(after, Intent.Undo(HistoryStack.Science))._1.document,
       m.document
@@ -537,7 +537,7 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       AppModel.run(AppModel.open(document, None), WizardEffect.appIntents(effects))._1.document
     val codec    = ok(StudioDocument.codec)
     val restored = ok(codec.decode(ok(codec.encode(imported))))
-    val spec     = restored.datasets.last
+    val spec     = restored.timedDatasets.last
     assertEquals(spec.inventory.flatMap(_.duration), Some(duration))
     val remap = run(
       ok(ImportWizard.remap(restored, spec.id, ImportPresets.empty)),

@@ -20,7 +20,11 @@ import cats.effect.std.{Mutex, Queue, Supervisor}
 import cats.effect.{Concurrent, Ref, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.artifacts.{NativeArtifactError, NativeBindingFacts}
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactError,
+  NativeBindingFacts,
+  NativeCompletionFacts
+}
 import eyes4s.studio.core.preview.PreviewReady
 import fs2.Stream
 import fs2.concurrent.Topic
@@ -54,7 +58,7 @@ trait ExecutionService[F[_]]:
   /** Submit a run of `stamp.revision`; `stamp` becomes the requested stamp
     * before the backend is asked.
     */
-  def submit(stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]]
+  def submit(stamp: ExecutionStamp): F[Either[ExecutionError, ExecutionJob]]
 
   /** Submit the exact prepared study named by a ready backend preview. */
   def submitPreview(ready: PreviewReady): F[Either[ExecutionError, ExecutionJob]]
@@ -62,12 +66,12 @@ trait ExecutionService[F[_]]:
   /** Track a job the backend already runs (a reopened project's
     * `JobHandle`); `stamp` becomes the requested stamp.
     */
-  def adopt(job: JobId, stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]]
+  def adopt(job: JobId, stamp: ExecutionStamp): F[Either[ExecutionError, ExecutionJob]]
 
   /** The document now wants results for `stamp`; jobs of any other stamp
     * that complete from now on are `Superseded`.
     */
-  def require(stamp: RunStamp): F[Unit]
+  def require(stamp: ExecutionStamp): F[Unit]
 
   /** Request cancellation. A live job is `Cancelling` at once and `Cancelled`
     * when the backend settles it; a settled job is returned as it is.
@@ -79,7 +83,7 @@ trait ExecutionService[F[_]]:
   def job(id: JobId): F[Either[ExecutionError, ExecutionJob]]
 
   /** The stamp completions are judged against. */
-  def requested: F[Option[RunStamp]]
+  def requested: F[Option[ExecutionStamp]]
 
   /** Every event from acquisition on, in the order the service applied them.
     * The subscription is registered when the resource is acquired, so no
@@ -99,7 +103,10 @@ object ExecutionService:
       backend: StudyBackend[F],
       subscriberBuffer: Int = SubscriberBuffer,
       artifacts: Option[ExecutionJob => F[Either[NativeArtifactError, NativeBindingFacts]]] =
-        None
+        None,
+      completions: Option[
+        ExecutionJob => F[Either[NativeArtifactError, NativeCompletionFacts]]
+      ] = None
   )(using
       F: Concurrent[F]
   ): Resource[F, ExecutionService[F]] =
@@ -121,7 +128,11 @@ object ExecutionService:
       state,
       mutex,
       subscriberBuffer max 1,
-      artifacts,
+      completions.orElse(
+        artifacts.map(deliver =>
+          (job: ExecutionJob) => deliver(job).map(_.map(NativeCompletionFacts.Timed.apply))
+        )
+      ),
       delivered
     )
 
@@ -133,7 +144,7 @@ object ExecutionService:
       state: Ref[F, ExecutionTracker],
       mutex: Mutex[F],
       subscriberBuffer: Int,
-      artifacts: Option[ExecutionJob => F[Either[NativeArtifactError, NativeBindingFacts]]],
+      artifacts: Option[ExecutionJob => F[Either[NativeArtifactError, NativeCompletionFacts]]],
       delivered: Ref[F, Set[JobId]]
   )(using F: Concurrent[F])
       extends ExecutionService[F]:
@@ -155,7 +166,7 @@ object ExecutionService:
       }
 
     /** Record the intent to run `stamp`; its generation. */
-    private def intend(stamp: RunStamp): F[Long] =
+    private def intend(stamp: ExecutionStamp): F[Long] =
       mutex.lock.surround(state.modify(_.intend(stamp)))
 
     /** Claim successful delivery once, including terminal adoption. Artifact
@@ -164,7 +175,7 @@ object ExecutionService:
       * (bead q-native-stored-completion).
       */
     private def deliverArtifacts(job: ExecutionJob): F[Unit] =
-      artifacts.filter(_ => job.phase.isInstanceOf[JobPhase.Succeeded]).fold(F.unit) { store =>
+      artifacts.filter(_ => job.phase.hasCompletedResult).fold(F.unit) { store =>
         delivered
           .modify { seen =>
             if seen(job.id) then (seen, false) else (seen + job.id, true)
@@ -178,10 +189,18 @@ object ExecutionService:
                     case Right(Right(facts))
                         if facts.run == job.run && facts.stamp
                           .agreesWithDeclarations(job.stamp) =>
-                      outbox.offer(ExecutionEvent.ArtifactsStored(job.id, facts))
+                      outbox.offer(facts match
+                        case NativeCompletionFacts.Timed(value) =>
+                          ExecutionEvent.ArtifactsStored(job.id, value)
+                        case NativeCompletionFacts.Locations(value) =>
+                          ExecutionEvent.LocationArtifactsStored(job.id, value))
                     case Right(Right(facts)) =>
                       val error = if facts.run != job.run then
-                        NativeArtifactError.WrongFacts(job.run, facts)
+                        NativeArtifactError.InvalidFacts(
+                          job.run,
+                          "completion run",
+                          s"Expected ${job.run.label}, received ${facts.run.label}."
+                        )
                       else
                         NativeArtifactError.InvalidFacts(
                           job.run,
@@ -213,9 +232,9 @@ object ExecutionService:
         case Left(_)    => F.unit
       }
 
-    def submit(stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]] =
+    def submit(stamp: ExecutionStamp): F[Either[ExecutionError, ExecutionJob]] =
       intend(stamp).flatMap { generation =>
-        backend.submit(stamp.revision).flatMap {
+        backend.submitStamped(stamp).flatMap {
           case Left(e)       => F.pure(Left(ExecutionError.Backend(e)))
           case Right(status) => start(status, stamp, generation)
         }
@@ -229,7 +248,7 @@ object ExecutionService:
         }
       }
 
-    def adopt(job: JobId, stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]] =
+    def adopt(job: JobId, stamp: ExecutionStamp): F[Either[ExecutionError, ExecutionJob]] =
       state.get.flatMap { t =>
         if t.jobs.exists(_.id == job) then F.pure(Left(ExecutionError.AlreadyTracked(job)))
         else
@@ -241,7 +260,7 @@ object ExecutionService:
 
     private def start(
         status: JobStatus,
-        stamp: RunStamp,
+        stamp: ExecutionStamp,
         generation: Long
     ): F[Either[ExecutionError, ExecutionJob]] =
       if status.revision != stamp.revision || status.dataset != stamp.dataset then
@@ -288,7 +307,7 @@ object ExecutionService:
         }
       }
 
-    def require(stamp: RunStamp): F[Unit] =
+    def require(stamp: ExecutionStamp): F[Unit] =
       mutex.lock.surround(state.update(_.require(stamp)))
 
     def cancel(id: JobId): F[Either[ExecutionError, ExecutionJob]] =
@@ -305,7 +324,7 @@ object ExecutionService:
 
     def job(id: JobId): F[Either[ExecutionError, ExecutionJob]] = state.get.map(_.job(id))
 
-    def requested: F[Option[RunStamp]] = state.get.map(_.requestedStamp)
+    def requested: F[Option[ExecutionStamp]] = state.get.map(_.requestedStamp)
 
     def subscribe: Resource[F, Stream[F, ExecutionEvent]] =
       topic.subscribeAwait(subscriberBuffer)

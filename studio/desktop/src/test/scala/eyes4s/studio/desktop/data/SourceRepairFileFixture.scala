@@ -55,7 +55,7 @@ object SourceRepairFileFixture:
   val dataset          = DatasetRevision(1)
   val trial            = TrialKey("P17", Phase.Encoding, "enc_03", 1)
   val blank            = TrialKey("P17", Phase.Encoding, "enc_04", 1)
-  private val original = get(StoryMoments.t2).datasets.last
+  private val original = get(StoryMoments.t2).timedDatasets.last
   val sources          = get(
     Sources.of(
       Vector(

@@ -51,12 +51,20 @@ object AnalysisSelection:
     val trail    = model.navigation.trail(Perspective.Analysis)
     val revision = trail.reverseIterator.collectFirst { case Place.Revision(id) => id }
     val family   = trail.reverseIterator.collectFirst { case Place.Family(id) => id }
-    revision
-      .flatMap(id => context(document, Some(id)))
-      .orElse(
-        family.flatMap(id => latest(document, id)).flatMap(id => context(document, Some(id)))
-      )
-      .orElse(context(document, None))
+    val chosen   = revision.orElse(family.flatMap(id => latest(document, id)))
+    val spatial  =
+      chosen.flatMap(document.analysisDefinition).exists(_.kind == StudyKind.Locations) ||
+        (chosen.isEmpty && document.draft.isEmpty && document.analyses.lastOption.exists(
+          _.kind == StudyKind.Locations
+        ))
+    if spatial then None
+    else
+      revision
+        .flatMap(id => context(document, Some(id)))
+        .orElse(
+          family.flatMap(id => latest(document, id)).flatMap(id => context(document, Some(id)))
+        )
+        .orElse(context(document, None))
 
   def name(document: StudioDocument, family: AnalysisFamilyId): Option[String] =
     document.draft
@@ -67,7 +75,7 @@ object AnalysisSelection:
       .orElse(
         document.analyses
           .findLast(a => document.familyOf(a.id).contains(family))
-          .map(_.studio.name.value)
+          .map(_.revisionName.value)
       )
       .orElse(
         document.draftContext

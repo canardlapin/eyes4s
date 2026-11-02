@@ -79,8 +79,8 @@ class RunStoreSuite extends CatsEffectSuite:
   private val afterRun8: StudioDocument =
     right(
       StudioDocument.of(
-        t3.datasets,
-        t3.analyses,
+        t3.timedDatasets,
+        t3.timedAnalyses,
         t3.draft,
         t3.runs.map(r => if r.id == StoryMoments.run8 then completed(r) else r),
         t3.reporting,

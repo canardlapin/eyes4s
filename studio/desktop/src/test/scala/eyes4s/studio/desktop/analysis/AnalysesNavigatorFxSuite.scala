@@ -61,7 +61,8 @@ class AnalysesNavigatorFxSuite extends ShellFxSuite:
     import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision}
     import eyes4s.studio.core.command.HistoryStack
     val data =
-      StoryModels.t2Analysis.document.datasets.last.copy(id = DatasetRevision(1), parent = None)
+      StoryModels.t2Analysis.document.timedDatasets.last
+        .copy(id = DatasetRevision(1), parent = None)
     val document = StudioDocument
       .of(
         Vector(data),
@@ -110,7 +111,7 @@ class AnalysesNavigatorFxSuite extends ShellFxSuite:
     import eyes4s.studio.core.backend.AnalysisRevision
     import eyes4s.studio.core.document.StudioDocument
     val before   = StoryModels.t2Analysis.document
-    val base     = before.analyses.last
+    val base     = before.timedAnalyses.last
     val more     = Vector.tabulate(30)(i => base.copy(id = AnalysisRevision(i + 5)))
     val document = StudioDocument
       .of(

@@ -111,8 +111,8 @@ object ExampleProject:
     */
   def registry(project: OpenedProject): Either[String, AssetRegistry] =
     for
-      dataset  <- project.document.datasets.lastOption.toRight("the project has no dataset")
-      stored   <- storedStimuli(project.manifest)
-      rows     <- GoldenAssets.rows
+      dataset <- project.document.timedDatasets.lastOption.toRight("the project has no dataset")
+      stored  <- storedStimuli(project.manifest)
+      rows    <- GoldenAssets.rows
       registry <- AssetRegistry.fromRows(dataset, rows, stored).leftMap(_.message)
     yield registry

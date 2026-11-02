@@ -51,8 +51,8 @@ class FigureModelSuite extends CatsEffectSuite:
   private val run8Shown: StudioDocument =
     val completed = right(
       StudioDocument.of(
-        t3.datasets,
-        t3.analyses,
+        t3.timedDatasets,
+        t3.timedAnalyses,
         t3.draft,
         t3.runs.map(r => if r.id == run8 then r.copy(state = RunLifecycle.Completed) else r),
         t3.reporting,
@@ -239,8 +239,8 @@ class FigureModelSuite extends CatsEffectSuite:
     val run9 = RunId(9)
     val two  = right(
       StudioDocument.of(
-        t2.datasets,
-        t2.analyses,
+        t2.timedDatasets,
+        t2.timedAnalyses,
         t2.draft,
         t2.runs :+ RunRef(
           run9,

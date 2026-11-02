@@ -35,7 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class ExecutionEventDeliverySuite extends munit.FunSuite:
   private def job(step: Long, id: JobId = StoryModels.run8Running.id): ExecutionJob =
-    val report   = StoryModels.run8Progress(step).report
+    val report = StoryModels.run8Progress(step).timed.getOrElse(fail("timed progress fixture"))
     val progress = ExecutionProgress(
       JobProgress
         .of(id, report.run, step, report.segment, report.meter, report.totals)

@@ -27,7 +27,9 @@ import eyes4s.studio.core.artifacts.{
   NativeArtifactPackage,
   NativeArtifactSink,
   NativeArtifactSource,
-  NativeBindingFacts
+  NativeBindingFacts,
+  NativeCompletion,
+  NativeCompletionFacts
 }
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
 import eyes4s.studio.desktop.platform.FileProjectStore
@@ -59,6 +61,23 @@ trait ProjectPort:
       )
     )
 
+  def storeNativeCompletion(
+      packageValue: NativeCompletion,
+      done: Either[NativeArtifactError, NativeCompletionFacts] => Unit
+  ): Unit = packageValue match
+    case NativeCompletion.Timed(value) =>
+      storeNativeArtifacts(value, answer => done(answer.map(NativeCompletionFacts.Timed.apply)))
+    case NativeCompletion.Locations(value) =>
+      done(
+        Left(
+          NativeArtifactError.persistence(
+            value.facts.run,
+            "store spatial completion",
+            "this project cannot store spatial run files"
+          )
+        )
+      )
+
   /** Native factories use the same serial transport as journals and saves. */
   final def nativeArtifactSink: NativeArtifactSink[IO] =
     val port = this
@@ -68,6 +87,13 @@ trait ProjectPort:
       ): IO[Either[NativeArtifactError, NativeBindingFacts]] =
         IO.async_[Either[NativeArtifactError, NativeBindingFacts]](done =>
           port.storeNativeArtifacts(packageValue, answer => done(Right(answer)))
+        )
+
+      override def storeCompletion(
+          packageValue: NativeCompletion
+      )(using cats.Applicative[IO]): IO[Either[NativeArtifactError, NativeCompletionFacts]] =
+        IO.async_(done =>
+          port.storeNativeCompletion(packageValue, answer => done(Right(answer)))
         )
 
   /** Absence is a value only when the host can establish it. An unsupported
@@ -92,6 +118,16 @@ trait ProjectPort:
         )
       )
 
+  def loadNativeCompletion(
+      ref: RunRef,
+      budget: NativeArtifactBudget,
+      done: Either[NativeArtifactError, Option[NativeCompletion]] => Unit
+  ): Unit = loadNativeArtifacts(
+    ref,
+    budget,
+    answer => done(answer.map(_.map(NativeCompletion.Timed.apply)))
+  )
+
   /** Reads share the same FIFO acceptance and closure boundary as storage. */
   final def nativeArtifactSource: NativeArtifactSource[IO] =
     val port = this
@@ -103,6 +139,11 @@ trait ProjectPort:
         IO.async_[Either[NativeArtifactError, Option[NativeArtifactPackage]]](done =>
           port.loadNativeArtifacts(ref, budget, answer => done(Right(answer)))
         )
+
+      override def loadCompletion(ref: RunRef, budget: NativeArtifactBudget)(using
+          cats.Functor[IO]
+      ): IO[Either[NativeArtifactError, Option[NativeCompletion]]] =
+        IO.async_(done => port.loadNativeCompletion(ref, budget, answer => done(Right(answer))))
 
   /** Copy an imported file's bytes into the project, listed at the next save
     * (S5.2): queued before the journal entry of the command that names it.
@@ -346,6 +387,56 @@ final class SessionPort private (
           )
         )
       },
+      s"$operation of ${ref.id.label}",
+      Some(reason => done(Left(NativeArtifactError.persistence(ref.id, operation, reason))))
+    )
+
+  override def storeNativeCompletion(
+      packageValue: NativeCompletion,
+      done: Either[NativeArtifactError, NativeCompletionFacts] => Unit
+  ): Unit =
+    val run       = packageValue.facts.run
+    val operation = "store native completion"
+    enqueue(
+      session
+        .storeNativeCompletion(packageValue)
+        .attempt
+        .flatMap(answer =>
+          IO(
+            done(
+              answer.left
+                .map(failure =>
+                  NativeArtifactError.Defect(run, operation, failure.getClass.getName)
+                )
+                .flatten
+            )
+          )
+        ),
+      s"$operation of ${run.label}",
+      Some(reason => done(Left(NativeArtifactError.persistence(run, operation, reason))))
+    )
+
+  override def loadNativeCompletion(
+      ref: RunRef,
+      budget: NativeArtifactBudget,
+      done: Either[NativeArtifactError, Option[NativeCompletion]] => Unit
+  ): Unit =
+    val operation = "load native completion"
+    enqueue(
+      session
+        .findNativeCompletion(ref, budget)
+        .attempt
+        .flatMap(answer =>
+          IO(
+            done(
+              answer.left
+                .map(failure =>
+                  NativeArtifactError.Defect(ref.id, operation, failure.getClass.getName)
+                )
+                .flatten
+            )
+          )
+        ),
       s"$operation of ${ref.id.label}",
       Some(reason => done(Left(NativeArtifactError.persistence(ref.id, operation, reason))))
     )

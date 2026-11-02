@@ -545,7 +545,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
           Right(())
         )
         assertEquals(runOnFx(host.model.problem), None)
-        assertEquals(session.saved.unsafeRunSync().datasets.last.id, DatasetRevision(4))
+        assertEquals(session.saved.unsafeRunSync().timedDatasets.last.id, DatasetRevision(4))
         // A file that changes between reading and committing is not stored,
         // and nothing is applied: the bytes on commit must be those read.
         val third = dir.resolve("session3.csv")
@@ -658,7 +658,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
     val imported = eyes4s.studio.app.AppModel
       .run(eyes4s.studio.app.AppModel.open(t2, None), m.app.toVector)
       ._1
-    val spec = imported.document.datasets.last
+    val spec = imported.document.timedDatasets.last
     assertEquals(spec.inventory.flatMap(_.displays), Some(ds))
     val registry = ok(
       eyes4s.studio.core.assets.AssetRegistry.fromInventory(
@@ -743,7 +743,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
         .document
       val codec    = ok(StudioDocument.codec)
       val restored = ok(codec.decode(ok(codec.encode(imported))))
-      val duration = restored.datasets.last.inventory
+      val duration = restored.timedDatasets.last.inventory
         .flatMap(_.duration)
         .getOrElse(fail("duration mapping was not stored"))
       assertEquals(duration.column.value, "presentation_ms")

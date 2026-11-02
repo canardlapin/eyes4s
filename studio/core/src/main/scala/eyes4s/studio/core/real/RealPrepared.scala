@@ -42,6 +42,27 @@ final class RealPrepared private (
   /** The native pairing refusal retained with these exact counts, if any. */
   val pairingRefusal: Option[eyes4s.plan.PlanError] = counts.cardinality.refusal(plan.layout)
 
+  /** Empty-work and archive-capacity refusals are shared by preview and submission. */
+  val executionRefusal: Option[BackendError] =
+    Option
+      .when(counts.eligibleQueries == 0L || counts.totalPairs == 0L)(
+        BackendError.NoExecutablePairs(
+          revision,
+          recipe.phases.focal.label,
+          summary.requestedQueries,
+          counts.eligibleQueries,
+          counts.totalPairs
+        )
+      )
+      .orElse(
+        NativeArchiveCapacity.refusal(
+          revision,
+          counts.totalMaps,
+          plan.grid.size,
+          eyes4s.studio.core.artifacts.NativeArtifactBudget.Default
+        )
+      )
+
   /** Trial-local preflight findings read from the retained preparation. No
     * schedules are visited and no maps or scores are calculated here.
     */

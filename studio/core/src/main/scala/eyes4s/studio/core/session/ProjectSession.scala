@@ -27,7 +27,9 @@ import eyes4s.studio.core.artifacts.{
   NativeArtifactBudget,
   NativeArtifactError,
   NativeArtifactPackage,
-  NativeBindingFacts
+  NativeBindingFacts,
+  NativeCompletion,
+  NativeCompletionFacts
 }
 import eyes4s.studio.core.backend.RunId
 import eyes4s.studio.core.bundle.*
@@ -181,9 +183,9 @@ final class ProjectSession[F[_]: Concurrent] private (
     * running target is projected completed solely for prevalidation. No
     * history, journal or manifest changes here (bead q-native-stored-completion).
     */
-  def storeNativeArtifacts(
-      artifacts: NativeArtifactPackage
-  ): F[Either[NativeArtifactError, NativeBindingFacts]] =
+  def storeNativeCompletion(
+      artifacts: NativeCompletion
+  ): F[Either[NativeArtifactError, NativeCompletionFacts]] =
     mutex.lock.surround(Concurrent[F].uncancelable { _ =>
       state.get.flatMap { s =>
         val facts                                      = artifacts.facts
@@ -222,7 +224,7 @@ final class ProjectSession[F[_]: Concurrent] private (
           }
         val validated = projected.flatMap(document =>
           Reducer
-            .run(document, Command.BindCompletedArtifacts(facts))
+            .run(document, bindingCommand(facts))
             .leftMap(e => failure("prevalidate storage", e.message))
         )
         (for
@@ -275,13 +277,64 @@ final class ProjectSession[F[_]: Concurrent] private (
       }
     })
 
-  /** Backend-independent cold readback: validate storage bytes and the
-    * native codec closure before comparing its facts with saved bindings.
-    */
+  private def bindingCommand(facts: NativeCompletionFacts): Command = facts match
+    case NativeCompletionFacts.Timed(value)     => Command.BindCompletedArtifacts(value)
+    case NativeCompletionFacts.Locations(value) => Command.BindLocationCompletedArtifacts(value)
+
+  def storeNativeArtifacts(
+      artifacts: NativeArtifactPackage
+  ): F[Either[NativeArtifactError, NativeBindingFacts]] =
+    storeNativeCompletion(NativeCompletion.Timed(artifacts)).map(_.flatMap {
+      case NativeCompletionFacts.Timed(value)     => Right(value)
+      case NativeCompletionFacts.Locations(value) =>
+        Left(
+          NativeArtifactError.persistence(
+            value.run,
+            "store timed artifacts",
+            "Received spatial completion facts."
+          )
+        )
+    })
+
   def loadNativeArtifacts(
       run: RunId,
       budget: NativeArtifactBudget = NativeArtifactBudget.Default
   ): F[Either[NativeArtifactError, NativeArtifactPackage]] =
+    loadNativeCompletion(run, budget).map(_.flatMap {
+      case NativeCompletion.Timed(value) => Right(value)
+      case NativeCompletion.Locations(_) =>
+        Left(
+          NativeArtifactError.persistence(
+            run,
+            "load timed artifacts",
+            "This run contains spatial artifacts."
+          )
+        )
+    })
+
+  def findNativeArtifacts(
+      ref: RunRef,
+      budget: NativeArtifactBudget = NativeArtifactBudget.Default
+  ): F[Either[NativeArtifactError, Option[NativeArtifactPackage]]] =
+    findNativeCompletion(ref, budget).map(_.flatMap(_.traverse {
+      case NativeCompletion.Timed(value) => Right(value)
+      case NativeCompletion.Locations(_) =>
+        Left(
+          NativeArtifactError.persistence(
+            ref.id,
+            "find timed artifacts",
+            "This run contains spatial artifacts."
+          )
+        )
+    }))
+
+  /** Backend-independent cold readback: validate storage bytes and the
+    * native codec closure before comparing its facts with saved bindings.
+    */
+  def loadNativeCompletion(
+      run: RunId,
+      budget: NativeArtifactBudget = NativeArtifactBudget.Default
+  ): F[Either[NativeArtifactError, NativeCompletion]] =
     mutex.lock.surround {
       state.get.flatMap { s =>
         def failure(operation: String, reason: String) =
@@ -323,15 +376,18 @@ final class ProjectSession[F[_]: Concurrent] private (
               entry.name -> NativeArtifactBytes.copyOf(bytes)
             )
           ).leftMap(e => failure("load archive entries", e.message))
-          verified <- EitherT.fromEither[F](NativeArtifactPackage.verify(files, budget))
+          verified <- EitherT.fromEither[F](NativeCompletion.verify(files, budget))
           _        <- EitherT.cond[F](
             verified.facts.run == run,
             (),
-            NativeArtifactError.WrongFacts(run, verified.facts)
+            failure(
+              "check archive identity",
+              s"Stored completion names ${verified.facts.run.label}; requested ${run.label}."
+            )
           )
           expected <- EitherT.fromEither[F](
             Reducer
-              .run(s.history.document, Command.BindCompletedArtifacts(verified.facts))
+              .run(s.history.document, bindingCommand(verified.facts))
               .leftMap(e => failure("check saved bindings", e.message))
           )
           _ <- EitherT.cond[F](
@@ -350,10 +406,10 @@ final class ProjectSession[F[_]: Concurrent] private (
     * archive and an index without native markers retain legacy behavior;
     * present incomplete native storage is a refusal, never a fallback.
     */
-  def findNativeArtifacts(
+  def findNativeCompletion(
       ref: RunRef,
       budget: NativeArtifactBudget = NativeArtifactBudget.Default
-  ): F[Either[NativeArtifactError, Option[NativeArtifactPackage]]] =
+  ): F[Either[NativeArtifactError, Option[NativeCompletion]]] =
     def failure(operation: String, reason: String) =
       NativeArtifactError.persistence(ref.id, operation, reason)
     val lookup = mutex.lock.surround {
@@ -383,7 +439,7 @@ final class ProjectSession[F[_]: Concurrent] private (
               })
             case Left(error) =>
               Concurrent[F].pure(Left(failure("find archive index", error.message)))
-            case Right(index) if index.names.contains(NativeArtifactPackage.FactsName) =>
+            case Right(index) if NativeCompletion.marked(index.names) =>
               Concurrent[F].pure(Right(true))
             case Right(index) =>
               val declared = (
@@ -416,7 +472,7 @@ final class ProjectSession[F[_]: Concurrent] private (
       case Left(error)  => Concurrent[F].pure(Left(error))
       case Right(false) => Concurrent[F].pure(Right(None))
       case Right(true)  =>
-        loadNativeArtifacts(ref.id, budget).flatMap {
+        loadNativeCompletion(ref.id, budget).flatMap {
           case Left(error)     => Concurrent[F].pure(Left(error))
           case Right(verified) =>
             mutex.lock.surround(

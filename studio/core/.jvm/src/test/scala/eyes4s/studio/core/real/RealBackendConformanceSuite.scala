@@ -93,8 +93,8 @@ object RealBackendConformanceSuite:
     StoryMoments.t2.flatMap(t2 =>
       StudioDocument
         .of(
-          t2.datasets,
-          t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
+          t2.timedDatasets,
+          t2.timedAnalyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
           t2.draft,
           t2.runs,
           t2.reporting,
@@ -113,38 +113,59 @@ object RealBackendConformanceSuite:
         case SourceRole.Fixations =>
           Some(IArray.from(GoldenCsv.fixations.getBytes(StandardCharsets.UTF_8)))
         case SourceRole.Trials =>
-          Some(IArray.from(GoldenCsv.trials.getBytes(StandardCharsets.UTF_8))))
+          Some(IArray.from(GoldenCsv.trials.getBytes(StandardCharsets.UTF_8)))
+        case SourceRole.LocationTrials | SourceRole.Locations | SourceRole.LocationPairs |
+            SourceRole.PhaseLedger | SourceRole.LocationLedger =>
+          None)
     def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
       IO.pure(GoldenAssets.registry(dataset).toOption)
 
-  /** Reopening recomputes through an ordinary listed job. Warm that job
-    * observably before result-contract checks; no fake result or hidden run
-    * execution is substituted. Each subject still has its own real registry.
-    */
-  private def warm(backend: RealStudyBackend[IO]): IO[Unit] =
-    backend.result(StoryMoments.run7).flatMap {
-      case Right(_)                                        => IO.unit
-      case Left(BackendError.ResultPending(_, pendingJob)) =>
-        for
-          jobs <- backend.jobs
-          job  <- IO.fromOption(
-            jobs.find(j => j.run == StoryMoments.run7 && j.job == pendingJob)
-          )(new AssertionError("Reopened current run did not register its recomputation job."))
-          events <- backend
-            .subscribe(job.job)
-            .flatMap(e => IO.fromEither(e.leftMap(error => new AssertionError(error.message))))
-          _      <- events.compile.drain
-          result <- backend.result(StoryMoments.run7)
-          _ <- IO.fromEither(result.leftMap(error => new AssertionError(error.message))).void
-        yield ()
-      case Left(error) => IO.raiseError(new AssertionError(error.message))
-    }
+  /** Construct the scientific fixture through an explicit Run submission. */
+  def beforeRun7(document: StudioDocument): StudioDocument =
+    StudioDocument
+      .of(
+        document.timedDatasets,
+        document.timedAnalyses,
+        document.draft,
+        document.runs.filterNot(_.id == StoryMoments.run7),
+        document.reporting,
+        document.figures.filterNot(_.run == StoryMoments.run7),
+        eyes4s.studio.core.document.PresentationState.default,
+        Vector.empty
+      )
+      .fold(e => throw AssertionError(e.toString), identity)
+
+  def computeCurrent(backend: RealStudyBackend[IO]): IO[Unit] =
+    for
+      submitted <- backend
+        .submit(StoryMoments.rev4)
+        .flatMap(value => IO.fromEither(value.leftMap(e => new AssertionError(e.message))))
+      _ <- IO.raiseUnless(submitted.run == StoryMoments.run7)(
+        new AssertionError(s"Expected run7, got ${submitted.run}")
+      )
+      events <- backend
+        .subscribe(submitted.job)
+        .flatMap(value => IO.fromEither(value.leftMap(e => new AssertionError(e.message))))
+      _      <- events.compile.drain
+      result <- backend.result(StoryMoments.run7)
+      _      <- IO.fromEither(result.leftMap(e => new AssertionError(e.message))).void
+    yield ()
+
+  def computedResource(document: StudioDocument): Resource[IO, RealStudyBackend[IO]] =
+    RealStudyBackend.resource[IO](beforeRun7(document), golden).evalTap(computeCurrent)
 
   def subjectResource: Resource[IO, BackendConformanceSuite.Subject] =
     Resource.eval(IO.fromEither(trialLayout.left.map(new AssertionError(_)))).flatMap {
       document =>
-        RealStudyBackend.resource[IO](document, golden).evalMap { backend =>
-          warm(backend).as(
+        computedResource(document)
+          .evalTap { backend =>
+            backend
+              .synchronize(document)
+              .flatMap(value =>
+                IO.fromEither(value.leftMap(e => new AssertionError(e.message)))
+              )
+          }
+          .map { backend =>
             BackendConformanceSuite.Subject(
               backend,
               StoryMoments.r3,
@@ -156,6 +177,5 @@ object RealBackendConformanceSuite:
                   case Left(error)   => IO.raiseError(new AssertionError(error.message))
                 }
             )
-          )
-        }
+          }
     }

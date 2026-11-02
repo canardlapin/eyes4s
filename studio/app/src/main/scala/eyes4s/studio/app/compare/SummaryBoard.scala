@@ -18,7 +18,7 @@ package eyes4s.studio.app.compare
 
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.plot.{ParticipantNotes, Slopegraphs}
-import eyes4s.studio.app.text.{Format, Messages}
+import eyes4s.studio.app.text.{Format, Messages, SummaryText, SummaryTextId}
 import eyes4s.studio.core.backend.{QueryStatus, ReportRole, ReportView}
 import eyes4s.studio.core.document.{ReportingId, ReportingWeight}
 import eyes4s.studio.core.selection.ScaleIndex
@@ -176,9 +176,16 @@ object SummaryBoard:
           .map { (p, qs) =>
             // "ret_04 (Forgotten), ret_11, ret_16 (Remembered)": the trials of
             // each response in turn, the response named after its last.
-            val byResponse = qs.groupBy(_.response).toVector.sortBy(_._1.label)
-            val listed     = byResponse
-              .map((g, gs) => gs.map(_.query.trial).sorted.mkString(", ") + s" (${g.label})")
+            val byResponse = qs.groupBy(_.response).toVector.sortBy {
+              case (Some(response), _) => response.label
+              case (None, _)           => SummaryText(SummaryTextId.ResponseNotDeclared)
+            }
+            val listed = byResponse
+              .map { (response, entries) =>
+                val label =
+                  response.fold(SummaryText(SummaryTextId.ResponseNotDeclared))(_.label)
+                entries.map(_.query.trial).sorted.mkString(", ") + s" ($label)"
+              }
             t(FailedQueries, p, listed.mkString(", "))
           }
         val thin = report.toVector

@@ -680,7 +680,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
   ): StudioDocument =
     ok(
       StudioDocument.of(
-        doc.datasets,
+        doc.timedDatasets,
         analyses,
         None,
         runs,
@@ -845,7 +845,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     val rev4 = StoryModels.t2.analysis(StoryMoments.rev4).get.copy(dataset = r2)
     val run6 =
       RunRef(StoryMoments.run6, rev4.id, r2, RunLifecycle.Completed, CoreBinding.unbound)
-    val withRun6 = withRuns(doc, doc.analyses :+ rev4, doc.runs :+ run6)
+    val withRun6 = withRuns(doc, doc.timedAnalyses :+ rev4, doc.runs :+ run6)
     val before   = dataView(AppModel.open(withRun6, Some(StoryModels.project)))
     assertEquals(
       before.freshness.standing(run5),
@@ -890,7 +890,10 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     )
     val doc    = onR3.document
     val opened =
-      AppModel.open(withRuns(doc, doc.analyses, doc.runs :+ run6), Some(StoryModels.project))
+      AppModel.open(
+        withRuns(doc, doc.timedAnalyses, doc.runs :+ run6),
+        Some(StoryModels.project)
+      )
     val spec     = doc.dataset(r3).get
     val reimport = Command.ImportSources(
       Some(r3),
@@ -903,7 +906,7 @@ class AdmissionLedgerSuite extends munit.FunSuite:
       spec.inventory
     )
     val pending = AppModel.update(opened, Intent.Dispatch(reimport))._1
-    assertEquals(pending.document.datasets.map(_.id), Vector(r2, r3, r4))
+    assertEquals(pending.document.timedDatasets.map(_.id), Vector(r2, r3, r4))
     assertEquals(
       pending.freshness.standing(run5),
       Some(RunStanding.Stale(NonEmptyVector.one(StaleReason.DatasetMoved(r2, r3))))

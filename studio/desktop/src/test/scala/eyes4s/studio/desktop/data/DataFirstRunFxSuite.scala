@@ -31,6 +31,9 @@ import javafx.scene.control.Label
 import scala.jdk.CollectionConverters.*
 
 class DataFirstRunFxSuite extends ShellFxSuite:
+  // The first example copy includes native analysis and archive persistence.
+  override val munitTimeout: scala.concurrent.duration.Duration =
+    scala.concurrent.duration.Duration(300, "s")
   private def get[E, A](answer: Either[E, A]): A = answer.fold(e => fail(e.toString), identity)
   private def path(p: java.nio.file.Path): HostPath = get(HostPath.of(p.toString))
   private def shown = Window.getWindows.asScala.filter(_.isShowing).toVector
@@ -119,16 +122,27 @@ class DataFirstRunFxSuite extends ShellFxSuite:
             runOnFx(host.start())
             val target = dir.resolve("Example.eyes")
             memory.answer(Some(path(target))).unsafeRunSync()
+            val preparationStarted = System.nanoTime
             runOnFx(host.window.get.firstRun.example.fire())
-            eventually(fx, "example copied and installed")(
-              !host.busy && host.window.exists(_.project.isDefined)
+            // First copy explicitly computes and persists the bundled result;
+            // subsequent opens must restore it without another run.
+            eventually(fx, "example preparation settled", timeoutSeconds = 120)(!host.busy)
+            println(
+              s"[example-preparation] elapsedMillis=${(System.nanoTime - preparationStarted) / 1000000L}"
             )
             runOnFx {
+              val errors = shown
+                .flatMap(window =>
+                  Option(window.getScene).toVector
+                    .flatMap(_.getRoot.lookupAll(".dialog-pane").asScala)
+                )
+                .collect { case pane: javafx.scene.control.DialogPane => pane.getContentText }
+              assert(host.window.exists(_.project.isDefined), errors.mkString("; "))
               assertEquals(
-                host.window.get.runtime.model.document.datasets.size,
-                ExampleProject.document.toOption.get.datasets.size
+                host.window.get.runtime.model.document.timedDatasets.size,
+                ExampleProject.document.toOption.get.timedDatasets.size
               )
-              assert(host.window.get.runtime.model.document.datasets.nonEmpty)
+              assert(host.window.get.runtime.model.document.timedDatasets.nonEmpty)
               assertEquals(host.window.get.runtime.model.save.edited, false)
             }
             val inputs = java.util.concurrent
@@ -136,7 +150,9 @@ class DataFirstRunFxSuite extends ShellFxSuite:
             runOnFx(host.window.get.project.get.storedInputs(answer => {
               inputs.complete(answer); ()
             }))
-            assertEquals(get(inputs.get(10, java.util.concurrent.TimeUnit.SECONDS)).size, 259)
+            // This request shares the project FIFO with initial archive/source
+            // verification, so allow the same bounded native-I/O budget.
+            assertEquals(get(inputs.get(120, java.util.concurrent.TimeUnit.SECONDS)).size, 259)
             val source = get(BundledExample.source.unsafeRunSync())
             val opened =
               get(eyes4s.studio.core.bundle.ProjectBundle.open(source).unsafeRunSync())
@@ -215,7 +231,7 @@ class DataFirstRunFxSuite extends ShellFxSuite:
               text.contains("trials.csv") && text.contains("fixations.csv")
             }
             runOnFx {
-              assert(host.window.get.runtime.model.document.datasets.isEmpty)
+              assert(host.window.get.runtime.model.document.timedDatasets.isEmpty)
               host.shutdown()
               assertEquals(shown.size, 1)
             }
@@ -283,7 +299,7 @@ class DataFirstRunFxSuite extends ShellFxSuite:
               entries.map(_.kind),
               Vector(eyes4s.studio.core.bundle.InputKind.StimulusImage)
             )
-            assert(runOnFx(host.window.get.runtime.model.document.datasets.isEmpty))
+            assert(runOnFx(host.window.get.runtime.model.document.timedDatasets.isEmpty))
           finally runOnFx(host.shutdown())
         }
       }

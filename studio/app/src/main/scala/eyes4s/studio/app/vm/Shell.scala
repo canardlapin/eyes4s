@@ -18,7 +18,13 @@ package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.{AppModel, Confirmation, Intent}
 import eyes4s.studio.app.jobs.JobHeadline
-import eyes4s.studio.core.backend.{ProgressTotal, RunId}
+import eyes4s.studio.core.backend.{
+  CountUnit,
+  JobProgress,
+  LocationJobProgress,
+  ProgressTotal,
+  RunId
+}
 import eyes4s.studio.core.execution.{ExecutionJob, JobPhase, Meter, MeterTotal}
 import eyes4s.studio.core.backend.AnalysisRevision
 import eyes4s.studio.app.keys.CommandRegistry
@@ -27,6 +33,8 @@ import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{Format, MessageId, Messages}
 import eyes4s.studio.core.document.{
   AdmissionDecision,
+  CoreBinding,
+  RunLifecycle,
   DatasetRevisionSpec,
   Perspective,
   RecipeChange,
@@ -133,6 +141,13 @@ object Shell:
       case MeterTotal.Exact(t) if t > 0 => Some(meter.done.toDouble / t.toDouble)
       case _                            => None
 
+    private def locationProgress(p: LocationJobProgress): (String, Long, Long, String) =
+      if p.completedMaps < p.totalMaps then ("Binning", p.completedMaps, p.totalMaps, "maps")
+      else ("Comparing", p.completedQueries, p.totalQueries, "queries")
+
+    private def locationFraction(done: Long, total: Long): Option[Double] =
+      Option.when(total > 0)(done.toDouble / total.toDouble)
+
     private def cancel(job: ExecutionJob): ActionVM =
       ActionVM(
         messages(Cancel),
@@ -178,25 +193,43 @@ object Shell:
             )
             chip.copy(accessible = chip.text)
           case JobPhase.Running(progress) =>
-            val stage = labels.stage(progress.stage)
-            val pairs = progress.pairs
-            val done  = Format.count(pairs.done)
-            JobsChipVM(
-              JobsChipState.Running,
-              title,
-              Some(stage),
-              Some(messages(JobPairs, done, total(pairs.total))),
-              fraction(pairs),
-              Some(cancel(job)),
-              None,
-              messages(
-                JobRunningAccessible,
-                job.run.number.toString,
-                stage.toLowerCase,
-                done,
-                total(pairs.total)
-              )
-            )
+            progress.report match
+              case timed: JobProgress =>
+                val stage = labels.stage(timed.segment.kind)
+                val pairs = Meter(
+                  CountUnit.Pairs,
+                  timed.totals.completedPairs,
+                  MeterTotal.of(timed.totals.totalPairs)
+                )
+                val done = Format.count(pairs.done)
+                JobsChipVM(
+                  JobsChipState.Running,
+                  title,
+                  Some(stage),
+                  Some(messages(JobPairs, done, total(pairs.total))),
+                  fraction(pairs),
+                  Some(cancel(job)),
+                  None,
+                  messages(
+                    JobRunningAccessible,
+                    job.run.number.toString,
+                    stage.toLowerCase,
+                    done,
+                    total(pairs.total)
+                  )
+                )
+              case locations: LocationJobProgress =>
+                val (stage, done, all, noun) = locationProgress(locations)
+                JobsChipVM(
+                  JobsChipState.Running,
+                  title,
+                  Some(stage),
+                  Some(s"${Format.count(done)} / ${Format.count(all)} $noun"),
+                  locationFraction(done, all),
+                  Some(cancel(job)),
+                  None,
+                  s"${job.run.label} $stage ${Format.count(done)} of ${Format.count(all)} $noun"
+                )
           case _ =>
             // Cancelling; a settled job is never the active one.
             val chip = JobsChipVM(
@@ -243,7 +276,7 @@ object Shell:
       */
     private def pendingDataset: Option[DatasetRevisionSpec] =
       val latest = doc.latestAdmitted.map(_.id.number).getOrElse(0)
-      doc.datasets.lastOption.filter(d => !d.decision.isAdmitted && d.id.number > latest)
+      doc.timedDatasets.lastOption.filter(d => !d.decision.isAdmitted && d.id.number > latest)
 
     private def badgeState(standing: RunStanding): String = messages(standing match
       case RunStanding.Current      => ToneCurrent
@@ -293,7 +326,16 @@ object Shell:
           .filter(_.run == r.run)
           .flatMap(_.phase.lastReport)
           .lastOption
-          .flatMap(p => fraction(p.pairs))
+          .flatMap(_.timed)
+          .flatMap(p =>
+            fraction(
+              Meter(
+                CountUnit.Pairs,
+                p.totals.completedPairs,
+                MeterTotal.of(p.totals.totalPairs)
+              )
+            )
+          )
         val fromSession = r.meter.collect {
           case eyes4s.studio.core.freshness.RunMeter(_, done, ProgressTotal.Exact(t))
               if t > 0 =>
@@ -534,14 +576,30 @@ object Shell:
           case JobPhase.Queued =>
             Some(StateSlotVM(messages(StateJob, n, messages(JobQueued).toLowerCase)))
           case JobPhase.Running(progress) =>
-            val pairs = progress.pairs
-            Some(
-              StateSlotVM(
-                messages(StateJob, n, labels.stage(progress.stage).toLowerCase),
-                count = Some(messages(JobCount, Format.count(pairs.done), total(pairs.total))),
-                progress = fraction(pairs)
-              )
-            )
+            progress.report match
+              case timed: JobProgress =>
+                val pairs = Meter(
+                  CountUnit.Pairs,
+                  timed.totals.completedPairs,
+                  MeterTotal.of(timed.totals.totalPairs)
+                )
+                Some(
+                  StateSlotVM(
+                    messages(StateJob, n, labels.stage(timed.segment.kind).toLowerCase),
+                    count =
+                      Some(messages(JobCount, Format.count(pairs.done), total(pairs.total))),
+                    progress = fraction(pairs)
+                  )
+                )
+              case locations: LocationJobProgress =>
+                val (stage, done, all, noun) = locationProgress(locations)
+                Some(
+                  StateSlotVM(
+                    messages(StateJob, n, stage.toLowerCase),
+                    count = Some(s"${Format.count(done)} / ${Format.count(all)} $noun"),
+                    progress = locationFraction(done, all)
+                  )
+                )
           case _ =>
             Some(StateSlotVM(messages(StateJob, n, messages(JobCancelling).toLowerCase)))
       case JobHeadline.Failed(job, diagnostics) =>
@@ -578,7 +636,7 @@ object Shell:
       case Some(d) =>
         StateSlotVM(messages(StateDataQualified, d.id.label, pendingWord(d)), draft = true)
       case None =>
-        doc.latestAdmitted match
+        doc.datasets.findLast(_.isAdmitted) match
           case None => StateSlotVM(messages(StateNoData), muted = true)
           case Some(d) if shown.forall(_.dataset == d.id) =>
             StateSlotVM(messages(StateData, d.id.label), muted = true)
@@ -636,7 +694,12 @@ object Shell:
               messages(StateFactAnalysis) -> run.analysis.label,
               messages(StateFactData)     -> run.dataset.label
             ),
-            note = stale,
+            note = stale.orElse(
+              Option.when(
+                run.state == RunLifecycle.Completed &&
+                  run.archive == CoreBinding.unbound
+              )(messages(StateResultNotStored))
+            ),
             actions = completed.toVector
           )
         case None =>
@@ -665,14 +728,16 @@ object Shell:
           actions = Vector(openData)
         )
       case None =>
-        doc.latestAdmitted.fold(
-          StateSectionVM(messages(StateNoData), actions = Vector(openData))
-        )(d =>
-          StateSectionVM(
-            messages(StateDatasetHead, d.id.label, messages(StateAdmitted)),
-            actions = Vector(openData)
+        doc.datasets
+          .findLast(_.isAdmitted)
+          .fold(
+            StateSectionVM(messages(StateNoData), actions = Vector(openData))
+          )(d =>
+            StateSectionVM(
+              messages(StateDatasetHead, d.id.label, messages(StateAdmitted)),
+              actions = Vector(openData)
+            )
           )
-        )
 
     private def analysisSection: StateSectionVM = m.freshness.draft match
       case Some(chip) =>
@@ -743,10 +808,18 @@ object Shell:
     private def confirmSection: Option[StateSectionVM] = m.pending.collect {
       case Confirmation.CancelRun(job, run) =>
         val done = m.jobs.job(job).flatMap(_.phase.lastReport).flatMap { p =>
-          p.pairs.total match
-            case MeterTotal.Exact(t) =>
-              Some(messages(ConfirmCancelRunDone, Format.count(p.pairs.done), Format.count(t)))
-            case _ => None
+          p.timed.flatMap { timed =>
+            MeterTotal.of(timed.totals.totalPairs) match
+              case MeterTotal.Exact(t) =>
+                Some(
+                  messages(
+                    ConfirmCancelRunDone,
+                    Format.count(timed.totals.completedPairs),
+                    Format.count(t)
+                  )
+                )
+              case _ => None
+          }
         }
         val stays = shown.map(r => messages(ConfirmCancelRunShown, r.id.number.toString))
         StateSectionVM(
@@ -807,8 +880,16 @@ object Shell:
       val chip = jobsChip
       m.jobs.headline match
         case JobHeadline.Active(ExecutionJob(_, _, _, JobPhase.Running(progress))) =>
-          val pairs = progress.pairs
-          val count = messages(JobCount, Format.count(pairs.done), total(pairs.total))
+          val count = progress.report match
+            case timed: JobProgress =>
+              messages(
+                JobCount,
+                Format.count(timed.totals.completedPairs),
+                total(MeterTotal.of(timed.totals.totalPairs))
+              )
+            case locations: LocationJobProgress =>
+              val (_, done, all, noun) = locationProgress(locations)
+              s"${Format.count(done)} / ${Format.count(all)} $noun"
           StatusJobVM(
             (Vector(chip.title) ++ chip.stage).mkString(" · "),
             Some(count),

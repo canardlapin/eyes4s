@@ -46,7 +46,7 @@ class NativeArtifactDeliverySuite extends munit.CatsEffectSuite:
       "P01,Retrieval,ret_01,1,item-a,Remembered,image,item-a.png\n"
   private lazy val verified =
     val sample   = get(StoryMoments.t2)
-    val original = sample.datasets.last
+    val original = sample.timedDatasets.last
     val byRole   = Map(SourceRole.Fixations -> fixes, SourceRole.Trials -> trials)
     val sources  = get(
       Sources.of(
@@ -62,7 +62,7 @@ class NativeArtifactDeliverySuite extends munit.CatsEffectSuite:
       AssetRegistry.of(spec.id, sources.trials.get.bytes, spec.geometry.screen, Vector.empty)
     )
     val admitted = get(RealAdmission.admit(spec, fixes, trials, assets))
-    val analysis = sample.analyses.last
+    val analysis = sample.timedAnalyses.last
     val recipe   = analysis.recipe.copy(
       grid = get(GridSize.of(8, 8)),
       scales = get(ScaleSet.of(Vector(get(Sigma.of(1)))))

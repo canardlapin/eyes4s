@@ -80,11 +80,7 @@ final class RealResults private (
         .filter(_.trial.phase == prepared.recipe.phases.focal)
         .traverse { entry =>
           val trial = entry.trial
-          for
-            response <- entry.response.toRight(
-              queryRefusal(trial, "the inventory declares no response")
-            )
-            row <- entry.disposition match
+          for row <- entry.disposition match
               case TrialDisposition.Admitted =>
                 for
                   core <- keys.get(trial).toRight(queryRefusal(trial, "no admitted key"))
@@ -100,7 +96,7 @@ final class RealResults private (
                         QueryRow(
                           trial,
                           entry.item,
-                          response,
+                          entry.response,
                           None,
                           None,
                           if reason == eyes4s.plan.UnmatchedKind.NoReferenceInDesign then
@@ -160,7 +156,7 @@ final class RealResults private (
                       yield QueryRow(
                         trial,
                         entry.item,
-                        response,
+                        entry.response,
                         Some(reference),
                         controls,
                         status
@@ -171,7 +167,7 @@ final class RealResults private (
                   QueryRow(
                     trial,
                     entry.item,
-                    response,
+                    entry.response,
                     None,
                     None,
                     QueryStatus.NotAdmitted(disposition)

@@ -59,7 +59,7 @@ private[runtime] object NativeScienceHarness extends munit.Assertions:
         f.registry
       )
     )
-    val analysis = document.analyses.last
+    val analysis = document.timedAnalyses.last
     get(RealPrepared.of(analysis.id, f.data.id, analysis.recipe, admitted))
 
   /** `repeated`: P1 encodes item 1 a second time, as trial enc_9, so its

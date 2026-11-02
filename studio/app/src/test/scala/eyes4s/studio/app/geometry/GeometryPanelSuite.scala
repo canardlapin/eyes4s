@@ -203,7 +203,7 @@ class GeometryPanelSuite extends munit.FunSuite:
     val spec  = model.document.dataset(r3).get
     assertEquals(spec.admission.offScreen, OffScreenChoice.QuarantineTrial)
     assertEquals(spec.decision, AdmissionDecision.Pending)
-    assertEquals(model.document.datasets.map(_.id), Vector(r2, r3))
+    assertEquals(model.document.timedDatasets.map(_.id), Vector(r2, r3))
     // The policy note and the outside-screen note follow the policy.
     val (shown, _) = GeometryPanel.sync(after, model)
     assertEquals(GeometryPanelVM.of(shown, model, None).outsideScreen.value, None)
@@ -467,7 +467,7 @@ class GeometryPanelSuite extends munit.FunSuite:
     val doc  = ok(
       StudioDocument.of(
         Vector(t1.document.dataset(r2).get, spec),
-        t1.document.analyses,
+        t1.document.timedAnalyses,
         t1.document.draft,
         t1.document.runs,
         t1.document.reporting,

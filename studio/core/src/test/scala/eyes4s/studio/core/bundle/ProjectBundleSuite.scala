@@ -96,7 +96,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
     )
     // Source.path is the import name; inputPath is its one stored path.
     assertEquals(
-      t2.datasets.head.sources.entries.map(s => ProjectBundle.inputPath(s).map(_.value)),
+      t2.timedDatasets.head.sources.entries.map(s => ProjectBundle.inputPath(s).map(_.value)),
       encoded.manifest.inputs.reverse.flatMap(_.path).map(p => Right(p.value))
     )
   }
@@ -266,7 +266,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
       written.flatMap(ladder.lift).map(_.hcursor.downField("value").focus),
       ladder.writeAt(latest, value).map(Some(_))
     )
-    assertEquals(ladder.versions.map(_.version), Vector(1, 2, 3))
+    assertEquals(ladder.versions.map(_.version), Vector(1, 2, 3, 4))
     assertEquals(ladder.earliest(value), first)
     // A manifest with a science digest or withheld inputs needs version 2.
     val current =
@@ -375,12 +375,12 @@ class ProjectBundleSuite extends CatsEffectSuite:
     "a document source not stored at its mapped input path is refused by dataset, role and path"
   ) {
     val inputs = inputsFor(t2).filterNot(_.kind == InputKind.Source(SourceRole.Trials))
-    val trials = t2.datasets.head.sources.trials.get
+    val trials = t2.timedDatasets.head.sources.trials.get
     val path   = right(ProjectBundle.inputPath(trials))
     assertEquals(path.value, s"inputs/${trials.bytes.hex}/trials.csv")
     assertEquals(
       ProjectBundle.encode(t2, SharingOptions.complete, inputs).map(_ => ()),
-      Left(BundleError.UnlistedSource(t2.datasets.head.id, SourceRole.Trials, path))
+      Left(BundleError.UnlistedSource(t2.timedDatasets.head.id, SourceRole.Trials, path))
     )
     // The same bytes under another name are not the mapped path.
     val renamed = inputs :+ right(
@@ -388,7 +388,7 @@ class ProjectBundleSuite extends CatsEffectSuite:
     )
     assertEquals(
       ProjectBundle.encode(t2, SharingOptions.complete, renamed).map(_ => ()),
-      Left(BundleError.UnlistedSource(t2.datasets.head.id, SourceRole.Trials, path))
+      Left(BundleError.UnlistedSource(t2.timedDatasets.head.id, SourceRole.Trials, path))
     )
   }
 

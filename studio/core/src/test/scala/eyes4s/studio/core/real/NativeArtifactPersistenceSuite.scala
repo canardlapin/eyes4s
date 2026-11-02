@@ -55,7 +55,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       "P01,Retrieval,ret_01,1,item-a,Remembered,image,item-a.png\n"
   private lazy val sample   = get(StoryMoments.t2)
   private lazy val prepared =
-    val original = sample.datasets.last
+    val original = sample.timedDatasets.last
     val byRole   = Map(SourceRole.Fixations -> fixes, SourceRole.Trials -> trials)
     val sources  = get(
       Sources.of(
@@ -72,7 +72,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       AssetRegistry.of(spec.id, sources.trials.get.bytes, spec.geometry.screen, Vector.empty)
     )
     val admitted = get(RealAdmission.admit(spec, fixes, trials, assets))
-    val recipe   = sample.analyses.last.recipe.copy(
+    val recipe   = sample.timedAnalyses.last.recipe.copy(
       grid = get(GridSize.of(8, 8)),
       scales = get(ScaleSet.of(Vector(get(Sigma.of(1)), get(Sigma.of(2)))))
     )
@@ -108,7 +108,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       spec.id,
       CoreBinding.unbound,
       prepared.recipe,
-      sample.analyses.last.studio.copy(preset = Preset.Custom)
+      sample.timedAnalyses.last.studio.copy(preset = Preset.Custom)
     )
     val analyses =
       if explicitFamilies then Vector(analysis, analysis.copy(id = AnalysisRevision(2)))
@@ -394,7 +394,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
     "contradictory declared fixation source refuses before storage, matching identity stores"
   ) {
     val other        = get(SemanticIdentity.of("ffeeddccbbaa9988"))
-    val matchingSpec = document(declaredSource = Some(exported.facts.source)).datasets.head
+    val matchingSpec = document(declaredSource = Some(exported.facts.source)).timedDatasets.head
     val assets       = get(
       AssetRegistry.of(
         matchingSpec.id,

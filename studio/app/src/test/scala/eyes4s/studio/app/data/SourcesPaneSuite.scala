@@ -92,8 +92,7 @@ class SourcesPaneSuite extends munit.FunSuite:
     assertEquals(missing.title, "2 image files missing")
     assertEquals(
       missing.body,
-      "forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; " +
-        "P24 enc_05, enc_18) are drawn as missing asset, never as blank. Gaze and scores are unaffected."
+      "Images are unavailable for 4 trials. Gaze and scores are unaffected."
     )
     assertEquals((missing.repair, missing.showTrials), ("Repair…", "Show 4 trials"))
     assertEquals(

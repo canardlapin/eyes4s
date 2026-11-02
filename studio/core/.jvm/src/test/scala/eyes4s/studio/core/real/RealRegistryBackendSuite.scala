@@ -32,14 +32,14 @@ class RealRegistryBackendSuite extends CatsEffectSuite:
   private val original                     = ok(RealBackendConformanceSuite.trialLayout)
 
   private def edited: StudioDocument =
-    val base  = original.analyses.last
+    val base  = original.timedAnalyses.last
     val draft = ok(
       Draft.between(StoryMoments.rev5, base, base.recipe.copy(grid = ok(GridSize.of(32, 24))))
     )
     ok(
       StudioDocument.of(
-        original.datasets,
-        original.analyses,
+        original.timedDatasets,
+        original.timedAnalyses,
         Some(draft),
         original.runs,
         original.reporting,
@@ -77,8 +77,8 @@ class RealRegistryBackendSuite extends CatsEffectSuite:
     val saved   = ok(Reducer.step(original, Command.SaveAndRun(None)))._1
     val distant = ok(
       StudioDocument.of(
-        saved.datasets,
-        saved.analyses,
+        saved.timedDatasets,
+        saved.timedAnalyses,
         saved.draft,
         saved.runs.init :+ saved.runs.last.copy(id = RunId(99)),
         saved.reporting,
@@ -136,8 +136,8 @@ class RealRegistryBackendSuite extends CatsEffectSuite:
     )
     val ambiguous = ok(
       StudioDocument.of(
-        original.datasets,
-        original.analyses,
+        original.timedDatasets,
+        original.timedAnalyses,
         original.draft,
         original.runs ++ Vector(first, first.copy(id = RunId(9))),
         original.reporting,
@@ -165,8 +165,8 @@ class RealRegistryBackendSuite extends CatsEffectSuite:
     val fake = ok(eyes4s.codec.CanonicalDigest.parse[StudyPlanArtifact]("ab" * 32))
     val bad  = ok(
       StudioDocument.of(
-        original.datasets,
-        original.analyses.map(a =>
+        original.timedDatasets,
+        original.timedAnalyses.map(a =>
           if a.id == StoryMoments.rev4 then a.copy(plan = CoreBinding.Bound(fake)) else a
         ),
         original.draft,
@@ -202,7 +202,7 @@ class RealRegistryBackendSuite extends CatsEffectSuite:
         snapshot <- backend.registry.get
       yield
         assert(before eq after)
-        assertEquals(after.prepared.recipe.grid, original.analyses.last.recipe.grid)
+        assertEquals(after.prepared.recipe.grid, original.timedAnalyses.last.recipe.grid)
         assertEquals(current.revision, StoryMoments.rev5)
         assertEquals(snapshot.document, edited)
     }

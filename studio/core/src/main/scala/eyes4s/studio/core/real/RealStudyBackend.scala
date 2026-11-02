@@ -26,11 +26,18 @@ import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.artifacts.{
   NativeArtifactSource,
   NativeArtifactBudget,
-  NativeArtifactError
+  NativeArtifactError,
+  NativeCompletion,
+  LocationNativePackage,
+  AdmittedLocations
 }
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
+  LocationDatasetRevision,
+  LocationAnalysisRevision,
+  AnalysisDefinition,
+  DatasetDefinition,
   AnalysisRevisionSpec,
   CoreBinding,
   RunLifecycle,
@@ -54,6 +61,14 @@ trait DatasetSources[F[_]]:
   /** The bytes of `source`, or `None` when the host does not hold them. */
   def bytes(dataset: DatasetRevisionSpec, source: Source): F[Option[IArray[Byte]]]
 
+  def locationBytes(
+      @scala.annotation.unused dataset: LocationDatasetRevision,
+      @scala.annotation.unused source: Source
+  )(using
+      F: cats.Applicative[F]
+  ): F[Option[IArray[Byte]]] =
+    F.pure(None)
+
   /** The stimulus registry of `dataset`, or `None` when the host has none. */
   def assets(dataset: DatasetRevisionSpec): F[Option[AssetRegistry]]
 
@@ -75,6 +90,8 @@ final class RealStudyBackend[F[_]] private (
     private[real] val registry: Ref[F, RealRegistry],
     sources: DatasetSources[F],
     admitted: Ref[F, Map[DatasetRevision, AdmittedDataset]],
+    locationAdmission: Ref[F, Option[AdmittedLocations]],
+    locationAdmissionMutex: Mutex[F],
     prepared: Ref[F, Map[AnalysisRevision, RealPrepared]],
     previews: RealPreview[F],
     state: SignallingRef[F, RealStudyBackend.Jobs[F]],
@@ -135,7 +152,25 @@ final class RealStudyBackend[F[_]] private (
                       "A new archive binding requires this run's retained native result."
                     )
                   )
-                  .flatMap(done => verify(ref, done.prepared, done.result).toLeft(()))
+                  .flatMap {
+                    case done: RealRun     => verify(ref, done.prepared, done.result).toLeft(())
+                    case done: LocationRun =>
+                      LocationNativePackage
+                        .create(ref.id, done.admitted, done.analysis, done.result)
+                        .leftMap(e =>
+                          BackendError.RegistryRefused(DiagnosticLocus.Run(ref.id), e.message)
+                        )
+                        .flatMap(p =>
+                          Either.cond(
+                            ref.archive == CoreBinding.Bound(p.facts.result),
+                            (),
+                            BackendError.RegistryRefused(
+                              DiagnosticLocus.Run(ref.id),
+                              "Spatial archive binding differs from the retained result."
+                            )
+                          )
+                        )
+                  }
               }
             }
             enriched
@@ -167,10 +202,15 @@ final class RealStudyBackend[F[_]] private (
                         val occupied = document.runs
                           .filterNot(r => change.next.reservations(r.id))
                           .map(_.id.number)
-                        current.copy(
-                          runs = updated ++ declared.filterNot(r => known(r.run)),
-                          nextRun = math.max(current.nextRun, occupied.maxOption.fold(1)(_ + 1))
-                        )
+                        current
+                          .copy(
+                            runs = updated ++ declared.filterNot(r => known(r.run)),
+                            nextRun =
+                              math.max(current.nextRun, occupied.maxOption.fold(1)(_ + 1))
+                          )
+                          .releaseArchivedLocations(if archiveSource.nonEmpty then
+                            archives.map(_.id).toSet
+                          else Set.empty)
                       }
                       .as(Right(()))
               }
@@ -273,9 +313,17 @@ final class RealStudyBackend[F[_]] private (
       for
         f <- fixations
         t <- trials
-        a <- assets.toRight(
-          BackendError.Unavailable(DiagnosticLocus.Field("stimulus registry"))
-        )
+        a <- assets match
+          case Some(registry)                                     => Right(registry)
+          case None if spec.inventory.flatMap(_.displays).isEmpty =>
+            AssetRegistry
+              .fromRows(spec, Vector.empty, Vector.empty)
+              .left
+              .map(error =>
+                BackendError.RegistryRefused(DiagnosticLocus.Dataset(spec.id), error.message)
+              )
+          case None =>
+            Left(BackendError.Unavailable(DiagnosticLocus.Field("stimulus registry")))
         result <- RealAdmission.admit(spec, f, t, a)
       yield result
     }
@@ -482,30 +530,101 @@ final class RealStudyBackend[F[_]] private (
     }
 
   def submit(revision: AnalysisRevision): F[Either[BackendError, JobStatus]] =
+    synchronization.lock.surround(submit0(revision))
+
+  override def submitStamped(
+      stamp: eyes4s.studio.core.execution.ExecutionStamp
+  )(using cats.Monad[F]): F[Either[BackendError, JobStatus]] =
     synchronization.lock.surround {
-      prepare(revision).flatMap {
-        case Left(e)     => F.pure(Left(e))
-        case Right(work) => start(work, Purpose.NewRun)
+      registry.get.flatMap { snapshot =>
+        val agrees = (snapshot.document.analysisDefinition(stamp.revision), stamp) match
+          case (
+                Some(value: LocationAnalysisRevision),
+                requested: eyes4s.studio.core.execution.LocationRunStamp
+              ) =>
+            eyes4s.studio.core.execution
+              .LocationRunStamp(value.id, value.dataset, value.plan, value.recipe.input)
+              .agreesWithDeclarations(requested)
+          case (
+                Some(value: AnalysisRevisionSpec),
+                requested: eyes4s.studio.core.execution.RunStamp
+              ) =>
+            value.dataset == requested.dataset
+          case (None, requested: eyes4s.studio.core.execution.RunStamp) =>
+            snapshot.revisions.get(requested.revision).exists(_._1 == requested.dataset)
+          case _ => false
+        if agrees then submit0(stamp.revision)
+        else
+          F.pure(
+            Left(
+              BackendError.RegistryRefused(
+                DiagnosticLocus.Revision(stamp.revision),
+                "Requested scientific kind or identities differ from the saved analysis."
+              )
+            )
+          )
       }
+    }
+
+  private def submit0(revision: AnalysisRevision): F[Either[BackendError, JobStatus]] =
+    registry.get.flatMap { snapshot =>
+      snapshot.document.analysisDefinition(revision) match
+        case Some(value: LocationAnalysisRevision) =>
+          prepareLocations(snapshot, value).flatMap {
+            case Left(error) => F.pure(Left(error))
+            case Right(work) =>
+              reserve(
+                value.id,
+                value.dataset,
+                Purpose.NewRun,
+                (status, handle) => launchLocations(work, value, status, handle)
+              )
+          }
+        case _ =>
+          prepare(revision).flatMap {
+            case Left(e)     => F.pure(Left(e))
+            case Right(work) => start(work, Purpose.NewRun)
+          }
     }
 
   /** Reserve the job (and, for a new run, its run), then start eyes4s's
     * runner on its own fiber. One job runs at a time.
     */
   private def start(work: RealPrepared, purpose: Purpose): F[Either[BackendError, JobStatus]] =
+    work.executionRefusal match
+      case Some(error) => F.pure(Left(error))
+      case None        => startChecked(work, purpose)
+
+  private def startChecked(
+      work: RealPrepared,
+      purpose: Purpose
+  ): F[Either[BackendError, JobStatus]] =
+    reserve(
+      work.revision,
+      work.dataset,
+      purpose,
+      (status, handle) => launch(work, status, handle, purpose)
+    )
+
+  private def reserve(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      purpose: Purpose,
+      launchReserved: (JobStatus, Deferred[F, F[Unit]]) => F[Unit]
+  ): F[Either[BackendError, JobStatus]] =
     registry.get.flatMap { snapshot =>
       Deferred[F, F[Unit]].flatMap { handle =>
         state
           .modify { s =>
             s.jobs.find(j => finished(j.state).isEmpty) match
               case Some(active) =>
-                (s, Left(BackendError.AlreadyRunning(work.revision, active.job)))
+                (s, Left(BackendError.AlreadyRunning(revision, active.job)))
               case None =>
                 val reserved = purpose match
                   case Purpose.NewRun =>
                     snapshot.reserved(
-                      work.revision,
-                      work.dataset,
+                      revision,
+                      dataset,
                       s.jobs.map(_.run).toSet ++ s.results.keySet
                     )
                   case Purpose.Recompute(_) => Right(None)
@@ -517,7 +636,7 @@ final class RealStudyBackend[F[_]] private (
                       case Purpose.NewRun =>
                         val id = requested.getOrElse(RunId(s.nextRun))
                         val r  =
-                          RunSummary(id, work.revision, work.dataset, RunState.Running(job))
+                          RunSummary(id, revision, dataset, RunState.Running(job))
                         (
                           id,
                           s.runs.filterNot(_.run == id) :+ r,
@@ -525,7 +644,7 @@ final class RealStudyBackend[F[_]] private (
                         )
                       case Purpose.Recompute(ref) => (ref.id, s.runs, s.nextRun)
                     val status =
-                      JobStatus(job, run, work.revision, work.dataset, JobState.Queued)
+                      JobStatus(job, run, revision, dataset, JobState.Queued)
                     (
                       s.copy(
                         jobs = s.jobs :+ status,
@@ -538,11 +657,189 @@ final class RealStudyBackend[F[_]] private (
                     )
           }
           .flatTap {
-            case Right(status) => launch(work, status, handle, purpose)
+            case Right(status) => launchReserved(status, handle)
             case Left(_)       => F.unit
           }
       }
     }
+
+  def locationAdmission(dataset: DatasetRevision): F[Either[BackendError, AdmittedLocations]] =
+    registry.get.flatMap(snapshot =>
+      snapshot.document.datasetDefinition(dataset) match
+        case Some(value: LocationDatasetRevision) => readLocations(value)
+        case _ => F.pure(Left(BackendError.UnknownDataset(dataset, snapshot.knownDatasets)))
+    )
+
+  private def readLocations(
+      dataset: LocationDatasetRevision
+  ): F[Either[BackendError, AdmittedLocations]] =
+    locationAdmissionMutex.lock.surround {
+      locationAdmission.get.flatMap {
+        case Some(value) if value.dataset == dataset => F.pure(Right(value))
+        case _                                       =>
+          dataset.sourceFiles
+            .traverse(source =>
+              sources
+                .locationBytes(dataset, source)
+                .map(data =>
+                  data
+                    .toRight(
+                      BackendError.AdmissionRefused(
+                        dataset.id,
+                        source.path.value,
+                        "Source bytes are unavailable."
+                      )
+                    )
+                    .map(value => source.role -> IArray.genericWrapArray(value).toIndexedSeq)
+                )
+            )
+            .map(
+              _.sequence.flatMap(files =>
+                LocationNativePackage
+                  .admit(dataset, files)
+                  .leftMap(e =>
+                    BackendError.AdmissionRefused(dataset.id, "spatial bundle", e.message)
+                  )
+              )
+            )
+            .flatTap(_.traverse_(value => locationAdmission.set(Some(value))))
+      }
+    }
+
+  /** Keep one immutable source closure for the currently used spatial dataset.
+    * Its key is the whole revision, including every source digest and profile.
+    */
+  private def sharedLocationAdmission(value: AdmittedLocations): F[AdmittedLocations] =
+    locationAdmissionMutex.lock.surround(
+      locationAdmission.modify {
+        case Some(cached) if cached.dataset == value.dataset => Some(cached) -> cached
+        case _                                               => Some(value)  -> value
+      }
+    )
+
+  private def prepareLocations(
+      snapshot: RealRegistry,
+      revision: LocationAnalysisRevision
+  ): F[Either[BackendError, AdmittedLocations]] =
+    snapshot.document.datasetDefinition(revision.dataset) match
+      case Some(dataset: LocationDatasetRevision) =>
+        readLocations(dataset).map(
+          _.flatMap(admitted =>
+            Either.cond(
+              revision.recipe.profile == dataset.profile &&
+                revision.recipe.input == CoreBinding.Bound(admitted.inputCanonical) &&
+                revision.plan == CoreBinding.Bound(
+                  admitted.planCanonical
+                ) && admitted.plan.queries.nonEmpty,
+              admitted,
+              BackendError.RegistryRefused(
+                DiagnosticLocus.Revision(revision.id),
+                "Spatial input, profile or plan differs from the admitted sources, or no query is executable."
+              )
+            )
+          )
+        )
+      case _ =>
+        F.pure(Left(BackendError.UnknownDataset(revision.dataset, snapshot.knownDatasets)))
+
+  private def launchLocations(
+      work: AdmittedLocations,
+      revision: LocationAnalysisRevision,
+      status: JobStatus,
+      handle: Deferred[F, F[Unit]]
+  ): F[Unit] =
+    val job                                                                   = status.job
+    val run                                                                   = status.run
+    def report(cursor: eyes4s.plan.LocationExecution): F[LocationJobProgress] =
+      F.fromEither(
+        LocationJobProgress
+          .of(
+            job,
+            run,
+            cursor.completedMaps.toLong + cursor.completedQueries.toLong,
+            cursor.completedMaps.toLong,
+            cursor.totalMaps.toLong,
+            cursor.completedQueries.toLong,
+            cursor.totalQueries.toLong
+          )
+          .leftMap(e => new IllegalStateException(e.toString))
+      )
+    def last(current: Jobs[F]): Option[JobProgressValue] = current
+      .job(job)
+      .flatMap(_.state match
+        case JobState.Running(progress) => Some(progress)
+        case _                          => None)
+    val compute = F.tailRecM(work.plan.execution) { cursor =>
+      report(cursor)
+        .flatMap(progress =>
+          state
+            .update { current =>
+              if current
+                  .live(job)
+                  .isDefined && (progress.step % 128 == 0 || cursor.complete || (cursor.completedMaps == cursor.totalMaps && cursor.completedQueries == 0))
+              then
+                current.copy(jobs =
+                  current.jobs.map(j =>
+                    if j.job == job then j.copy(state = JobState.Running(progress)) else j
+                  )
+                )
+              else current
+            }
+            .as(progress)
+        )
+        .flatMap { progress =>
+          cursor.result match
+            case Some(result) =>
+              state
+                .update { current =>
+                  if current.live(job).isEmpty then current
+                  else
+                    current.settle(
+                      job,
+                      run,
+                      JobOutcome.Completed(job, run, progress),
+                      Some(RunState.Completed),
+                      Some(LocationRun(work, revision, result, RunOrigin.Computed))
+                    )
+                }
+                .as(Right(()))
+            case None => F.cede >> F.catchNonFatal(cursor.step).map(Left(_))
+        }
+    }
+    val guarded = F
+      .onCancel(
+        compute,
+        state.update { current =>
+          if current.live(job).isEmpty then current
+          else
+            current.settle(
+              job,
+              run,
+              JobOutcome.Cancelled(job, run, last(current)),
+              Some(RunState.Cancelled(None)),
+              None
+            )
+        }
+      )
+      .handleErrorWith(error =>
+        state.update { current =>
+          val diagnostic = NativeArtifactError
+            .Defect(run, "spatial execution", error.getClass.getName)
+            .diagnostic
+          if current.live(job).isEmpty then current
+          else
+            current.settle(
+              job,
+              run,
+              JobOutcome.Failed(job, run, Vector(diagnostic), last(current)),
+              Some(RunState.Failed),
+              None
+            )
+        }
+      )
+    F.uncancelable(_ =>
+      supervisor.supervise(guarded).flatMap(fiber => handle.complete(fiber.cancel).void)
+    )
 
   /** The runner's progress is folded into the job by one observer fiber; its
     * authoritative outcome settles the job on another, then releases the run.
@@ -691,19 +988,22 @@ final class RealStudyBackend[F[_]] private (
               )
             )
 
-  private def datasetMismatch(ref: RunRef, work: RealPrepared): BackendError =
-    BackendError.RunDatasetMismatch(ref.id, work.revision, ref.dataset, work.dataset)
-
-  /** The eyes4s result of `run`. A completed run of the document that this
-    * backend did not compute is recomputed on first request (S3.7 slice 5,
-    * option (a)): its revision's prepared study runs as an ordinary job, whose
-    * progress the job surface shows, and until it completes the run is
-    * `ResultPending`, naming its ordinary job. A busy backend reports
-    * `ResultDeferred`, naming the job that occupies its one slot. The
-    * result is kept, marked recomputed with the eyes4s
-    * release that produced it.
+  /** Serve a retained completion or restore its verified archive. A result read
+    * never admits sources or starts scientific execution; absent storage is an
+    * explicit refusal, and the user can submit a new run through the normal job path.
     */
   private[real] def held(run: RunId): F[Either[BackendError, RealRun]] =
+    heldCompletion(run).map(_.flatMap {
+      case timed: RealRun => Right(timed)
+      case _: LocationRun =>
+        Left(
+          BackendError.Unavailable(
+            DiagnosticLocus.Artifact(s"${run.label} is spatial; use the spatial result view.")
+          )
+        )
+    })
+
+  private[real] def heldCompletion(run: RunId): F[Either[BackendError, RetainedRun]] =
     registry.get.flatMap(snapshot =>
       state.get.flatMap { s =>
         (s.results.get(run), s.refused.get(run), s.runs.find(_.run == run)) match
@@ -711,22 +1011,35 @@ final class RealStudyBackend[F[_]] private (
           case (_, Some(refused), _) => F.pure(Left(refused))
           case (_, _, None) => F.pure(Left(BackendError.UnknownRun(run, s.runs.map(_.run))))
           case (_, _, Some(summary)) =>
-            snapshot.documentRuns.get(run).filter(_.state == RunLifecycle.Completed) match
-              case None      => F.pure(Left(BackendError.NoResult(run, summary.state)))
-              case Some(ref) =>
-                s.jobs.find(j => j.run == run && finished(j.state).isEmpty) match
-                  case Some(active) => F.pure(Left(BackendError.ResultPending(run, active.job)))
-                  case None         =>
-                    restoreOrRecompute(ref)
+            s.jobs.find(j => j.run == run && finished(j.state).isEmpty) match
+              case Some(active) => F.pure(Left(BackendError.ResultPending(run, active.job)))
+              case None         =>
+                snapshot.documentRuns.get(run).filter(_.state == RunLifecycle.Completed) match
+                  case None      => F.pure(Left(BackendError.NoResult(run, summary.state)))
+                  case Some(ref) =>
+                    snapshot.revisions.get(ref.analysis) match
+                      case Some((dataset, _)) if dataset != ref.dataset =>
+                        F.pure(
+                          Left(
+                            BackendError.RunDatasetMismatch(
+                              run,
+                              ref.analysis,
+                              ref.dataset,
+                              dataset
+                            )
+                          )
+                        )
+                      case _ => restoreStored(ref)
+
       }
     )
 
   /** Coalesced host archive lookup (bead q-native-archive-readback). Only local read wrappers wait on its
     * signal; no scientific execution job represents storage access.
     */
-  private def restoreOrRecompute(ref: RunRef): F[Either[BackendError, RealRun]] =
+  private def restoreStored(ref: RunRef): F[Either[BackendError, RetainedRun]] =
     archiveSource match
-      case None         => prepare(ref.analysis).flatMap(work => recompute(ref, work))
+      case None         => F.pure(Left(BackendError.ResultArchiveUnavailable(ref.id)))
       case Some(source) =>
         Deferred[F, Either[BackendError, Boolean]].flatMap { candidate =>
           F.uncancelable { poll =>
@@ -748,9 +1061,9 @@ final class RealStudyBackend[F[_]] private (
                 launch >> poll(signal.tryGet.flatMap {
                   case None               => F.pure(Left(BackendError.ResultRestoring(ref.id)))
                   case Some(Left(error))  => F.pure(Left(error))
-                  case Some(Right(true))  => held(ref.id)
+                  case Some(Right(true))  => heldCompletion(ref.id)
                   case Some(Right(false)) =>
-                    prepare(ref.analysis).flatMap(work => recompute(ref, work))
+                    F.pure(Left(BackendError.ResultArchiveUnavailable(ref.id)))
                 })
               }
           }
@@ -758,7 +1071,7 @@ final class RealStudyBackend[F[_]] private (
 
   /** Wait only for an already requested archive lookup. Its scientific
     * result or refusal is retained separately; absence wakes normal reads
-    * to the existing ordinary recomputation path.
+    * to an explicit unavailable-archive refusal without scientific execution.
     */
   def awaitRestore(run: RunId): F[Either[BackendError, Unit]] =
     restoring.get.flatMap(_.get(run) match
@@ -773,8 +1086,8 @@ final class RealStudyBackend[F[_]] private (
     def refused(error: NativeArtifactError): BackendError =
       BackendError.ArchiveRestoreRefused(ref.id, error.diagnostic)
     def publish(
-        value: Either[BackendError, Option[RealRun]],
-        expected: Option[(AnalysisRevisionSpec, DatasetRevisionSpec)] = None
+        value: Either[BackendError, Option[RetainedRun]],
+        expected: Option[(AnalysisDefinition, DatasetDefinition)] = None
     ): F[Unit] =
       synchronization.lock.surround {
         registry.get.flatMap { current =>
@@ -782,8 +1095,8 @@ final class RealStudyBackend[F[_]] private (
             Either.cond(
               current.documentRuns.get(ref.id).contains(ref) && expected.forall {
                 (revision, dataset) =>
-                  current.document.analysis(revision.id).contains(revision) &&
-                  current.datasets.get(dataset.id).contains(dataset)
+                  current.document.analysisDefinition(revision.id).contains(revision) &&
+                  current.document.datasetDefinition(dataset.id).contains(dataset)
               },
               result,
               BackendError.RegistryRefused(
@@ -793,10 +1106,21 @@ final class RealStudyBackend[F[_]] private (
             )
           }
           val retainPrepared = checked match
-            case Right(Some(done)) => prepared.update(_.updated(ref.analysis, done.prepared))
-            case _                 => F.unit
-          retainPrepared >> state.update { state =>
+            case Right(Some(done: RealRun)) =>
+              prepared.update(_.updated(ref.analysis, done.prepared))
+            case _ => F.unit
+          val forgetEvictedSignals = checked match
+            case Right(Some(done: LocationRun)) if Jobs.isRestored(done) =>
+              state.get.flatMap(current =>
+                restoring.update(_ -- current.results.collect {
+                  case (id, value: LocationRun) if id != ref.id && Jobs.isRestored(value) => id
+                })
+              )
+            case _ => F.unit
+          retainPrepared >> forgetEvictedSignals >> state.update { state =>
             checked match
+              case Right(Some(done: LocationRun)) if Jobs.isRestored(done) =>
+                state.retainRestoredLocation(ref.id, done)
               case Right(Some(done)) =>
                 state.copy(results = state.results.updated(ref.id, done))
               case Left(error) => state.refuse(ref.id, error)
@@ -804,23 +1128,63 @@ final class RealStudyBackend[F[_]] private (
           } >> signal.complete(checked.map(_.nonEmpty)).void
         }
       }
-    val read = source.load(ref, NativeArtifactBudget.Default).flatMap {
+    val read = source.loadCompletion(ref, NativeArtifactBudget.Default).flatMap {
       case Left(error)           => publish(Left(refused(error)))
       case Right(None)           => publish(Right(None))
       case Right(Some(artifact)) =>
         registry.get.flatMap { current =>
           val declarations = for
             revision <- current.document
-              .analysis(ref.analysis)
+              .analysisDefinition(ref.analysis)
               .toRight(BackendError.UnknownRevision(ref.analysis, current.knownRevisions))
-            dataset <- current.datasets
-              .get(ref.dataset)
+            dataset <- current.document
+              .datasetDefinition(ref.dataset)
               .toRight(BackendError.UnknownDataset(ref.dataset, current.knownDatasets))
           yield (revision, dataset)
           val restored = declarations.flatMap((revision, dataset) =>
-            NativeArtifactRestore.of(artifact, ref, revision, dataset).map(Some(_))
+            (artifact, revision, dataset) match
+              case (
+                    NativeCompletion.Timed(value),
+                    r: AnalysisRevisionSpec,
+                    d: DatasetRevisionSpec
+                  ) =>
+                NativeArtifactRestore.of(value, ref, r, d).map(Some(_))
+              case (
+                    NativeCompletion.Locations(value),
+                    r: LocationAnalysisRevision,
+                    d: LocationDatasetRevision
+                  ) =>
+                Either.cond(
+                  value.facts.run == ref.id && value.facts.analysis == r && value.facts.dataset == d &&
+                    ref.analysis == r.id && ref.dataset == d.id && ref.archive == CoreBinding
+                      .Bound(value.facts.result),
+                  Some(
+                    LocationRun(
+                      value.admitted,
+                      r,
+                      value.retained.result,
+                      RunOrigin.Restored(value.facts.result.sha256)
+                    )
+                  ),
+                  BackendError.RegistryRefused(
+                    DiagnosticLocus.Run(ref.id),
+                    "Spatial archive identities differ from the saved run."
+                  )
+                )
+              case _ =>
+                Left(
+                  BackendError.RegistryRefused(
+                    DiagnosticLocus.Run(ref.id),
+                    "Archive, analysis and dataset scientific kinds differ."
+                  )
+                )
           )
-          publish(restored, declarations.toOption)
+          restored match
+            case Right(Some(value: LocationRun)) =>
+              sharedLocationAdmission(value.admitted).flatMap(shared =>
+                publish(Right(Some(value.copy(admitted = shared))), declarations.toOption)
+              )
+            case _ => publish(restored, declarations.toOption)
         }
     }
     F.guarantee(
@@ -835,43 +1199,6 @@ final class RealStudyBackend[F[_]] private (
       ),
       signal.complete(Left(BackendError.ResultReadClosed(ref.id, None))).void
     )
-
-  /** Preparation can overlap another read's complete recomputation. Recheck
-    * the retained result/refusal before reserving, under the same mutex as
-    * submissions and document publication. Job completion itself never waits
-    * for this mutex and publishes its finished status and result atomically.
-    */
-  private def recompute(
-      ref: RunRef,
-      preparedWork: Either[BackendError, RealPrepared]
-  ): F[Either[BackendError, RealRun]] =
-    synchronization.lock.surround {
-      state.get.flatMap { current =>
-        val run = ref.id
-        (
-          current.results.get(run),
-          current.refused.get(run),
-          current.jobs.find(j => j.run == run && finished(j.state).isEmpty)
-        ) match
-          case (Some(done), _, _)    => F.pure(Right(done))
-          case (_, Some(refused), _) => F.pure(Left(refused))
-          case (_, _, Some(active)) => F.pure(Left(BackendError.ResultPending(run, active.job)))
-          case _                    =>
-            preparedWork match
-              case Left(error) => F.pure(Left(error))
-              // The run records the dataset revision it was computed on;
-              // its analysis must still be on that revision.
-              case Right(work) if work.dataset != ref.dataset =>
-                F.pure(Left(datasetMismatch(ref, work)))
-              case Right(work) =>
-                start(work, Purpose.Recompute(ref)).map {
-                  case Right(status) => Left(BackendError.ResultPending(run, status.job))
-                  case Left(BackendError.AlreadyRunning(_, job)) =>
-                    Left(BackendError.ResultDeferred(run, job))
-                  case Left(error) => Left(error)
-                }
-      }
-    }
 
   /** The run's result as eyes4s inspects it, built once per run. */
   private def results(run: RunId): F[Either[BackendError, RealResults]] =
@@ -907,12 +1234,49 @@ final class RealStudyBackend[F[_]] private (
               )
             )
           )
-        case Some(done) =>
+        case Some(_: LocationRun) =>
+          F.pure(
+            Left(
+              NativeArtifactError.InvalidFacts(
+                run,
+                "scientific kind",
+                "A spatial run requires nativeCompletion."
+              )
+            )
+          )
+        case Some(done: RealRun) =>
           F.catchNonFatal(NativeArtifacts.build(run, done, budget))
             .handleError(e =>
               Left(NativeArtifactError.Defect(run, "export", e.getClass.getName))
             )
     }
+
+  override def nativeCompletion(run: RunId, budget: NativeArtifactBudget)(using
+      cats.Functor[F]
+  ): F[Either[NativeArtifactError, NativeCompletion]] =
+    state.get.flatMap { current =>
+      current.results.get(run) match
+        case Some(done: LocationRun) =>
+          F.catchNonFatal(
+            LocationNativePackage
+              .create(run, done.admitted, done.analysis, done.result, budget)
+              .map(NativeCompletion.Locations.apply)
+          ).handleError(e =>
+            Left(
+              NativeArtifactError.Defect(run, "export spatial completion", e.getClass.getName)
+            )
+          )
+        case _ => nativeArtifacts(run, budget).map(_.map(NativeCompletion.Timed.apply))
+    }
+
+  def locationResult(run: RunId): F[Either[BackendError, LocationRun]] =
+    heldCompletion(run).map(_.flatMap {
+      case value: LocationRun => Right(value)
+      case _: RealRun         =>
+        Left(
+          BackendError.Unavailable(DiagnosticLocus.Artifact(s"${run.label} is a timed study."))
+        )
+    })
 
   /** Ungrouped count facts; numerical report cells are served by `report`. */
   def result(run: RunId): F[Either[BackendError, ResultSummary]] =
@@ -1050,6 +1414,8 @@ object RealStudyBackend:
     Supervisor[F](await = false).evalMap(supervisor =>
       (
         Ref.of[F, Map[DatasetRevision, AdmittedDataset]](Map.empty),
+        Ref.of[F, Option[AdmittedLocations]](None),
+        Mutex[F],
         Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty),
         SignallingRef[F].of(Jobs.of[F](document)),
         Ref.of[F, Map[RunId, RealResults]](Map.empty),
@@ -1063,6 +1429,8 @@ object RealStudyBackend:
       ).mapN {
         (
             admitted,
+            locationAdmission,
+            locationAdmissionMutex,
             prepared,
             state,
             inspected,
@@ -1078,6 +1446,8 @@ object RealStudyBackend:
             registry,
             sources,
             admitted,
+            locationAdmission,
+            locationAdmissionMutex,
             prepared,
             previews,
             state,
@@ -1119,7 +1489,7 @@ object RealStudyBackend:
       purposes: Map[JobId, Purpose],
       carried: Map[JobId, RealExecution.Carried],
       defects: Map[JobId, RealExecution.Defect],
-      results: Map[RunId, RealRun],
+      results: Map[RunId, RetainedRun],
       refused: Map[RunId, BackendError]
   ):
     def job(id: JobId): Option[JobStatus] = jobs.find(_.job == id)
@@ -1142,7 +1512,7 @@ object RealStudyBackend:
         run: RunId,
         outcome: JobOutcome,
         state: Option[RunState],
-        result: Option[RealRun]
+        result: Option[RetainedRun]
     ): Jobs[F] =
       copy(
         jobs =
@@ -1157,7 +1527,34 @@ object RealStudyBackend:
     def refuse(run: RunId, error: BackendError): Jobs[F] =
       copy(refused = refused.updated(run, error))
 
+    /** Cold spatial archives are re-readable, so retain only the most recent one.
+      * Computed values stay resident until their native archive is published.
+      */
+    def retainRestoredLocation(run: RunId, value: LocationRun): Jobs[F] =
+      copy(results =
+        results
+          .collect {
+            case (id, retained: LocationRun) if !Jobs.isRestored(retained) => id -> retained
+            case (id, retained: RealRun)                                   => id -> retained
+          }
+          .updated(run, value)
+      )
+
+    /** An archive binding was checked against this exact spatial result. It is
+      * durable now, so a later read restores its saved bytes rather than holding
+      * the completed source closure in this process.
+      */
+    def releaseArchivedLocations(runs: Set[RunId]): Jobs[F] =
+      copy(results = results.filter {
+        case (run, _: LocationRun) => !runs(run)
+        case _                     => true
+      })
+
   object Jobs:
+    private[real] def isRestored(value: LocationRun): Boolean = value.origin match
+      case RunOrigin.Restored(_) => true
+      case _                     => false
+
     /** The document's runs as this backend reports them. The shown run is
       * current; another completed run is stale once a later dataset revision
       * is admitted, and completed otherwise. A run the document records as
@@ -1166,13 +1563,20 @@ object RealStudyBackend:
       * number is never reused.
       */
     def of[F[_]](document: StudioDocument): Jobs[F] =
-      val latest = document.latestAdmitted.map(_.id)
-      val runs   = document.runs.flatMap { r =>
+      def latest(dataset: DatasetRevision) = document
+        .datasetDefinition(dataset)
+        .flatMap(d =>
+          document.datasets
+            .findLast(candidate => candidate.kind == d.kind && candidate.isAdmitted)
+            .map(_.id)
+        )
+      val runs = document.runs.flatMap { r =>
         val state = r.state match
           case RunLifecycle.Completed if document.presentation.shownRun.contains(r.id) =>
             Some(RunState.Current)
-          case RunLifecycle.Completed if !latest.contains(r.dataset) => Some(RunState.Stale)
-          case RunLifecycle.Completed                                => Some(RunState.Completed)
+          case RunLifecycle.Completed if !latest(r.dataset).contains(r.dataset) =>
+            Some(RunState.Stale)
+          case RunLifecycle.Completed     => Some(RunState.Completed)
           case RunLifecycle.Cancelled(at) => Some(RunState.Cancelled(at))
           case RunLifecycle.Failed        => Some(RunState.Failed)
           case RunLifecycle.Running       => None
@@ -1206,12 +1610,21 @@ object RealStudyBackend:
     case Recomputed(eyes4sVersion: String)
     case Restored(manifest: ByteDigest)
 
+  sealed trait RetainedRun
+
+  final case class LocationRun(
+      admitted: AdmittedLocations,
+      analysis: LocationAnalysisRevision,
+      result: eyes4s.plan.LocationComparisonResult,
+      origin: RunOrigin
+  ) extends RetainedRun
+
   /** A run's eyes4s result with the prepared study that produced it. */
   final case class RealRun(
       prepared: RealPrepared,
       result: RealExecution.Result,
       origin: RunOrigin
-  ):
+  ) extends RetainedRun:
     private[real] lazy val reportSource = ReportSources
       .retainedStudy(prepared.plans, prepared.inputs, prepared.results)(
         prepared.plan,

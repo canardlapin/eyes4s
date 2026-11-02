@@ -322,6 +322,7 @@ object TrialKeyCheck:
     val digits = source match
       case SourceRole.Trials    => Option.when(raw.matches("[0-9]+"))(raw)
       case SourceRole.Fixations => Some(raw)
+      case _                    => None
     digits.flatMap(_.toIntOption).flatMap(TrialOccurrence.of(_).toOption)
 
   /** The columns the check reads for `columns` and `unit`. */

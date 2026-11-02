@@ -844,6 +844,7 @@ lazy val results = crossProject(JVMPlatform, JSPlatform)
     // check both code tables together.
     Test / unmanagedSources ++= Seq(
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/LocationDiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile
     )
@@ -863,6 +864,7 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
       // The plan catalog's samples and alignment check, so the codec suites
       // check both code tables together.
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/LocationDiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
       file(
@@ -956,6 +958,7 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
       // Every catalog's samples and alignment check, so io checks all code
       // tables together and enumerates every public error enum.
       file("plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala").getAbsoluteFile,
+      file("plan/src/test/scala/eyes4s/plan/LocationDiagnosticSamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticExamples.scala").getAbsoluteFile,
       file("plan/src/test/scala/eyes4s/plan/DiagnosticAlignment.scala").getAbsoluteFile,
       file("codec/src/test/scala/eyes4s/codec/CodecDiagnosticSamples.scala").getAbsoluteFile,

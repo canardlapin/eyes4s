@@ -28,8 +28,19 @@ trait NativeArtifactSource[F[_]]:
       budget: NativeArtifactBudget = NativeArtifactBudget.Default
   ): F[Either[NativeArtifactError, Option[NativeArtifactPackage]]]
 
+  def loadCompletion(
+      ref: RunRef,
+      budget: NativeArtifactBudget = NativeArtifactBudget.Default
+  )(using F: cats.Functor[F]): F[Either[NativeArtifactError, Option[NativeCompletion]]] =
+    F.map(load(ref, budget))(_.map(_.map(NativeCompletion.Timed.apply)))
+
 object NativeArtifactSource:
   def project[F[_]](session: ProjectSession[F]): NativeArtifactSource[F] =
     new NativeArtifactSource[F]:
       def load(ref: RunRef, budget: NativeArtifactBudget) =
         session.findNativeArtifacts(ref, budget)
+
+      override def loadCompletion(ref: RunRef, budget: NativeArtifactBudget)(using
+          cats.Functor[F]
+      ) =
+        session.findNativeCompletion(ref, budget)

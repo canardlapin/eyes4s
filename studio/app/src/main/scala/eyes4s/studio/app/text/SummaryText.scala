@@ -35,7 +35,7 @@ enum SummaryTextId derives CanEqual:
   case GroupCell
 
   /** The query table's headers. */
-  case Query, Item, Response, Status, M, B, D
+  case Query, Item, Response, ResponseNotDeclared, Status, M, B, D
 
   /** A query's status when it has no scores. */
   case StatusFailed, StatusNoMatch, StatusNotAdmitted, StatusContributing, StatusByDesign
@@ -95,6 +95,7 @@ object SummaryText:
       case Query                      => "Query"
       case Item                       => "Item"
       case Response                   => "Response"
+      case ResponseNotDeclared        => "Not declared"
       case Status                     => "Status"
       case M                          => "M"
       case B                          => "B"

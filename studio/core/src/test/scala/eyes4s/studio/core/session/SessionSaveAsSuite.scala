@@ -34,7 +34,7 @@ class SessionSaveAsSuite extends SessionConformance:
     BundleSamples.withSources(withoutJobs(DocumentSamples.t1), fixes, trials)
   private val inputs = Vector(SourceRole.Fixations -> fixes, SourceRole.Trials -> trials).map {
     (role, b) =>
-      val source = document.datasets.last.sources.entries.find(_.role == role).get
+      val source = document.timedDatasets.last.sources.entries.find(_.role == role).get
       BundleSamples.right(
         InputEntry.of(
           InputKind.Source(role),

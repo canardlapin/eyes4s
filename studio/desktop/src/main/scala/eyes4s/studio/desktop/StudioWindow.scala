@@ -116,6 +116,8 @@ final class StudioWindow private (
     val firstRun: eyes4s.studio.desktop.data.DataFirstRunView,
     val figures: FiguresHost,
     figuresListener: AppModel => Unit,
+    val spatial: eyes4s.studio.desktop.locations.SpatialWorkflowHost,
+    spatialListener: AppModel => Unit,
     val themes: ThemeHost,
     themeListener: AppModel => Unit,
     deactivate: () => Unit
@@ -241,6 +243,8 @@ final class StudioWindow private (
     compareInspector.dispose()
     reporting.dispose()
     figures.dispose()
+    runtime.unlisten(spatialListener)
+    spatial.dispose()
     runtime.unlisten(themeListener)
     themes.dispose()
     shell.dispose()
@@ -265,6 +269,19 @@ object StudioWindow:
           eyes4s.studio.app.importing.ColumnMappingPane
             .follow(before, model())
             .foreach(dispatch)
+        case Intent.Dispatch(_: eyes4s.studio.core.command.Command.AppendLocationDataset) =>
+          model().document.datasets.lastOption
+            .filterNot(d => before.datasets.exists(_.id == d.id))
+            .foreach(d =>
+              dispatch(
+                Intent.Navigate(
+                  eyes4s.studio.app.nav.Location(
+                    eyes4s.studio.core.document.Perspective.Data,
+                    Vector(eyes4s.studio.app.nav.Place.Dataset(d.id))
+                  )
+                )
+              )
+            )
         case _ => ()
 
   /** The answer to Rename…: the typed name, or why it was refused. */
@@ -812,6 +829,12 @@ object StudioWindow:
     val figuresListener: AppModel => Unit = figures.sync
     r.listen(figuresListener)
     figures.sync(r.model)
+    val spatial =
+      eyes4s.studio.desktop.locations.SpatialWorkflowHost(() => r.model, dispatch, session)
+    spatial.nodes.foreach((id, node) => host.host(id, node))
+    val spatialListener: AppModel => Unit = spatial.sync
+    r.listen(spatialListener)
+    spatial.sync(r.model)
     Right(
       StudioWindow(
         session,
@@ -851,6 +874,8 @@ object StudioWindow:
         firstRun,
         figures,
         figuresListener,
+        spatial,
+        spatialListener,
         themes,
         themeListener,
         () => runtime = None

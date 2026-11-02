@@ -40,7 +40,7 @@ object TrialDurationNativeFixture:
       s"P17,Encoding,enc_04,1,item-b,,blank,,$cell\n" +
       s"P17,Retrieval,ret_07,1,item-a,Remembered,blank,,$cell\n"
   def spec(cell: Option[String]): DatasetRevisionSpec =
-    val original = get(StoryMoments.t2).datasets.last
+    val original = get(StoryMoments.t2).timedDatasets.last
     val texts    =
       Map(SourceRole.Fixations -> fixes, SourceRole.Trials -> trials(cell.getOrElse("")))
     val sources = get(
@@ -72,7 +72,7 @@ object TrialDurationNativeFixture:
       )
     )
     val admitted = get(RealAdmission.admit(dataset, fixes, trials(cell.getOrElse("")), assets))
-    val recipe   = get(StoryMoments.t2).analyses.last.recipe.copy(
+    val recipe   = get(StoryMoments.t2).timedAnalyses.last.recipe.copy(
       input = None,
       grid = get(GridSize.of(8, 8)),
       scales = get(ScaleSet.of(Vector(get(Sigma.of(1)))))

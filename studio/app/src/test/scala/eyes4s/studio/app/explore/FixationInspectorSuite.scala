@@ -146,7 +146,9 @@ class FixationInspectorSuite extends munit.FunSuite:
       assertEquals(source("Admission"), "admitted · dataset r3")
       assertEquals(
         source("File"),
-        right(StoryMoments.t2).datasets.last.sources.fixations.get.path.value.split('/').last
+        right(StoryMoments.t2).timedDatasets.last.sources.fixations.get.path.value
+          .split('/')
+          .last
       )
       // The scale the served degrees are at, as the page states it.
       assertEquals(

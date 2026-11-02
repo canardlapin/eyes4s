@@ -146,8 +146,8 @@ class AssetRepairSuite extends munit.FunSuite:
     )
     val mapped = ok(
       StudioDocument.of(
-        t2.datasets.map(d => if d.id == r3 then d.copy(inventory = Some(withCols)) else d),
-        t2.analyses,
+        t2.timedDatasets.map(d => if d.id == r3 then d.copy(inventory = Some(withCols)) else d),
+        t2.timedAnalyses,
         t2.draft,
         t2.runs,
         t2.reporting,
@@ -238,7 +238,9 @@ class AssetRepairSuite extends munit.FunSuite:
   test("a pending revision with a repair can be discarded; its undo puts the repair back") {
     val t1      = ok(StoryMoments.t1)
     val pending =
-      t1.datasets.find(!_.decision.isAdmitted).getOrElse(fail("t1 has no pending revision"))
+      t1.timedDatasets
+        .find(!_.decision.isAdmitted)
+        .getOrElse(fail("t1 has no pending revision"))
     val repair   = Command.RelinkAsset(pending.id, forest, Some(restored))
     val repaired = ok(Reducer.step(t1, repair))._1
     val outcome  = ok(Reducer.run(repaired, Command.DiscardDataset(pending.id)))

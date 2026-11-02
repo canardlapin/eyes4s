@@ -17,11 +17,13 @@
 package eyes4s.studio.core.command
 
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
-import eyes4s.codec.ByteDigest
+import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.studio.core.artifacts.LocationBindingFacts
 import eyes4s.studio.core.assets.{AssetFile, AssetRef}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.*
+import eyes4s.studio.core.fixture.StoryMoments
 import eyes4s.studio.core.preset.InitialRecipe
 import org.scalacheck.Gen
 
@@ -47,7 +49,9 @@ object CommandGen:
       "RecordRunOutcome",
       "CancelRun",
       "BindPlan",
-      "BindCompletedArtifacts"
+      "BindCompletedArtifacts",
+      "BindLocationCompletedArtifacts",
+      "ReserveLocationRun"
     )
 
   private def pick[A](values: Vector[A]): Option[Gen[A]] =
@@ -63,10 +67,10 @@ object CommandGen:
     case _                                    => None
 
   def dataset(d: StudioDocument): Vector[Gen[Command]] =
-    val ids       = d.datasets.map(_.id)
-    val pending   = d.datasets.filterNot(_.decision.isAdmitted)
+    val ids       = d.timedDatasets.map(_.id)
+    val pending   = d.timedDatasets.filterNot(_.decision.isAdmitted)
     val editable  = pending.filter(_.decision == AdmissionDecision.Pending)
-    val next      = d.datasets.lastOption.fold(1)(_.id.number + 1)
+    val next      = d.timedDatasets.lastOption.fold(1)(_.id.number + 1)
     val importing = for
       parent <- if ids.isEmpty then Gen.const(None) else Gen.option(Gen.oneOf(ids))
       s      <- sources
@@ -162,7 +166,7 @@ object CommandGen:
         runs.map(r => Command.CancelRun(r.id))
       )
     }
-    val plans = pick(d.analyses).toVector.map { specs =>
+    val plans = pick(d.timedAnalyses).toVector.map { specs =>
       for
         a <- specs
         p <- canonical[StudyPlanArtifact]
@@ -213,11 +217,11 @@ object CommandGen:
     outcomes ++ plans ++ artifacts
 
   def analysis(d: StudioDocument): Vector[Gen[Command]] =
-    val admitted = d.datasets.filter(_.decision.isAdmitted).map(_.id)
+    val admitted = d.timedDatasets.filter(_.decision.isAdmitted).map(_.id)
     val initial  =
-      if d.analyses.nonEmpty || d.draft.nonEmpty then Vector.empty
+      if d.timedAnalyses.nonEmpty || d.draft.nonEmpty then Vector.empty
       else
-        pick(d.datasets.filter(_.decision.isAdmitted)).toVector.map { datasets =>
+        pick(d.timedDatasets.filter(_.decision.isAdmitted)).toVector.map { datasets =>
           for
             data   <- datasets
             preset <- Gen.oneOf(
@@ -254,22 +258,22 @@ object CommandGen:
     val reverts = d.draft.flatMap(dr => pick(dr.changes)).toVector.map { g =>
       g.map(c => Command.ChangeRecipe(c.inverse))
     }
-    val starts = pick(d.analyses).toVector.map { bases =>
+    val starts = pick(d.timedAnalyses).toVector.map { bases =>
       for
         base <- bases
         r    <- recipe
-        ds   <- Gen.option(Gen.oneOf(d.datasets.map(_.id)))
+        ds   <- Gen.option(Gen.oneOf(d.timedDatasets.map(_.id)))
       yield Command.StartDraft(base.id, ds, RecipeChange.between(base.recipe, r))
     }
     val restores = d.latestAnalysis.toVector.flatMap { latest =>
-      pick(d.analyses).toVector.map { bases =>
+      pick(d.timedAnalyses).toVector.map { bases =>
         bases
           .flatMap(b => draft(b, latest.id.number + 1, admitted))
           .suchThat(_.nonEmpty)
           .map(dr => Command.RestoreDraft(dr.get))
       }
     }
-    val rebases = pick(d.datasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
+    val rebases = pick(d.timedDatasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
     initial ++ families ++ changes ++ composites ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
       Gen.const(Command.DiscardDraft),
       Gen.option(studio).map(Command.SaveAndRun(_))
@@ -380,10 +384,10 @@ object CommandGen:
         // Mostly a held revision and a new link: an unknown revision, or an
         // unlink of nothing, is refused, and refusals are rarer than edits.
         id <-
-          if d.datasets.isEmpty then Gen.const(DatasetRevision(99))
+          if d.timedDatasets.isEmpty then Gen.const(DatasetRevision(99))
           else
             Gen.frequency(
-              9 -> Gen.oneOf(d.datasets.map(_.id)),
+              9 -> Gen.oneOf(d.timedDatasets.map(_.id)),
               1 -> Gen.const(DatasetRevision(99))
             )
         file  <- Gen.oneOf(files)
@@ -449,6 +453,156 @@ object CommandGen:
       entry: JournalEntry,
       result: Either[CommandError, Step]
   )
+
+  private val locationInput =
+    CanonicalDigest.parse[LocationInputArtifact]("1" * 64).toOption.get
+  private val locationPlan = CanonicalDigest.parse[LocationPlanArtifact]("2" * 64).toOption.get
+  private val locationSources = LocationBundleSources
+    .of(LocationBundleSources.roles.map { role =>
+      Source(
+        role,
+        SourcePath.of(s"figrim/${role.label.replace(' ', '-')}.txt").toOption.get,
+        ByteDigest.sha256(IArray.from(role.label.getBytes)),
+        None
+      )
+    })
+    .toOption
+    .get
+
+  /** A complete spatial lifecycle gives the generic laws actual admitted
+    * definitions, a completed run, and binding facts rather than fabricated
+    * timed recipe state.
+    */
+  def spatialSession: Gen[(StudioDocument, Vector[Trace])] = Gen.const {
+    val start  = StoryMoments.t1.toOption.get
+    val family = AnalysisFamily.of(start.nextFamilyId.toOption.get, "FIGRIM map").toOption.get
+    val name   = RevisionName.of("FIGRIM spatial comparison").toOption.get
+    def apply(history: History, command: Command): (History, Trace) =
+      val entry  = JournalEntry.Apply(command)
+      val result = history.perform(entry)
+      val next   = result.fold(error => throw new AssertionError(error.message), _.history)
+      next -> Trace(history, entry, result)
+    def entry(history: History, value: JournalEntry): (History, Trace) =
+      val result = history.perform(value)
+      val next   = result.fold(error => throw new AssertionError(error.message), _.history)
+      next -> Trace(history, value, result)
+
+    val append = Command.AppendLocationDataset(
+      None,
+      locationSources,
+      LocationProfile.FigrimV1,
+      locationInput
+    )
+    val (afterAppend, appendTrace)         = apply(History.start(start), append)
+    val (afterUndoAppend, undoAppendTrace) = entry(afterAppend, JournalEntry.Undo)
+    val (afterRedoAppend, redoAppendTrace) = entry(afterUndoAppend, JournalEntry.Redo)
+    val dataset                            = afterRedoAppend.document.datasets.collect {
+      case value: LocationDatasetRevision => value
+    }.last
+    val (afterDiscardData, discardDataTrace) =
+      apply(afterRedoAppend, Command.DiscardLocationDataset(dataset.id))
+    val (afterUndoDiscardData, undoDiscardDataTrace) =
+      entry(afterDiscardData, JournalEntry.Undo)
+    val (afterRedoDiscardData, redoDiscardDataTrace) =
+      entry(afterUndoDiscardData, JournalEntry.Redo)
+    val (afterRestoreData, restoreDataTrace) =
+      apply(afterRedoDiscardData, Command.RestoreLocationDataset(dataset))
+    val (afterUndoRestoreData, undoRestoreDataTrace) =
+      entry(afterRestoreData, JournalEntry.Undo)
+    val (afterRedoRestoreData, redoRestoreDataTrace) =
+      entry(afterUndoRestoreData, JournalEntry.Redo)
+    val save = Command.SaveLocationAnalysis(
+      family,
+      dataset.id,
+      locationPlan,
+      name,
+      "Fixed-profile location comparison"
+    )
+    val (afterSave, saveTrace)         = apply(afterRedoRestoreData, save)
+    val (afterUndoSave, undoSaveTrace) = entry(afterSave, JournalEntry.Undo)
+    val (afterRedoSave, redoSaveTrace) = entry(afterUndoSave, JournalEntry.Redo)
+    val analysis                       = afterRedoSave.document.analyses.collect {
+      case value: LocationAnalysisRevision => value
+    }.last
+    val (afterDiscardAnalysis, discardAnalysisTrace) =
+      apply(afterRedoSave, Command.DiscardLocationAnalysis(analysis.id))
+    val (afterUndoDiscardAnalysis, undoDiscardAnalysisTrace) =
+      entry(afterDiscardAnalysis, JournalEntry.Undo)
+    val (afterRedoDiscardAnalysis, redoDiscardAnalysisTrace) =
+      entry(afterUndoDiscardAnalysis, JournalEntry.Redo)
+    val restoreAnalysis = Command.RestoreLocationAnalysis(
+      analysis,
+      afterRedoSave.document.analysisFamilies,
+      afterDiscardAnalysis.document.analysisFamilies
+    )
+    val (afterRestoreAnalysis, restoreAnalysisTrace) =
+      apply(afterRedoDiscardAnalysis, restoreAnalysis)
+    val removeAnalysis = Command.RemoveLocationAnalysis(
+      analysis.id,
+      afterRestoreAnalysis.document.analysisFamilies,
+      afterDiscardAnalysis.document.analysisFamilies
+    )
+    val (afterRemoveAnalysis, removeAnalysisTrace) = apply(afterRestoreAnalysis, removeAnalysis)
+    val (afterUndoRemoveAnalysis, undoRemoveAnalysisTrace) =
+      entry(afterRemoveAnalysis, JournalEntry.Undo)
+    val (afterRedoRemoveAnalysis, redoRemoveAnalysisTrace) =
+      entry(afterUndoRemoveAnalysis, JournalEntry.Redo)
+    val (afterRestoreRemovedAnalysis, restoreRemovedAnalysisTrace) =
+      apply(afterRedoRemoveAnalysis, restoreAnalysis)
+    val (afterUndoRestoreAnalysis, undoRestoreAnalysisTrace) =
+      entry(afterRestoreRemovedAnalysis, JournalEntry.Undo)
+    val (afterRedoRestoreAnalysis, redoRestoreAnalysisTrace) =
+      entry(afterUndoRestoreAnalysis, JournalEntry.Redo)
+    val (afterReserve, reserveTrace) =
+      apply(afterRedoRestoreAnalysis, Command.ReserveLocationRun(analysis.id))
+    val run                                = afterReserve.document.runs.last
+    val (afterCompletion, completionTrace) = apply(
+      afterReserve,
+      Command.RecordRunOutcome(run.id, RunLifecycle.Completed, CoreBinding.unbound)
+    )
+    val facts = LocationBindingFacts
+      .of(
+        run.id,
+        afterCompletion.document.datasets.collect { case value: LocationDatasetRevision =>
+          value
+        }.last,
+        afterCompletion.document.analyses.collect { case value: LocationAnalysisRevision =>
+          value
+        }.last,
+        CanonicalDigest.parse[ResultArchiveArtifact]("3" * 64).toOption.get
+      )
+      .toOption
+      .get
+    val (_, bindingTrace) =
+      apply(afterCompletion, Command.BindLocationCompletedArtifacts(facts))
+    start -> Vector(
+      appendTrace,
+      undoAppendTrace,
+      redoAppendTrace,
+      discardDataTrace,
+      undoDiscardDataTrace,
+      redoDiscardDataTrace,
+      restoreDataTrace,
+      undoRestoreDataTrace,
+      redoRestoreDataTrace,
+      saveTrace,
+      undoSaveTrace,
+      redoSaveTrace,
+      discardAnalysisTrace,
+      undoDiscardAnalysisTrace,
+      redoDiscardAnalysisTrace,
+      restoreAnalysisTrace,
+      removeAnalysisTrace,
+      undoRemoveAnalysisTrace,
+      redoRemoveAnalysisTrace,
+      restoreRemovedAnalysisTrace,
+      undoRestoreAnalysisTrace,
+      redoRestoreAnalysisTrace,
+      reserveTrace,
+      completionTrace,
+      bindingTrace
+    )
+  }
 
   /** `n` entries performed in turn from `h`; a refused entry leaves `h`. */
   def walk(h: History, n: Int, next: History => Gen[JournalEntry] = entry): Gen[Vector[Trace]] =

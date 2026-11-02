@@ -88,8 +88,8 @@ class DocumentHashSuite extends munit.ScalaCheckSuite:
   ): StudioDocument =
     right(
       StudioDocument.of(
-        datasets(t2.datasets),
-        analyses(t2.analyses),
+        datasets(t2.timedDatasets),
+        analyses(t2.timedAnalyses),
         draft(t2.draft),
         runs(t2.runs),
         reporting(t2.reporting),
@@ -214,8 +214,8 @@ class DocumentHashSuite extends munit.ScalaCheckSuite:
           right(
             Draft.between(
               AnalysisRevision(5),
-              t2.analyses(1),
-              t2.analyses(1).recipe.copy(unmatched = UnmatchedChoice.Refuse)
+              t2.timedAnalyses(1),
+              t2.timedAnalyses(1).recipe.copy(unmatched = UnmatchedChoice.Refuse)
             )
           )
         )

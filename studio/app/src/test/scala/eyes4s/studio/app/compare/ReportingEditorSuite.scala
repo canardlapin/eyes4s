@@ -215,8 +215,8 @@ class ReportingEditorSuite extends munit.FunSuite:
       val (b, a) = (m.document, after.document)
       assertNotEquals(spec(a), spec(b), edit.toString)
       assertEquals(a.runs, b.runs, edit.toString)
-      assertEquals(a.analyses, b.analyses, edit.toString)
-      assertEquals(a.datasets, b.datasets, edit.toString)
+      assertEquals(a.timedAnalyses, b.timedAnalyses, edit.toString)
+      assertEquals(a.timedDatasets, b.timedDatasets, edit.toString)
       assertEquals(a.figures, b.figures, edit.toString)
       assertEquals(after.jobs, m.jobs, edit.toString)
       assertEquals(after.freshness.standing(run7), m.freshness.standing(run7), edit.toString)
@@ -309,7 +309,7 @@ class ReportingEditorSuite extends munit.FunSuite:
         filters.toString
       )
       // The run's analysis, which alone decides the pool, is untouched.
-      assertEquals(after.document.analyses, t2Compare.document.analyses)
+      assertEquals(after.document.timedAnalyses, t2Compare.document.timedAnalyses)
       val page = right(PageRequest.first(PageRequest.MaximumSize))
       for
         pool <- s.navigator.pairs(query, PairDesign.Control, page).map(right)
@@ -320,7 +320,9 @@ class ReportingEditorSuite extends munit.FunSuite:
         // Some controls are the encoding trials of items P17 forgot at retrieval:
         // a hit-only report still compares every query against them.
         val forgotten = rows.rows
-          .filter(r => r.query.participant == "P17" && r.response == Response("Forgotten"))
+          .filter(r =>
+            r.query.participant == "P17" && r.response.contains(Response("Forgotten"))
+          )
           .flatMap(_.matched)
           .toSet
         assert(controls.exists(forgotten.contains), controls.toString)

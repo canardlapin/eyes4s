@@ -20,7 +20,12 @@ import cats.effect.IO
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.assets.{AssetFile, AssetRef, AssetRegistry}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Source, SourceRole}
+import eyes4s.studio.core.document.{
+  DatasetRevisionSpec,
+  LocationDatasetRevision,
+  Source,
+  SourceRole
+}
 import eyes4s.studio.core.real.DatasetSources
 import eyes4s.studio.core.fixture.GoldenAssets
 import eyes4s.studio.app.explore.DisplaySource
@@ -35,6 +40,10 @@ object DatasetSourceHosts:
       IO.async_[Option[IArray[Byte]]](done =>
         project.readInput(source, value => done(Right(value.toOption)))
       )
+    override def locationBytes(dataset: LocationDatasetRevision, source: Source)(using
+        cats.Applicative[IO]
+    ): IO[Option[IArray[Byte]]] =
+      IO.async_(done => project.readInput(source, value => done(Right(value.toOption))))
     def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
       IO.async_[Option[AssetRegistry]](done =>
         NavigatorDisplays
@@ -53,17 +62,17 @@ object DatasetSourceHosts:
     * Source digests are still verified by the native backend; missing files stay missing.
     */
   def golden(root: Path): DatasetSources[IO] = new DatasetSources[IO]:
-    private def file(source: Source): Path = source.role match
-      case SourceRole.Fixations => root.resolve("fixations.csv")
-      case SourceRole.Trials    => root.resolve("trials.csv")
+    private def file(source: Source): Option[Path] = source.role match
+      case SourceRole.Fixations => Some(root.resolve("fixations.csv"))
+      case SourceRole.Trials    => Some(root.resolve("trials.csv"))
+      case _                    => None
     private def read(path: Path): IO[Option[IArray[Byte]]] = IO
       .blocking {
         Option.when(Files.isRegularFile(path))(IArray.from(Files.readAllBytes(path)))
       }
       .handleError(_ => None)
-    def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] = read(
-      file(source)
-    )
+    def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] =
+      file(source).fold(IO.pure(Option.empty[IArray[Byte]]))(read)
     def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
       dataset.sources.trials match
         case None         => IO.pure(None)

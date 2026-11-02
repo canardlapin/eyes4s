@@ -91,8 +91,14 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
       outcome   <- fake.complete(submitted.job).map(right(_))
     yield
       assert(after.jobSnapshots(submitted.job) eq captured)
-      assertEquals(outcome.progress.map(_.totals.completedPairs), Some(7L))
-      assertEquals(outcome.progress.map(_.totals.totalPairs), Some(ProgressTotal.Exact(7L)))
+      assertEquals(
+        outcome.progress.map(ProtocolSamples.timed).map(_.totals.completedPairs),
+        Some(7L)
+      )
+      assertEquals(
+        outcome.progress.map(ProtocolSamples.timed).map(_.totals.totalPairs),
+        Some(ProgressTotal.Exact(7L))
+      )
   }
 
   test("ExecutionEffect.SubmitPreview runs the retained snapshot, not a rebuilt one (E2E-05)") {

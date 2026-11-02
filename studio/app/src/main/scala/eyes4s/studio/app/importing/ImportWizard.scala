@@ -306,7 +306,7 @@ object ImportWizard:
     * blank: geometry is declared, never guessed.
     */
   def newImport(document: StudioDocument, presets: ImportPresets): ImportWizard =
-    val parent = document.datasets.lastOption
+    val parent = document.timedDatasets.lastOption
     ImportWizard(
       WizardTarget.NewImport,
       None,
@@ -414,6 +414,12 @@ object ImportWizard:
                   ),
                   none
                 )
+          case other =>
+            refuse(
+              WizardProblem.BadSources(
+                DocumentError.SourceKinds("timed fixations", Vector(other))
+              )
+            )
       case WizardIntent.ReadFailed(path, error) => refuse(WizardProblem.ReadFailed(path, error))
       case WizardIntent.ChooseTab(tab)          => (cleared.copy(tab = tab), none)
       case WizardIntent.DropTrials(drop)        =>
@@ -426,7 +432,13 @@ object ImportWizard:
               (cleared.copy(dropTrials = true, trials = None, setAside = w.trials), none)
             else (cleared.copy(dropTrials = false, trials = w.setAside, setAside = None), none)
           case _ => refuse(WizardProblem.NoTrials)
-      case WizardIntent.RequestFile(role) => (cleared, Vector(WizardEffect.OpenFile(role)))
+      case WizardIntent.RequestFile(role) =>
+        if role == SourceRole.Fixations || role == SourceRole.Trials then
+          (cleared, Vector(WizardEffect.OpenFile(role)))
+        else
+          refuse(
+            WizardProblem.BadSources(DocumentError.SourceKinds("timed fixations", Vector(role)))
+          )
 
       case WizardIntent.Choose(SourceRole.Fixations, column, choice) =>
         w.fixations match
@@ -448,6 +460,11 @@ object ImportWizard:
                 e => refuse(WizardProblem.Mapping(e)),
                 d => (cleared.copy(trials = Some((src, d))), none)
               )
+
+      case WizardIntent.Choose(role, _, _) =>
+        refuse(
+          WizardProblem.BadSources(DocumentError.SourceKinds("timed fixations", Vector(role)))
+        )
 
       case WizardIntent.DeclareDisplays(columns) =>
         w.trials match
@@ -664,7 +681,7 @@ object ImportWizard:
         case WizardTarget.NewImport =>
           // The parent is the live document's latest revision, not the one
           // there was when the wizard opened.
-          val parent = document.datasets.lastOption.map(_.id)
+          val parent = document.timedDatasets.lastOption.map(_.id)
           Sources
             .of(Vector(src.source) ++ w.trials.map(_._1.source))
             .left

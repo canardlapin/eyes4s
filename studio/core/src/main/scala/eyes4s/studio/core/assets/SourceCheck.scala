@@ -138,7 +138,7 @@ object SourceCheck:
       case InputCheck.Checked(statuses) =>
         val findings = for
           spec   <- document.datasets
-          source <- spec.sources.entries
+          source <- spec.sourceFiles
         yield
           val kind  = InputKind.Source(source.role)
           val entry = statuses.find(s =>

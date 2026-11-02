@@ -419,12 +419,77 @@ object StudioLayouts:
       yield other
     }
 
+  val spatialSources    = PaneId("spatial.sources")
+  val spatialData       = PaneId("spatial.data")
+  val spatialProfile    = PaneId("spatial.profile")
+  val spatialAnalyses   = PaneId("spatial.analyses")
+  val spatialRecipe     = PaneId("spatial.recipe")
+  val spatialPreflight  = PaneId("spatial.preflight")
+  val spatialRuns       = PaneId("spatial.runs")
+  val spatialSummary    = PaneId("spatial.summary")
+  val spatialQueries    = PaneId("spatial.queries")
+  val spatialProvenance = PaneId("spatial.provenance")
+  val spatialReportNav  = PaneId("spatial.report-nav")
+  val spatialReport     = PaneId("spatial.report")
+  val spatialMethods    = PaneId("spatial.methods")
+
+  private val locationData = layout(
+    "data.locations",
+    Perspective.Data,
+    columns(
+      navigator(pane(spatialSources.value, "Sources", Navigator)) -> NavPx,
+      group(pane(spatialData.value, "Admission", Form)),
+      group(pane(spatialProfile.value, "Spatial profile", Inspector)) -> InspectorPx
+    ),
+    MessageId.HintSpatialData
+  )
+  private val locationAnalysis = layout(
+    "analysis.locations",
+    Perspective.Analysis,
+    columns(
+      navigator(pane(spatialAnalyses.value, "Analyses", Navigator)) -> NavPx,
+      group(pane(spatialRecipe.value, "Analysis", Form)),
+      group(pane(spatialPreflight.value, "Preflight", Inspector)) -> InspectorPx
+    ),
+    MessageId.HintSpatialAnalysis
+  )
+  private val locationResults = layout(
+    "results.locations",
+    Perspective.Results,
+    columns(
+      navigator(pane(spatialRuns.value, "Runs", Navigator)) -> NavPx,
+      stack(
+        group(pane(spatialSummary.value, "Descriptive summary", Form)) -> 180.0,
+        group(pane(spatialQueries.value, "Query scores", Table))       -> 600.0
+      ),
+      group(pane(spatialProvenance.value, "Provenance", Inspector)) -> InspectorPx
+    ),
+    MessageId.HintSpatialResults
+  )
+  private val locationReport = layout(
+    "report.locations",
+    Perspective.Report,
+    columns(
+      navigator(pane(spatialReportNav.value, "Report", Navigator)) -> NavPx,
+      group(pane(spatialReport.value, "Spatial report", Form)),
+      group(pane(spatialMethods.value, "Methods", Text)) -> InspectorPx
+    ),
+    MessageId.HintSpatialReport
+  )
+
+  def spatial(perspective: Perspective): PerspectiveLayout = perspective match
+    case Perspective.Data     => locationData
+    case Perspective.Analysis => locationAnalysis
+    case Perspective.Results  => locationResults
+    case Perspective.Report   => locationReport
+
   val spec: LayoutSpec = LayoutSpec(
     Vector(
-      Perspective.Data     -> NonEmptyVector.of(dataVerify, dataFirstRun, dataTrials),
-      Perspective.Analysis -> NonEmptyVector.one(analysis),
-      Perspective.Results  -> NonEmptyVector.of(compareQuery, compareSummary, explore),
-      Perspective.Report   -> NonEmptyVector.one(figures)
+      Perspective.Data -> NonEmptyVector.of(dataVerify, dataFirstRun, dataTrials, locationData),
+      Perspective.Analysis -> NonEmptyVector.of(analysis, locationAnalysis),
+      Perspective.Results  -> NonEmptyVector
+        .of(compareQuery, compareSummary, explore, locationResults),
+      Perspective.Report -> NonEmptyVector.of(figures, locationReport)
     )
   )
 

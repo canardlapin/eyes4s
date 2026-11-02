@@ -18,11 +18,13 @@ package eyes4s.studio.desktop.journey
 
 import cats.effect.{IO, Resource}
 import cats.syntax.all.*
-import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.codec.ByteDigest
 import eyes4s.plan.{ResultInspection, ResultRef, TrialKeyDefinitions}
 import eyes4s.studio.app.{AppModel, ProjectName}
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.figures.*
+import eyes4s.studio.core.artifacts.{NativeArtifactSource, NativeArtifactBudget}
+import eyes4s.studio.core.command.{Command, JournalEntry}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.*
@@ -74,7 +76,7 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
 
   private lazy val declared: StudioDocument =
     val base     = get(StoryMoments.t2)
-    val datasets = base.datasets.map { d =>
+    val datasets = base.timedDatasets.map { d =>
       if d.id != StoryMoments.r3 then d
       else
         d.copy(inventory =
@@ -93,7 +95,7 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
           )
         )
     }
-    val analyses = base.analyses.map(a =>
+    val analyses = base.timedAnalyses.map(a =>
       a.copy(recipe =
         a.recipe.copy(layout = DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout))
       )
@@ -133,11 +135,22 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
       files: Vector[(String, IArray[Byte])]
   )
 
-  private def readback(document: StudioDocument, sources: DatasetSources[IO]): IO[Readback] =
+  private def readback(
+      document: StudioDocument,
+      sources: DatasetSources[IO],
+      archiveSource: NativeArtifactSource[IO]
+  ): IO[Readback] =
     RealStudyBackend
-      .resource[IO](document, sources)
+      .resource[IO](document, sources, Some(archiveSource))
       .flatMap { backend =>
-        NativeReads.resource[IO](backend, backend.navigator).map(backend -> _)
+        NativeReads
+          .resource[IO](
+            backend,
+            backend.navigator,
+            () => IO.pure(Right(())),
+            Some(backend.awaitRestore)
+          )
+          .map(backend -> _)
       }
       .use { (backend, reads) =>
         val run    = StoryMoments.run7
@@ -242,8 +255,8 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
           )
           jobs <- backend.jobs
         yield
-          assert(jobs.exists(_.run == run), jobs)
-          assert(provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed]))
+          assertEquals(jobs, Vector.empty)
+          assert(provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Restored]))
           inspected match
             case Inspection.Contrast(_, m, b, d) =>
               focus.status match
@@ -256,7 +269,9 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
           Readback(summary, rows, report, source, provenance, files)
       }
 
-  private def storedSources(store: ProjectStore[IO]): Resource[IO, DatasetSources[IO]] =
+  private def storedSources(
+      store: ProjectStore[IO]
+  ): Resource[IO, (DatasetSources[IO], NativeArtifactSource[IO])] =
     // SessionPort.close drains/cancels its queue; its documented contract
     // leaves ProjectSession open. These nested resources give each one
     // exactly one owner, with the port released before the project lock.
@@ -267,7 +282,7 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
       port <- Resource.make(IO.blocking(SessionPort.start(project)))(p =>
         IO.blocking(p.close())
       )
-    yield DatasetSourceHosts.stored(port)
+    yield (DatasetSourceHosts.stored(port), port.nativeArtifactSource)
 
   test(
     "native bytes and bound plan run, inspect, save/reopen and export identical scientific values"
@@ -293,25 +308,32 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
           .recipe
         prepared = get(RealPrepared.of(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
         direct <- IO.blocking(get(prepared.work.run))
-        planDigest   = get(prepared.plans.codec.digest(prepared.plan))
-        resultDigest = get(prepared.results.codec.digest(direct))
-        boundPlan    = CoreBinding.Bound(
-          get(CanonicalDigest.parse[StudyPlanArtifact](planDigest.sha256.hex))
+        preSubmit = get(
+          StudioDocument.of(
+            declared.datasets,
+            declared.analyses,
+            None,
+            declared.runs.filterNot(_.id == StoryMoments.run7),
+            declared.reporting,
+            declared.figures.filterNot(_.run == StoryMoments.run7),
+            PresentationState.default,
+            Vector.empty
+          )
         )
-        boundResult = CoreBinding.Bound(
-          get(CanonicalDigest.parse[ResultArchiveArtifact](resultDigest.sha256.hex))
-        )
-        document = rebuild(
-          declared,
-          declared.datasets,
-          declared.analyses
-            .map(a => if a.id == StoryMoments.rev4 then a.copy(plan = boundPlan) else a),
-          declared.runs
-            .map(r => if r.id == StoryMoments.run7 then r.copy(archive = boundResult) else r),
-          declared.figures,
-          declared.reporting
-        )
-        first        <- readback(document, sources)
+        artifact <- RealStudyBackend.resource[IO](preSubmit, sources).use { backend =>
+          for
+            submitted <- ok(backend.submit(StoryMoments.rev4))
+            _ = assertEquals(submitted.run, StoryMoments.run7)
+            events <- ok(backend.subscribe(submitted.job)).flatMap(_.compile.toVector)
+            _ = assert(events.exists {
+              case JobEvent.Finished(JobOutcome.Completed(_, StoryMoments.run7, _)) => true
+              case _                                                                => false
+            })
+            packageValue <- backend
+              .nativeArtifacts(StoryMoments.run7, NativeArtifactBudget.Default)
+              .map(get)
+          yield packageValue
+        }
         store        <- FileProjectStore.at[IO](directory.resolve("native.eyes"))
         lock         <- ok(store.acquire(owner))
         inputEntries <- bytes.traverse { (source, held) =>
@@ -334,14 +356,37 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
               ok(ProjectBundle.importInput(store, lock, InputKind.StimulusImage, name, b))
             )
           })
-        encoded = get(
-          ProjectBundle.encode(document, SharingOptions.complete, inputEntries ++ imageEntries)
-        )
-        _        <- ok(ProjectBundle.save(store, lock, None, encoded))
         _        <- ok(store.release(lock))
+        document <- Resource
+          .make(
+            ProjectSession
+              .create(
+                store,
+                owner,
+                declared,
+                SharingOptions.complete,
+                inputEntries ++ imageEntries
+              )
+              .map(get)
+          )(session => session.close.map(get))
+          .use { session =>
+            for
+              facts <- session.storeNativeArtifacts(artifact).map(get)
+              _     <- session
+                .perform(JournalEntry.Apply(Command.BindCompletedArtifacts(facts)))
+                .map(get)
+              _     <- session.save.map(get)
+              bound <- session.document
+            yield bound
+          }
+        first <- storedSources(store).use { (stored, archives) =>
+          readback(document, stored, archives)
+        }
         reopened <- ok(ProjectBundle.open(store))
         verified <- ProjectBundle.checkInputs(store, reopened.manifest)
-        second   <- storedSources(store).use(readback(reopened.document, _))
+        second   <- storedSources(store).use { (stored, archives) =>
+          readback(reopened.document, stored, archives)
+        }
         exported <- IO.async_[Either[String, String]](done =>
           BundleWriter.write(
             directory.resolve("export"),

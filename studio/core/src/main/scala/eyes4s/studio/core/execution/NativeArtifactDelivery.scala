@@ -22,7 +22,8 @@ import eyes4s.studio.core.artifacts.{
   NativeArtifactError,
   NativeArtifactProvider,
   NativeArtifactSink,
-  NativeBindingFacts
+  NativeBindingFacts,
+  NativeCompletionFacts
 }
 import eyes4s.studio.core.backend.RunId
 
@@ -52,4 +53,29 @@ private[studio] object NativeArtifactDelivery:
               )
             )
           })
+    }
+
+  def storeCompletion[F[_]: Monad](
+      provider: NativeArtifactProvider[F],
+      sink: NativeArtifactSink[F],
+      run: RunId
+  ): F[Either[NativeArtifactError, NativeCompletionFacts]] =
+    provider.nativeCompletion(run).flatMap {
+      case Left(error)     => Monad[F].pure(Left(error))
+      case Right(verified) =>
+        sink
+          .storeCompletion(verified)
+          .map(
+            _.flatMap(found =>
+              Either.cond(
+                found == verified.facts,
+                found,
+                NativeArtifactError.InvalidFacts(
+                  run,
+                  "stored package acknowledgement",
+                  s"Verified package declared ${verified.facts}; host acknowledged $found."
+                )
+              )
+            )
+          )
     }

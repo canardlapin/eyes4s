@@ -306,7 +306,8 @@ object IoDiagnosticCatalog:
     csvLayout,
     sourceText,
     sourceAdmission,
-    ledgerVerification
+    ledgerVerification,
+    LocationImportDiagnostics.family
   )
 
   /** Every live family, in the order documented. */

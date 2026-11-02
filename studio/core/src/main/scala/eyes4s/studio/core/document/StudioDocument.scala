@@ -95,21 +95,30 @@ object CanonicalJson:
   * [[StudioDocument]] builds one, so it is always cross-checked.
   */
 final class ScienceContent private (
-    val datasets: Vector[DatasetRevisionSpec],
-    val analyses: Vector[AnalysisRevisionSpec],
+    val datasets: Vector[DatasetDefinition],
+    val analyses: Vector[AnalysisDefinition],
     val draft: Option[Draft],
     val runs: Vector[RunRef],
     val reporting: Vector[ReportingSpec],
     val figures: Vector[FigureSpec],
     val analysisFamilies: Option[AnalysisFamilyRegistry]
 ) derives CanEqual:
+  def timedDatasets: Vector[DatasetRevisionSpec] = datasets.collect {
+    case d: DatasetRevisionSpec => d
+  }
+  def timedAnalyses: Vector[AnalysisRevisionSpec] = analyses.collect {
+    case a: AnalysisRevisionSpec => a
+  }
+  def hasLocations: Boolean = datasets.exists(_.kind == StudyKind.Locations) || analyses.exists(
+    _.kind == StudyKind.Locations
+  )
   private[document] def hasRecipeEditingFields: Boolean =
     def cross(choice: InitialFixationChoice): Boolean = choice match
       case _: InitialFixationChoice.DropLeadingAtScreenCross => true
       case _                                                 => false
     def extended(recipe: Recipe): Boolean =
       recipe.expectedUnmatched.nonEmpty || cross(recipe.initialFixations)
-    analyses.exists(a => extended(a.recipe)) || draft.exists(d =>
+    timedAnalyses.exists(a => extended(a.recipe)) || draft.exists(d =>
       d.changes.exists {
         case _: RecipeChange.ExpectedUnmatched            => true
         case RecipeChange.InitialFixations(before, after) => cross(before) || cross(after)
@@ -129,8 +138,8 @@ final class ScienceContent private (
 object ScienceContent:
   /** Called after StudioDocument.of has checked every cross-reference. */
   private[document] def checked(
-      datasets: Vector[DatasetRevisionSpec],
-      analyses: Vector[AnalysisRevisionSpec],
+      datasets: Vector[DatasetDefinition],
+      analyses: Vector[AnalysisDefinition],
       draft: Option[Draft],
       runs: Vector[RunRef],
       reporting: Vector[ReportingSpec],
@@ -167,9 +176,15 @@ object ScienceContent:
           )
           .as[StudioDocument]
           .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
+      def beforeLocations(s: ScienceContent): Either[CodecError, ScienceContent] =
+        Either.cond(
+          !s.hasLocations,
+          s,
+          CodecError.Unsupported("studio science", "spatial definitions need version 9")
+        )
       def beforeNewFamily(s: ScienceContent): Either[CodecError, ScienceContent] =
         Either.cond(
-          !s.hasRecipeEditingFields && !s.draft.exists(_.isNewFamily),
+          !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(_.isNewFamily),
           s,
           CodecError.Unsupported(
             "studio science",
@@ -191,7 +206,7 @@ object ScienceContent:
       def beforeDuration(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeFamilies(s).flatMap(v =>
           Either.cond(
-            s.datasets.forall(_.inventory.forall(_.duration.isEmpty)),
+            s.timedDatasets.forall(_.inventory.forall(_.duration.isEmpty)),
             v,
             CodecError.Unsupported("studio science", "declared trial duration needs version 5")
           )
@@ -229,9 +244,9 @@ object ScienceContent:
         )
         .next(
           s =>
-            !s.hasRecipeEditingFields && !s.draft.exists(
+            !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(
               _.isNewFamily
-            ) && s.analysisFamilies.isEmpty && s.datasets.forall(
+            ) && s.analysisFamilies.isEmpty && s.timedDatasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures.forall(
               _.methods.isEmpty
@@ -241,9 +256,9 @@ object ScienceContent:
         )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
         .next(
           s =>
-            !s.hasRecipeEditingFields && !s.draft.exists(
+            !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(
               _.isNewFamily
-            ) && s.analysisFamilies.isEmpty && s.datasets.forall(
+            ) && s.analysisFamilies.isEmpty && s.timedDatasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures.forall(
               _.methods.isEmpty
@@ -252,9 +267,9 @@ object ScienceContent:
         )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
         .next(
           s =>
-            !s.hasRecipeEditingFields && !s.draft.exists(
+            !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(
               _.isNewFamily
-            ) && s.analysisFamilies.isEmpty && s.datasets.forall(
+            ) && s.analysisFamilies.isEmpty && s.timedDatasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures
               .forall(_.methods.isEmpty),
@@ -262,23 +277,26 @@ object ScienceContent:
         )(s => beforeDuration(s).flatMap(write))(json => read(json).flatMap(beforeDuration))
         .next(
           s =>
-            !s.hasRecipeEditingFields && !s.draft.exists(
+            !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(
               _.isNewFamily
-            ) && s.analysisFamilies.isEmpty && s.datasets
+            ) && s.analysisFamilies.isEmpty && s.timedDatasets
               .forall(_.inventory.forall(_.duration.isEmpty)),
           identity
         )(s => beforeFamilies(s).flatMap(write))(json => read(json).flatMap(beforeFamilies))
         .next(
           s =>
-            !s.hasRecipeEditingFields && !s.draft.exists(
+            !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(
               _.isNewFamily
             ) && s.analysisFamilies.isEmpty,
           identity
         )(s => beforeNewFamily(s).flatMap(write))(json => read(json).flatMap(beforeNewFamily))
-        .next(s => !s.hasRecipeEditingFields && !s.draft.exists(_.isNewFamily), identity)(s =>
+        .next(
+          s => !s.hasLocations && !s.hasRecipeEditingFields && !s.draft.exists(_.isNewFamily),
+          identity
+        )(s =>
           Either
             .cond(
-              !s.hasRecipeEditingFields,
+              !s.hasLocations && !s.hasRecipeEditingFields,
               s,
               CodecError.Unsupported(
                 "studio science",
@@ -289,7 +307,7 @@ object ScienceContent:
         )(json =>
           read(json).flatMap(s =>
             Either.cond(
-              !s.hasRecipeEditingFields,
+              !s.hasLocations && !s.hasRecipeEditingFields,
               s,
               CodecError.Unsupported(
                 "studio science",
@@ -298,7 +316,10 @@ object ScienceContent:
             )
           )
         )
-        .next(s => !s.hasRecipeEditingFields, identity)(write)(read)
+        .next(s => !s.hasLocations && !s.hasRecipeEditingFields, identity)(s =>
+          beforeLocations(s).flatMap(write)
+        )(json => read(json).flatMap(beforeLocations))
+        .next(s => !s.hasLocations, identity)(write)(read)
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -333,8 +354,11 @@ final class StudioDocument private (
       relinks: AssetRelinks = this.relinks
   ): StudioDocument = new StudioDocument(science, presentation, jobs, relinks)
 
-  def datasets: Vector[DatasetRevisionSpec]            = science.datasets
-  def analyses: Vector[AnalysisRevisionSpec]           = science.analyses
+  def timedDatasets: Vector[DatasetRevisionSpec]  = science.timedDatasets
+  def timedAnalyses: Vector[AnalysisRevisionSpec] = science.timedAnalyses
+
+  def datasets: Vector[DatasetDefinition]              = science.datasets
+  def analyses: Vector[AnalysisDefinition]             = science.analyses
   def draft: Option[Draft]                             = science.draft
   def runs: Vector[RunRef]                             = science.runs
   def reporting: Vector[ReportingSpec]                 = science.reporting
@@ -375,7 +399,7 @@ final class StudioDocument private (
       )(_.nextId)
       .leftMap(DocumentError.FamilyOwnership(_))
 
-  def nextAnalysisId: Either[DocumentError, AnalysisRevision] = latestAnalysis match
+  def nextAnalysisId: Either[DocumentError, AnalysisRevision] = analyses.lastOption match
     case Some(last) if last.id.number == Int.MaxValue =>
       Left(DocumentError.ExhaustedAnalysisRevision(last.id))
     case Some(last) => Right(AnalysisRevision(last.id.number + 1))
@@ -384,9 +408,14 @@ final class StudioDocument private (
   def sameFamily(first: AnalysisRevision, second: AnalysisRevision): Boolean =
     familyOf(first).exists(family => familyOf(second).contains(family))
 
-  def dataset(id: DatasetRevision): Option[DatasetRevisionSpec]    = datasets.find(_.id == id)
-  def analysis(id: AnalysisRevision): Option[AnalysisRevisionSpec] = analyses.find(_.id == id)
-  def run(id: RunId): Option[RunRef]                               = runs.find(_.id == id)
+  def datasetDefinition(id: DatasetRevision): Option[DatasetDefinition] =
+    datasets.find(_.id == id)
+  def analysisDefinition(id: AnalysisRevision): Option[AnalysisDefinition] =
+    analyses.find(_.id == id)
+  def dataset(id: DatasetRevision): Option[DatasetRevisionSpec] = timedDatasets.find(_.id == id)
+  def analysis(id: AnalysisRevision): Option[AnalysisRevisionSpec] =
+    timedAnalyses.find(_.id == id)
+  def run(id: RunId): Option[RunRef] = runs.find(_.id == id)
 
   /** The number the next created figure gets: one after the last. */
   def nextFigureId: Either[DocumentError, FigureId] =
@@ -396,16 +425,17 @@ final class StudioDocument private (
   def job(run: RunId): Option[JobId] = jobs.find(_.run == run).map(_.job)
 
   /** The latest dataset revision that has been admitted. */
-  def latestAdmitted: Option[DatasetRevisionSpec] = datasets.findLast(_.decision.isAdmitted)
+  def latestAdmitted: Option[DatasetRevisionSpec] =
+    timedDatasets.findLast(_.decision.isAdmitted)
 
-  def latestAnalysis: Option[AnalysisRevisionSpec] = analyses.lastOption
+  def latestAnalysis: Option[AnalysisRevisionSpec] = timedAnalyses.lastOption
 
   def runsOn(dataset: DatasetRevision): Vector[RunRef] = runs.filter(_.dataset == dataset)
 
   def running: Vector[RunRef] = runs.filter(_.state == RunLifecycle.Running)
 
   /** The recipe the draft describes, if there is a draft. */
-  def draftContext: Option[DraftContext] = draft.flatMap(_.context(analyses))
+  def draftContext: Option[DraftContext] = draft.flatMap(_.context(timedAnalyses))
   def draftRecipe: Option[Recipe]        = draftContext.map(_.recipe)
 
   /** The same science with another presentation. */
@@ -421,14 +451,14 @@ final class StudioDocument private (
     */
   def withRelinks(next: AssetRelinks): Either[DocumentError, StudioDocument] =
     next.entries
-      .find(r => dataset(r.dataset).isEmpty)
+      .find(r => datasetDefinition(r.dataset).isEmpty)
       .map(r => DocumentError.RelinkUnknownDataset(r.dataset, r.file.value))
       .toLeft(copy(relinks = next))
 
 object StudioDocument:
   def of(
-      datasets: Vector[DatasetRevisionSpec],
-      analyses: Vector[AnalysisRevisionSpec],
+      datasets: Vector[DatasetDefinition],
+      analyses: Vector[AnalysisDefinition],
       draft: Option[Draft],
       runs: Vector[RunRef],
       reporting: Vector[ReportingSpec],
@@ -452,16 +482,60 @@ object StudioDocument:
         (),
         DocumentError.UnorderedIds("reporting spec", reportingId.map(_.value))
       )
-      _ <- datasets.traverse_(DatasetRevisionSpec.checkAttributes)
-      _ <- datasets.traverse_(DatasetRevisionSpec.checkInventory)
+      _ <- datasets
+        .collect { case d: DatasetRevisionSpec => d }
+        .traverse_(DatasetRevisionSpec.checkAttributes)
+      _ <- datasets
+        .collect { case d: DatasetRevisionSpec => d }
+        .traverse_(DatasetRevisionSpec.checkInventory)
       _ <- datasets.traverse_ { d =>
         d.parent.traverse_ { p =>
           if p.number >= d.id.number then Left(DocumentError.ParentNotEarlier(d.id, p))
-          else known(datasetIds, p)(DocumentError.UnknownDataset(s"dataset ${d.id.label}", p))
+          else
+            known(datasetIds, p)(
+              DocumentError.UnknownDataset(s"dataset ${d.id.label}", p)
+            ) *> datasets
+              .find(_.id == p)
+              .traverse_(parent =>
+                Either.cond(
+                  parent.kind == d.kind,
+                  (),
+                  DocumentError.KindMismatch(
+                    s"dataset ${d.id.label} parent ${p.label}",
+                    d.kind,
+                    parent.kind
+                  )
+                )
+              )
         }
       }
       _ <- analyses.traverse_ { a =>
-        known(datasetIds, a.dataset)(DocumentError.UnknownDataset(a.id.label, a.dataset))
+        known(datasetIds, a.dataset)(
+          DocumentError.UnknownDataset(a.id.label, a.dataset)
+        ) *> datasets
+          .find(_.id == a.dataset)
+          .traverse_(data =>
+            Either.cond(
+              data.kind == a.kind,
+              (),
+              DocumentError.KindMismatch(a.id.label, a.kind, data.kind)
+            )
+          )
+      }
+      _ <- analyses.collect { case a: LocationAnalysisRevision => a }.traverse_ { a =>
+        datasets
+          .collectFirst { case d: LocationDatasetRevision if d.id == a.dataset => d }
+          .traverse_ { d =>
+            (d.decision, a.recipe.input) match
+              case (LocationAdmissionDecision.Admitted(expected), CoreBinding.Bound(found)) =>
+                Either.cond(
+                  expected == found,
+                  (),
+                  DocumentError
+                    .LocationInputMismatch(a.id, d.id, expected.display, found.display)
+                )
+              case _ => Right(())
+          }
       }
       _ <- analysisFamilies.traverse_ { registry =>
         registry.checkScope(analysisIds).leftMap(DocumentError.FamilyOwnership(_))
@@ -481,6 +555,7 @@ object StudioDocument:
         val seed     = d.origin match
           case DraftOrigin.Existing(baseId) =>
             analyses
+              .collect { case a: AnalysisRevisionSpec => a }
               .find(_.id == baseId)
               .toRight(DocumentError.UnknownAnalysis(referrer, baseId))
               .flatMap { base =>
@@ -518,7 +593,7 @@ object StudioDocument:
                 .find(_.id == seedDataset)
                 .toRight(DocumentError.UnknownDataset(referrer, seedDataset))
               _ <- Either.cond(
-                data.decision.isAdmitted,
+                data.isAdmitted,
                 (),
                 DocumentError.RebaseNotAdmitted(d.id, seedDataset)
               )
@@ -540,23 +615,48 @@ object StudioDocument:
                 .toRight(DocumentError.UnknownDataset(referrer, seedDataset))
                 .flatMap(data =>
                   Either.cond(
-                    data.decision.isAdmitted,
+                    data.isAdmitted,
                     (),
                     DocumentError.RebaseNotAdmitted(d.id, seedDataset)
                   )
                 )
             yield ()
-        seed *> d.dataset.traverse_ { target =>
+        val context   = d.context(analyses.collect { case a: AnalysisRevisionSpec => a })
+        val kindCheck = context.toVector.traverse_(ctx =>
+          datasets
+            .find(_.id == ctx.dataset)
+            .traverse_(data =>
+              Either.cond(
+                data.kind == StudyKind.Timed,
+                (),
+                DocumentError.KindMismatch(referrer, StudyKind.Timed, data.kind)
+              )
+            )
+        )
+        seed *> kindCheck *> d.dataset.traverse_ { target =>
           datasets.find(_.id == target) match
             case None => Left(DocumentError.UnknownDataset(referrer, target))
-            case Some(data) if !data.decision.isAdmitted =>
+            case Some(data) if !data.isAdmitted =>
               Left(DocumentError.RebaseNotAdmitted(d.id, target))
             case Some(_) => Right(())
         }
       }
       _ <- runs.traverse_ { r =>
         known(analysisIds, r.analysis)(DocumentError.UnknownAnalysis(r.id.label, r.analysis)) *>
-          known(datasetIds, r.dataset)(DocumentError.UnknownDataset(r.id.label, r.dataset))
+          known(datasetIds, r.dataset)(DocumentError.UnknownDataset(r.id.label, r.dataset)) *>
+          analyses
+            .find(_.id == r.analysis)
+            .traverse_(a =>
+              datasets
+                .find(_.id == r.dataset)
+                .traverse_(data =>
+                  Either.cond(
+                    a.kind == data.kind,
+                    (),
+                    DocumentError.KindMismatch(r.id.label, a.kind, data.kind)
+                  )
+                )
+            )
       }
       _ <- figures.traverse_ { f =>
         for
@@ -564,7 +664,10 @@ object StudioDocument:
           _   <- known(reportingId, f.reporting)(
             DocumentError.UnknownReporting(f.id.label, f.reporting)
           )
-          scales = analyses.find(_.id == run.analysis).map(_.recipe.scales.values)
+          scales = analyses
+            .collect { case a: AnalysisRevisionSpec => a }
+            .find(_.id == run.analysis)
+            .map(_.recipe.scales.values)
           _ <- f.namedScales.traverse_ { (letter, sigma) =>
             Either.cond(
               scales.exists(_.contains(sigma)),
@@ -630,7 +733,7 @@ object StudioDocument:
 
   given Decoder[StudioDocument] = Decoder.instance { c =>
     for
-      analyses <- c.get[Vector[AnalysisRevisionSpec]]("analyses")
+      analyses <- c.get[Vector[AnalysisDefinition]]("analyses")
       families <-
         if c.downField("analysisFamilies").succeeded then
           c.get[Json]("analysisFamilies")
@@ -664,17 +767,27 @@ object StudioDocument:
   /** The presets a version-4 document knows: every one before
     * `PerceptionImagery` (S7.1), which only version 5 can name.
     */
+  private def beforeLocations(d: StudioDocument): Either[CodecError, StudioDocument] =
+    Either.cond(
+      !d.science.hasLocations,
+      d,
+      CodecError.Unsupported("studio document", "spatial definitions need version 13")
+    )
+
   private def presetBeforeV5(preset: Preset): Boolean = preset != Preset.PerceptionImagery
 
   /** Whether a version-4 document can hold `document`: no analysis names a
     * preset added in version 5.
     */
   private def expressedByV4(document: StudioDocument): Boolean =
-    expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
+    expressedByV5(document) && document.timedAnalyses.forall(a =>
+      presetBeforeV5(a.studio.preset)
+    )
 
   /** Version 11 first records provisional independent-family drafts. */
   private def expressedByV10(document: StudioDocument): Boolean =
-    !document.science.hasRecipeEditingFields && !document.draft.exists(_.isNewFamily)
+    !document.science.hasLocations && !document.science.hasRecipeEditingFields && !document.draft
+      .exists(_.isNewFamily)
   private def beforeV11(document: StudioDocument): Either[CodecError, StudioDocument] =
     Either.cond(
       expressedByV10(document),
@@ -696,7 +809,9 @@ object StudioDocument:
       )
     )
   private def expressedByV8(document: StudioDocument): Boolean =
-    expressedByV9(document) && document.datasets.forall(_.inventory.forall(_.duration.isEmpty))
+    expressedByV9(document) && document.timedDatasets.forall(
+      _.inventory.forall(_.duration.isEmpty)
+    )
   private def beforeV9(document: StudioDocument): Either[CodecError, StudioDocument] =
     beforeV10(document).flatMap(v => Either.cond(expressedByV8(v), v, durationVersionError))
   private val durationVersionError =
@@ -773,19 +888,19 @@ object StudioDocument:
     */
   private def expressedByV3(document: StudioDocument): Boolean =
     expressedByV4(document) && document.relinks.isEmpty &&
-      document.datasets.forall(_.inventory.forall(_.displays.isEmpty))
+      document.timedDatasets.forall(_.inventory.forall(_.displays.isEmpty))
 
   /** Whether a version-2 document can hold `document`: version 2 records no
     * admission policy (S5.6).
     */
   private def expressedByV2(document: StudioDocument): Boolean =
-    expressedByV3(document) && document.datasets.forall(_.decision.admittedUnder.isEmpty)
+    expressedByV3(document) && document.timedDatasets.forall(_.decision.admittedUnder.isEmpty)
 
   /** Whether a version-1 document can hold `document`: version 1 records
     * neither a trial inventory mapping (S5.4) nor an admission policy.
     */
   private def expressedByV1(document: StudioDocument): Boolean =
-    expressedByV2(document) && document.datasets.forall(_.inventory.isEmpty)
+    expressedByV2(document) && document.timedDatasets.forall(_.inventory.isEmpty)
 
   private def mapDatasets(payload: Json)(f: JsonObject => JsonObject): Json =
     payload.hcursor
@@ -891,7 +1006,7 @@ object StudioDocument:
         )
         .next(expressedByV10, identity)(d =>
           Either.cond(
-            !d.science.hasRecipeEditingFields,
+            !d.science.hasLocations && !d.science.hasRecipeEditingFields,
             CanonicalJson(d.asJson),
             CodecError.Unsupported(
               "studio document",
@@ -901,7 +1016,7 @@ object StudioDocument:
         )(json =>
           read(json).flatMap(d =>
             Either.cond(
-              !d.science.hasRecipeEditingFields,
+              !d.science.hasLocations && !d.science.hasRecipeEditingFields,
               d,
               CodecError.Unsupported(
                 "studio document",
@@ -910,9 +1025,10 @@ object StudioDocument:
             )
           )
         )
-        .next(d => !d.science.hasRecipeEditingFields, identity)(d =>
-          Right(CanonicalJson(d.asJson))
-        )(read)
+        .next(d => !d.science.hasLocations && !d.science.hasRecipeEditingFields, identity)(d =>
+          beforeLocations(d).map(v => CanonicalJson(v.asJson))
+        )(json => read(json).flatMap(beforeLocations))
+        .next(d => !d.science.hasLocations, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

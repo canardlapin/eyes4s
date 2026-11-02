@@ -251,7 +251,8 @@ class ReportsSuite extends CatsEffectSuite:
       )
       // Every eligible Forgotten query is filtered out, whatever its outcome.
       val forgottenEligible = rows.count(r =>
-        r.response == Response.Forgotten && !r.status.isInstanceOf[QueryStatus.NotAdmitted]
+        r.response.contains(Response.Forgotten) && !r.status
+          .isInstanceOf[QueryStatus.NotAdmitted]
       )
       assertEquals(d(ReportCount.FilteredOut), forgottenEligible)
       assertEquals(report.cell(forgotten, ReportRole.Difference).flatMap(_.estimate), None)

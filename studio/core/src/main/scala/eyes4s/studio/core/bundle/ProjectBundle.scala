@@ -24,6 +24,8 @@ import eyes4s.plan.DefinitionId
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.document.{
   JobHandle,
+  DatasetRevisionSpec,
+  LocationDatasetRevision,
   ScienceContent,
   Source,
   SourceRole,
@@ -241,26 +243,32 @@ object ProjectBundle:
       figureJson   <- array(value, "figures")
       relinkJson   <- value("relinks").fold(Right(Vector.empty))(_ => array(value, "relinks"))
       datasets     <- document.datasets.zip(datasetJson).traverse { (d, json) =>
-        val obj = json.asObject.getOrElse(JsonObject.empty)
-        // A revision's repaired assets are stored with it (S5.7), only when it has some.
-        val relinks = document.relinks.entries
-          .zip(relinkJson)
-          .collect { case (r, j) if r.dataset == d.id => j }
+        val obj     = json.asObject.getOrElse(JsonObject.empty)
+        val relinks = document.relinks.entries.zip(relinkJson).collect {
+          case (r, j) if r.dataset == d.id => j
+        }
         val stored =
-          if relinks.isEmpty then obj.remove("mapping")
-          else obj.remove("mapping").add("relinks", Json.fromValues(relinks))
-        for
-          dataset <- part(
-            BundleArea.Datasets,
-            s"r${d.id.number}",
-            Json.fromJsonObject(stored)
-          )
-          mapping <- part(
-            BundleArea.Mappings,
-            s"r${d.id.number}",
-            obj("mapping").getOrElse(Json.Null)
-          )
-        yield (dataset, mapping)
+          if relinks.isEmpty then obj else obj.add("relinks", Json.fromValues(relinks))
+        d match
+          case _: LocationDatasetRevision =>
+            part(BundleArea.Datasets, s"r${d.id.number}", Json.fromJsonObject(stored))
+              .map(p => (LocationDatasetPart(p._1): DatasetPartDefinition, Vector(p)))
+          case _: DatasetRevisionSpec =>
+            for
+              dataset <- part(
+                BundleArea.Datasets,
+                s"r${d.id.number}",
+                Json.fromJsonObject(stored.remove("mapping"))
+              )
+              mapping <- part(
+                BundleArea.Mappings,
+                s"r${d.id.number}",
+                obj("mapping").getOrElse(Json.Null)
+              )
+            yield (
+              DatasetParts(dataset._1, mapping._1): DatasetPartDefinition,
+              Vector(dataset, mapping)
+            )
       }
       analyses <- document.analyses
         .zip(analysisJson)
@@ -292,7 +300,7 @@ object ProjectBundle:
         sharing,
         inputs,
         DocumentParts(
-          datasets.map((d, m) => DatasetParts(d._1, m._1)),
+          datasets.map(_._1),
           analyses.map(_._1),
           draft.map(_._1),
           runs.map(_._1),
@@ -303,7 +311,7 @@ object ProjectBundle:
         value("presentation").getOrElse(Json.Null)
       )
       manifestBytes <- manifestBytes(manifest)
-      files = (datasets.flatMap((d, m) => Vector(d, m)) ++ analyses ++ draft ++ runs ++
+      files = (datasets.flatMap(_._2) ++ analyses ++ draft ++ runs ++
         reporting ++ figures ++ families).map((entry, bytes) => entry.path -> bytes)
     yield EncodedBundle(manifest, manifestBytes, files, document.jobs)
 
@@ -352,40 +360,43 @@ object ProjectBundle:
         )
         json <- parseJson(entry.path.value, bytes)
       yield json
+    def readDataset(d: DatasetPartDefinition): Either[BundleError, (Json, Vector[Json])] =
+      for
+        dataset <- load(d.dataset)
+        obj     <- dataset.asObject.toRight(
+          BundleError.MalformedPart(d.dataset.path, "a dataset part is a JSON object")
+        )
+        spatial = obj("kind").contains(Json.fromString("locations"))
+        _ <- Either.cond(
+          spatial == d.isInstanceOf[LocationDatasetPart],
+          (),
+          BundleError.MalformedPart(
+            d.dataset.path,
+            "dataset part kind disagrees with its payload"
+          )
+        )
+        relinks <- obj("relinks").fold(Right(Vector.empty[Json]))(r =>
+          r.asArray.toRight(
+            BundleError.MalformedPart(d.dataset.path, "a dataset's relinks are an array")
+          )
+        )
+        _ <- relinks
+          .find(r => r.hcursor.downField("dataset").focus != obj("id"))
+          .map(_ =>
+            BundleError.MalformedPart(
+              d.dataset.path,
+              "a dataset's relinks name another dataset revision"
+            )
+          )
+          .toLeft(())
+        restored <- d match
+          case timed: DatasetParts =>
+            load(timed.mapping).map(mapping => obj.remove("relinks").add("mapping", mapping))
+          case _: LocationDatasetPart => Right(obj.remove("relinks"))
+      yield (Json.fromJsonObject(restored), relinks)
     val parts = manifest.parts
     for
-      read <- parts.datasets.traverse { d =>
-        (load(d.dataset), load(d.mapping)).tupled.flatMap((dataset, mapping) =>
-          dataset.asObject
-            .toRight(
-              BundleError.MalformedPart(d.dataset.path, "a dataset part is a JSON object")
-            )
-            .flatMap { obj =>
-              obj("relinks")
-                .fold(Right(Vector.empty[Json]))(r =>
-                  r.asArray.toRight(
-                    BundleError
-                      .MalformedPart(d.dataset.path, "a dataset's relinks are an array")
-                  )
-                )
-                // A part's repairs are its own revision's, never another's.
-                .flatMap(relinks =>
-                  relinks
-                    .find(r => r.hcursor.downField("dataset").focus != obj("id"))
-                    .map(_ =>
-                      BundleError.MalformedPart(
-                        d.dataset.path,
-                        "a dataset's relinks name another dataset revision"
-                      )
-                    )
-                    .toLeft(relinks)
-                )
-                .map(relinks =>
-                  (Json.fromJsonObject(obj.remove("relinks").add("mapping", mapping)), relinks)
-                )
-            }
-        )
-      }
+      read <- parts.datasets.traverse(readDataset)
       datasets = read.map(_._1)
       relinks  = read.flatMap(_._2)
       analyses  <- parts.analyses.traverse(load)
@@ -628,7 +639,7 @@ object ProjectBundle:
       inputs: Vector[InputEntry]
   ): Either[BundleError, Unit] =
     document.datasets.traverse_ { d =>
-      d.sources.entries.traverse_ { s =>
+      d.sourceFiles.traverse_ { s =>
         inputPath(s).flatMap(path =>
           Either.cond(
             inputs.exists(i =>

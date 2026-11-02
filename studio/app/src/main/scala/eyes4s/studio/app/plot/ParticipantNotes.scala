@@ -193,8 +193,9 @@ object ParticipantNotes:
           line(NoteFailed, NoteRole.Fact, NoteTone.Primary, n)
             .copy(spoken = ParticipantText(NoteFailedSpoken, n))
       val rows   = queries.getOrElse(Vector.empty).filter(q => q.query.participant == p)
-      val byKind = groups.map(g => g -> rows.count(q => q.response == g && q.status.isFailed))
-      val parts  = byKind.collect {
+      val byKind =
+        groups.map(g => g -> rows.count(q => q.response.contains(g) && q.status.isFailed))
+      val parts = byKind.collect {
         case (g, n) if n > 0 =>
           ParticipantText(NoteFailedInGroup, Format.count(n.toLong), g.label)
       }

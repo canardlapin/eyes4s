@@ -132,6 +132,7 @@ enum SourceRecordsIntent derives CanEqual:
   case Located(
       revision: AnalysisRevision,
       trial: TrialKey,
+      ask: Int,
       result: Either[String, BackendAnswer[TrialFixations]]
   )
 
@@ -147,7 +148,7 @@ enum SourceRecordsIntent derives CanEqual:
 
 enum SourceRecordsEffect derives CanEqual:
   case RequestPage(revision: AnalysisRevision, page: Int, from: Int, size: Int, ask: Int)
-  case Locate(revision: AnalysisRevision, trial: TrialKey)
+  case Locate(revision: AnalysisRevision, trial: TrialKey, ask: Int)
   case App(intent: Intent)
 
 /** One row as the view draws it: its cells, whether it is under the cursor or
@@ -160,9 +161,10 @@ enum SourceRowVM derives CanEqual:
 
 /** Explore's source records table (ticket S6.4; Explore.dc.html, bottom):
   * every record of the revision's fixation table, read a page at a time
-  * around what the view shows, with a row cursor that follows the selection.
-  * At most [[SourceRecords.KeptPages]] pages are held. Pure; a host performs
-  * the effects.
+  * around what the view shows. The table is explicitly whole-source: its
+  * context is the trial Explore displays, whose first admitted source record
+  * is the cursor's anchor. At most [[SourceRecords.KeptPages]] pages are
+  * held. Pure; a host performs the effects.
   */
 final case class SourceRecords(
     revision: Option[AnalysisRevision],
@@ -173,6 +175,8 @@ final case class SourceRecords(
     cursor: Option[Int],
     raw: Boolean,
     selection: ViewSelection,
+    trial: Option[TrialKey],
+    anchored: Boolean,
     followed: Option[StudioRef],
     located: Map[TrialKey, Loading[BackendAnswer[TrialFixations]]]
 ) derives CanEqual
@@ -186,7 +190,20 @@ object SourceRecords:
   val KeptPages: Int = 6
 
   def initial(selection: ViewSelection): SourceRecords =
-    SourceRecords(None, 0, None, Map.empty, (0, 0), None, false, selection, None, Map.empty)
+    SourceRecords(
+      None,
+      0,
+      None,
+      Map.empty,
+      (0, 0),
+      None,
+      false,
+      selection,
+      None,
+      false,
+      None,
+      Map.empty
+    )
 
   private def pageOf(index: Int): Int = index / PageSize
 
@@ -205,87 +222,136 @@ object SourceRecords:
   // The pages the viewport and the cursor need, asked for; the rest let go
   // when more than KeptPages are held.
   private def fill(s: SourceRecords): (SourceRecords, Vector[SourceRecordsEffect]) =
-    val (first, count) = s.viewport
-    val last           = s.total.fold(first + count)(t => math.min(first + count, t)) - 1
-    val wanted         =
-      ((pageOf(first) to pageOf(math.max(first, last))).toVector ++ s.cursor.map(pageOf))
-        .filter(p => s.total.forall(p * PageSize < _))
-        .distinct
-    val (asked, effects) = wanted.foldLeft((s, Vector.empty[SourceRecordsEffect])) {
-      case ((st, es), p) =>
-        val (n, e) = request(st, p)
-        (n, es ++ e)
-    }
-    val held = asked.pages.keys.toVector
-    val drop =
-      if held.size <= KeptPages then Vector.empty
-      else
-        held
-          .filterNot(wanted.contains)
-          .sortBy(p => -math.abs(p - pageOf(first)))
-          .take(held.size - KeptPages)
-    (asked.copy(pages = asked.pages -- drop), effects)
+    if !trialLocated(s) then (s, Vector.empty)
+    else
+      val (first, count) = s.viewport
+      val last           = s.total.fold(first + count)(t => math.min(first + count, t)) - 1
+      val wanted         =
+        ((pageOf(first) to pageOf(math.max(first, last))).toVector ++ s.cursor.map(pageOf))
+          .filter(p => s.total.forall(p * PageSize < _))
+          .distinct
+      val (asked, effects) = wanted.foldLeft((s, Vector.empty[SourceRecordsEffect])) {
+        case ((st, es), p) =>
+          val (n, e) = request(st, p)
+          (n, es ++ e)
+      }
+      val held = asked.pages.keys.toVector
+      val drop =
+        if held.size <= KeptPages then Vector.empty
+        else
+          held
+            .filterNot(wanted.contains)
+            .sortBy(p => -math.abs(p - pageOf(first)))
+            .take(held.size - KeptPages)
+      (asked.copy(pages = asked.pages -- drop), effects)
 
-  /** Follows the model: the shown run's revision, and the selection, whose
-    * record the cursor moves to.
+  private def trialLocated(s: SourceRecords): Boolean =
+    s.trial.exists(t =>
+      s.located
+        .get(t)
+        .flatMap(_.toOption)
+        .exists {
+          case BackendAnswer.Answered(_) => true
+          case _                         => false
+        }
+    )
+
+  /** Follows the model: the shown run and the trial Explore displays. A
+    * context change discards the previous table before locating the new
+    * trial, so source rows from one trial are never left under another's
+    * plot while its answer is in flight.
     */
   def sync(s: SourceRecords, m: AppModel): (SourceRecords, Vector[SourceRecordsEffect]) =
     val revision       = ExploreTrialView.shownRevision(m)
+    val trial          = TrialsNavigator.selected(m)
     val (projected, _) = s.selection.project(m.selection)
     val base           =
-      if revision == s.revision then s.copy(selection = projected)
+      if revision == s.revision && trial == s.trial then s.copy(selection = projected)
       else
         initial(projected).copy(
           revision = revision,
           ask = s.ask + 1,
           viewport = s.viewport,
-          raw = s.raw
+          raw = s.raw,
+          trial = trial
         )
     val (followed, asks) = follow(base, m.selection)
     val (filled, reads)  = fill(followed)
     (filled, asks ++ reads)
 
-  // The first fixation or fixation record the selection holds.
-  // A record of another source (the trial inventory) is not this table's.
-  private def selectedRecordRef(selection: SelectionState): Option[StudioRef] =
+  // The first fixation or fixation record in the displayed trial. A source
+  // record from another role or trial must not move this table's cursor.
+  private def selectedRecordRef(
+      selection: SelectionState,
+      trial: TrialKey
+  ): Option[StudioRef] =
     selection.selected.collectFirst {
-      case r @ StudioRef.SourceRecord(_, _, SourceRole.Fixations, _) => r
-      case f @ StudioRef.Fixation(_, _)                              => f
+      case r @ StudioRef.SourceRecord(`trial`, _, SourceRole.Fixations, _) => r
+      case f @ StudioRef.Fixation(`trial`, _)                              => f
     }
 
   private def follow(
       s: SourceRecords,
       selection: SelectionState
   ): (SourceRecords, Vector[SourceRecordsEffect]) =
-    selectedRecordRef(selection) match
-      case None                                  => (s.copy(followed = None), Vector.empty)
-      case Some(ref) if s.followed.contains(ref) => (s, Vector.empty)
-      case Some(ref)                             =>
-        recordOf(s, ref) match
-          case Some(record) =>
-            (s.copy(cursor = Some(record - 1), followed = Some(ref)), Vector.empty)
-          case None =>
-            ref match
-              case StudioRef.Fixation(trial, _) if !s.located.contains(trial) =>
-                s.revision.fold((s, Vector.empty)) { r =>
+    s.trial match
+      case None        => (s, Vector.empty)
+      case Some(trial) =>
+        if !s.anchored then
+          s.located.get(trial) match
+            case Some(Loading.Ready(BackendAnswer.Answered(fixations))) =>
+              fixations.fixations.headOption match
+                case Some(fixation) =>
+                  val record = fixation.record
+                  val count  = math.max(1, s.viewport._2)
                   (
-                    s.copy(located = s.located.updated(trial, Loading.Waiting)),
-                    Vector(SourceRecordsEffect.Locate(r, trial))
+                    s.copy(
+                      cursor = Some(record - 1),
+                      viewport = (record - 1, count),
+                      anchored = true,
+                      followed = selectedRecordRef(selection, trial)
+                    ),
+                    Vector.empty
                   )
-                }
-              case _ => (s, Vector.empty)
+                // An answered empty scanpath is evidence that there is no
+                // anchor. Start its whole-source view deterministically.
+                case None =>
+                  (
+                    s.copy(
+                      viewport = (0, math.max(1, s.viewport._2)),
+                      anchored = true,
+                      followed = selectedRecordRef(selection, trial)
+                    ),
+                    Vector.empty
+                  )
+            case None =>
+              s.revision.fold((s, Vector.empty)) { r =>
+                (
+                  s.copy(located = s.located.updated(trial, Loading.Waiting)),
+                  Vector(SourceRecordsEffect.Locate(r, trial, s.ask))
+                )
+              }
+            // A request is in flight, failed, or was refused: do not change
+            // the context before a successful answer establishes its anchor.
+            case Some(_) => (s, Vector.empty)
+        else
+          selectedRecordRef(selection, trial) match
+            case Some(ref) if !s.followed.contains(ref) =>
+              recordOf(s, ref).fold((s, Vector.empty)) { record =>
+                (s.copy(cursor = Some(record - 1), followed = Some(ref)), Vector.empty)
+              }
+            case Some(_) => (s, Vector.empty)
+            case None    => (s.copy(followed = None), Vector.empty)
 
-  // The data record of a selected ref: a record ref names it; a fixation's
-  // comes from its trial's admitted fixations.
+  // The data record of a selected ref: a source-record ref names it; a
+  // fixation's record comes from its displayed trial's admitted fixations.
   private def recordOf(s: SourceRecords, ref: StudioRef): Option[Int] = ref match
     case StudioRef.SourceRecord(_, _, SourceRole.Fixations, record) => Some(record.value)
     case StudioRef.Fixation(trial, index)                           =>
       s.located
         .get(trial)
         .flatMap(_.toOption)
-        .collect { case BackendAnswer.Answered(t) =>
-          t
-        }
+        .collect { case BackendAnswer.Answered(t) => t }
         .flatMap(_.fixations.find(_.ref.index == index))
         .map(_.record)
     case _ => None
@@ -320,9 +386,10 @@ object SourceRecords:
             case Right(a) => Loading.Ready(a)
           val total = result.toOption.collect { case BackendAnswer.Answered(p) => p.total }
           fill(s.copy(pages = s.pages.updated(page, loaded), total = total.orElse(s.total)))
-      case Located(r, trial, result) =>
-        if !s.revision.contains(r) || !s.located.get(trial).contains(Loading.Waiting) then
-          (s, Vector.empty)
+      case Located(r, trial, ask, result) =>
+        if !s.revision.contains(r) || !s.trial.contains(trial) || ask != s.ask ||
+          !s.located.get(trial).contains(Loading.Waiting)
+        then (s, Vector.empty)
         else
           val loaded = result.fold(Loading.Failed(_), Loading.Ready(_))
           fill(follow(s.copy(located = s.located.updated(trial, loaded)), m.selection)._1)
@@ -362,7 +429,7 @@ object SourceRecords:
         cause
       )
       (
-        s.copy(selection = next, followed = Some(row.fixationRef.getOrElse(row.ref))),
+        s.copy(selection = next),
         Vector(SourceRecordsEffect.App(intent))
       )
     }
@@ -479,12 +546,44 @@ object SourceRecords:
 
   /** Why the table shows no rows, if it shows none. */
   def status(s: SourceRecords): Option[String] =
-    (s.revision, s.total) match
-      case (None, _)          => Some(RecordText(RecordTextId.NoRun))
-      case (Some(_), Some(0)) => Some(RecordText(RecordTextId.Empty))
-      case (Some(_), Some(_)) => None
-      case (Some(_), None)    =>
-        s.pages.get(0) match
+    (s.revision, s.trial, s.total) match
+      case (None, _, _)          => Some(RecordText(RecordTextId.NoRun))
+      case (Some(_), None, _)    => Some("No trial is displayed; source records are not loaded")
+      case (Some(_), Some(t), _) =>
+        s.located.get(t) match
           case Some(Loading.Failed(why))                       => Some(why)
           case Some(Loading.Ready(BackendAnswer.Refused(why))) => Some(why)
-          case _ => Some(RecordText(RecordTextId.Reading))
+          case _                                               => sourceStatus(s, t)
+
+  private def sourceStatus(s: SourceRecords, t: TrialKey): Option[String] =
+    pageFailure(s) match
+      case Some(why) => Some(why)
+      case _         =>
+        s.located.get(t) match
+          case Some(Loading.Ready(BackendAnswer.Answered(fixations)))
+              if fixations.fixations.isEmpty =>
+            s.total match
+              case Some(0) =>
+                Some(
+                  s"Whole source file; following trial ${t.label}. The fixation table has no records"
+                )
+              case Some(_) =>
+                Some(s"Whole source file; trial ${t.label} has no admitted fixation anchor")
+              case None =>
+                Some(
+                  s"Trial ${t.label} has no admitted fixations; reading the whole source file…"
+                )
+          case _ =>
+            s.total match
+              case Some(0) =>
+                Some(
+                  s"Whole source file; following trial ${t.label}. The fixation table has no records"
+                )
+              case Some(_) => Some(s"Whole source file; following trial ${t.label}")
+              case None    => Some(s"Reading the whole source file for trial ${t.label}…")
+
+  private def pageFailure(s: SourceRecords): Option[String] =
+    s.pages.valuesIterator.collectFirst {
+      case Loading.Failed(why)                       => why
+      case Loading.Ready(BackendAnswer.Refused(why)) => why
+    }

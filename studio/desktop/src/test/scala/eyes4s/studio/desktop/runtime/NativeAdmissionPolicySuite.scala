@@ -94,7 +94,7 @@ class NativeAdmissionPolicySuite extends munit.CatsEffectSuite:
           registry
         )
       )
-      val revision = document.analyses.head.id
+      val revision = document.timedAnalyses.head.id
       RealStudyBackend.resource[IO](document, fixture.sources).use { backend =>
         for
           admission <- ok(backend.admission(data.id))

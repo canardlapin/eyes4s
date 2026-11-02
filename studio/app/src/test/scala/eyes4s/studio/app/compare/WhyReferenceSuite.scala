@@ -68,7 +68,7 @@ class WhyReferenceSuite extends munit.FunSuite:
     e.fold(x => fail(s"unexpected Left: $x"), identity)
 
   private lazy val registry =
-    right(GoldenAssets.registry(right(StoryMoments.t2).datasets.last))
+    right(GoldenAssets.registry(right(StoryMoments.t2).timedDatasets.last))
 
   private def withSession[A](f: HeadlessSession => Future[A]): Future[A] =
     HeadlessSession
@@ -224,10 +224,10 @@ class WhyReferenceSuite extends munit.FunSuite:
   private def withRecipe(m: AppModel)(f: Recipe => Recipe): StudioDocument =
     val doc     = m.document
     val changed =
-      doc.analyses.map(a => if a.id == rev4 then a.copy(recipe = f(a.recipe)) else a)
+      doc.timedAnalyses.map(a => if a.id == rev4 then a.copy(recipe = f(a.recipe)) else a)
     right(
       StudioDocument.of(
-        doc.datasets,
+        doc.timedDatasets,
         changed,
         doc.draft,
         doc.runs,

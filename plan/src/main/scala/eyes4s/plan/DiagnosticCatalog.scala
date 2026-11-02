@@ -1139,7 +1139,13 @@ object DiagnosticCatalog:
     navigation,
     projectPrerequisite,
     ScanpathMethodDiagnostics.comparison,
-    revisit
+    revisit,
+    LocationDiagnostics.input,
+    LocationDiagnostics.query,
+    LocationDiagnostics.plan,
+    LocationDiagnostics.map,
+    LocationDiagnostics.run,
+    LocationDiagnostics.restore
   )
 
   /** Every live family, grouped as documented. */

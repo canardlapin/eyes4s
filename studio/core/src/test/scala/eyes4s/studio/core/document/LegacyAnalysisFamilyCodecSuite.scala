@@ -74,7 +74,7 @@ class LegacyAnalysisFamilyCodecSuite extends munit.FunSuite:
     assertEquals(replay.torn, None)
     val recovered = replay.history.document
     assertEquals(
-      recovered.analyses.map(a => LegacyAnalysisFamily.familyOf(recovered, a.id)),
-      Vector.fill(recovered.analyses.size)(Some(AnalysisFamilyId.Legacy))
+      recovered.timedAnalyses.map(a => LegacyAnalysisFamily.familyOf(recovered, a.id)),
+      Vector.fill(recovered.timedAnalyses.size)(Some(AnalysisFamilyId.Legacy))
     )
   }

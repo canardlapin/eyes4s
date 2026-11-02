@@ -130,6 +130,43 @@ class LayoutSpecSuite extends munit.FunSuite:
         "Diff vs generated" -> "figures.methods-diff",
         "Panel D"           -> "figures.panel"
       )
+    ),
+    (
+      "Spatial Data",
+      spatial(Perspective.Data),
+      Vector(
+        "Sources"         -> "spatial.sources",
+        "Admission"       -> "spatial.data",
+        "Spatial profile" -> "spatial.profile"
+      )
+    ),
+    (
+      "Spatial Analysis",
+      spatial(Perspective.Analysis),
+      Vector(
+        "Analyses"  -> "spatial.analyses",
+        "Analysis"  -> "spatial.recipe",
+        "Preflight" -> "spatial.preflight"
+      )
+    ),
+    (
+      "Spatial Results",
+      spatial(Perspective.Results),
+      Vector(
+        "Runs"                -> "spatial.runs",
+        "Descriptive summary" -> "spatial.summary",
+        "Query scores"        -> "spatial.queries",
+        "Provenance"          -> "spatial.provenance"
+      )
+    ),
+    (
+      "Spatial Report",
+      spatial(Perspective.Report),
+      Vector(
+        "Report"         -> "spatial.report-nav",
+        "Spatial report" -> "spatial.report",
+        "Methods"        -> "spatial.methods"
+      )
     )
   )
 

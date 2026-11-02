@@ -70,19 +70,20 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals((job.run, job.revision, job.dataset), (RunId(8), rev5, DatasetRevision(3)))
       job.state match
         case JobState.Running(p) =>
-          assertEquals(p.segment.kind, StageKind.Comparing)
+          val timed = ProtocolSamples.timed(p)
+          assertEquals(timed.segment.kind, StageKind.Comparing)
           assertEquals(
-            (p.totals.completedPairs, p.totals.totalPairs),
+            (timed.totals.completedPairs, timed.totals.totalPairs),
             (21400L, ProgressTotal.Exact(44845L))
           )
           // 21,400 = two whole scales of 8,969 pairs, 457 matched and 3,005 controls.
-          assertEquals(p.segment, Segment.Comparing(2, PairDesign.Control))
+          assertEquals(timed.segment, Segment.Comparing(2, PairDesign.Control))
           assertEquals(
-            (p.meter.unit, p.meter.done, p.meter.total),
+            (timed.meter.unit, timed.meter.done, timed.meter.total),
             (CountUnit.Pairs, 3005L, ProgressTotal.Exact(8512L))
           )
           assertEquals(
-            (p.totals.completedMaps, p.totals.totalMaps),
+            (timed.totals.completedMaps, timed.totals.totalMaps),
             (3L * 937, ProgressTotal.Exact(5L * 937))
           )
           assertEquals(first, Vector(JobEvent.Advanced(p)))
@@ -184,9 +185,10 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       out  <- ok(fake.complete(job))
     yield out match
       case JobOutcome.Completed(_, _, last) =>
-        assertEquals(last.segment, Segment.Contrasting(4))
-        assertEquals(last.totals.completedPairs, 44845L)
-        assertEquals(last.totals.completedMaps, 5L * 937)
+        val timed = ProtocolSamples.timed(last)
+        assertEquals(timed.segment, Segment.Contrasting(4))
+        assertEquals(timed.totals.completedPairs, 44845L)
+        assertEquals(timed.totals.completedMaps, 5L * 937)
       case other => fail(s"not completed: $other")
   }
 
@@ -254,7 +256,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
             case QueryStatus.NoMatch(_) | QueryStatus.NotAdmitted(_) => None
             case _ => Some(key(id, get[String](c, "match")))
           assertEquals(row.matched, expectedMatch)
-          assertEquals(row.response.label, get[String](c, "response"))
+          assertEquals(row.response.map(_.label), Some(get[String](c, "response")))
           assertEquals(row.controls, get[Option[Int]](c, "controls"))
           def reason = get[String](c, "reason")
           (get[String](c, "status"), row.status) match
@@ -363,7 +365,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
     yield
       assertEquals(
         (row.item, row.response, row.matched),
-        ("beach-042", Response.Remembered, Some(matched))
+        ("beach-042", Some(Response.Remembered), Some(matched))
       )
       assertEquals(row.controls, Some(19))
       assertEquals(

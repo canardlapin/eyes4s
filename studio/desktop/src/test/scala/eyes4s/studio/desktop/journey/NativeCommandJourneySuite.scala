@@ -151,16 +151,13 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
                 )
                 .use { session =>
                   for
-                    summary <- phase("raw-source-fallback-reexecution")(
-                      future(session.result(run)).map(get)
-                    )
-                    provenance <- future(
-                      session.provenance(run, ResultAddress.ContrastRow(scale, focus))
-                    ).map(get)
-                    _ = assertEquals(summary, first.summary)
+                    result <- phase("unavailable-archive-refusal")(future(session.result(run)))
+                    jobs   <- session.rawBackend.jobs
                     _ = assert(
-                      provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed])
+                      result.left.exists(_.isInstanceOf[BackendError.ResultArchiveUnavailable]),
+                      result
                     )
+                    _ = assertEquals(jobs, Vector.empty[JobStatus])
                   yield ()
                 }
             yield output

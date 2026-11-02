@@ -75,12 +75,12 @@ class AnalysesNavigatorSuite extends munit.FunSuite:
     assertEquals(AnalysesNavigator.vm(clean).create, Some(Intent.NewAnalysis))
     val independent = AppModel.update(clean, Intent.NewAnalysis)._1
     assert(independent.document.draft.exists(_.isNewFamily))
-    assertEquals(independent.document.analyses, clean.document.analyses)
+    assertEquals(independent.document.timedAnalyses, clean.document.timedAnalyses)
     assertEquals(
       AppModel.update(independent, Intent.Undo(HistoryStack.Science))._1.document.science,
       clean.document.science
     )
-    val data = held.document.datasets.last
+    val data = held.document.timedDatasets.last
       .copy(id = eyes4s.studio.core.backend.DatasetRevision(1), parent = None)
     val document = StudioDocument
       .of(
@@ -134,7 +134,7 @@ class AnalysesNavigatorSuite extends munit.FunSuite:
       Vector(Preset.PerceptionImagery)
     )
     assert(picker.options.find(_.preset == Preset.Recognition).get.choose.isDefined)
-    assertEquals(changed.document.analyses, viewing.document.analyses)
+    assertEquals(changed.document.timedAnalyses, viewing.document.timedAnalyses)
     assertEquals(changed.document.runs, viewing.document.runs)
     assertEquals(changed.document.presentation.shownRun, viewing.document.presentation.shownRun)
     assert(!effects.exists {

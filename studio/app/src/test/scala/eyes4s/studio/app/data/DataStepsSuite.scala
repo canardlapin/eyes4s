@@ -40,7 +40,7 @@ class DataStepsSuite extends FunSuite:
     DataSteps.vm(model, SourcesVM.of(pane, model)).head
 
   private def present(model: AppModel): Vector[InputStatus] =
-    model.document.datasets.flatMap(_.sources.entries).distinct.map { s =>
+    model.document.timedDatasets.flatMap(_.sources.entries).distinct.map { s =>
       val entry = InputEntry
         .of(InputKind.Source(s.role), s.path.value.split('/').last, s.bytes, 1L)
         .fold(e => fail(e.message), identity)
@@ -68,7 +68,7 @@ class DataStepsSuite extends FunSuite:
   }
 
   test("a step opens its section of the dataset") {
-    val d    = m.document.datasets.last.id
+    val d    = m.document.timedDatasets.last.id
     val step = DataSteps.vm(m, vm).find(_.section == DataSection.Geometry).get
     assertEquals(
       step.open,
@@ -83,8 +83,8 @@ class DataStepsSuite extends FunSuite:
 
   test("all setup steps retain the Data perspective's selected older revision") {
     val initial = StoryModels.t2Figures
-    val older   = initial.document.datasets.head
-    assertNotEquals(older.id, initial.document.datasets.last.id)
+    val older   = initial.document.timedDatasets.head
+    assertNotEquals(older.id, initial.document.timedDatasets.last.id)
     val selected = AppModel
       .update(
         initial,
@@ -111,7 +111,7 @@ class DataStepsSuite extends FunSuite:
     val missing = checked(m, Vector.empty)
     assertEquals(sourceStep(missing).state, StepState.Problems(2))
     assert(sourceStep(missing).sub.contains("missing"))
-    val source  = m.document.datasets.last.sources.entries.head
+    val source  = m.document.timedDatasets.last.sources.entries.head
     val changed = present(m).map { status =>
       if status.entry.sha256 == source.bytes then
         InputStatus.Changed(status.entry, ByteDigest.sha256(IArray.from(Array[Byte](1, 2, 3))))

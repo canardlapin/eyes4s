@@ -18,6 +18,7 @@ package eyes4s.results
 
 import eyes4s.plan.*
 import eyes4s.plan.DiagnosticSamples.generated
+import eyes4s.kernel.*
 
 /** One generated value of every case of every results error and finding
   * family, projected through the public `Diagnose` instances, in catalog
@@ -54,5 +55,19 @@ object ResultsDiagnosticSamples:
     generated[SpecError]("SpecError"),
     generated[CovariateError[StudyKey]]("CovariateError"),
     generated[ResultTableError]("ResultTableError"),
-    generated[ReportNavigationError[StudyKey]]("ReportNavigationError")
+    generated[ReportNavigationError[StudyKey]]("ReportNavigationError"),
+    DiagnosticSamples.family[LocationReportError]("LocationReportError")(
+      LocationReportError.InputHash(ContentHash.empty, ContentHash.ofString("input")),
+      LocationReportError.PlanHash(ContentHash.empty, ContentHash.ofString("plan")),
+      LocationReportError.Grid(GridId("expected"), GridId("found")),
+      LocationReportError.MapTrials(
+        Vector(LocationTrialId.of("expected").toOption.get),
+        Vector(LocationTrialId.of("found").toOption.get)
+      ),
+      LocationReportError.OutcomeQueries(Vector("expected"), Vector("found")),
+      LocationReportError.MissingMetadata(LocationTrialId.of("missing").toOption.get),
+      LocationReportError.DuplicateMetadata(LocationTrialId.of("duplicate").toOption.get),
+      LocationReportError.SurplusMetadata(LocationTrialId.of("surplus").toOption.get),
+      LocationReportError.Table(ResultTableError.Context("metadata", "invalid"))
+    )
   )

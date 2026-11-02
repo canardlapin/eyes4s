@@ -60,7 +60,7 @@ class DescriptorEditorSuite extends munit.FunSuite:
     val command = loaded.command(model).get
     val next    = AppModel.update(model, Intent.Dispatch(command))._1
     assertEquals(next.document.draftRecipe, Some(recipe))
-    assertEquals(next.document.analyses, model.document.analyses)
+    assertEquals(next.document.timedAnalyses, model.document.timedAnalyses)
     assertEquals(next.document.runs, model.document.runs)
     assertEquals(loaded.command(next), None)
   }

@@ -26,7 +26,7 @@ object FamilySamples:
   val a: AnalysisFamilyId = get(AnalysisFamilyId.of(1))
   val b: AnalysisFamilyId = get(AnalysisFamilyId.of(2))
   private val source      = DocumentSamples.t2
-  private val seed        = source.analyses.last
+  private val seed        = source.timedAnalyses.last
   val a1                  = seed.copy(id = AnalysisRevision(1))
   val b2                  = seed.copy(id = AnalysisRevision(2))
   val a3                  = seed.copy(id = AnalysisRevision(3))
@@ -67,7 +67,7 @@ object FamilySamples:
     )
     get(
       StudioDocument.of(
-        source.datasets,
+        source.timedDatasets,
         analyses,
         draft,
         runs,

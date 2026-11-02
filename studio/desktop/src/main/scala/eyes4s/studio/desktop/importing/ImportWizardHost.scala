@@ -37,6 +37,8 @@ import eyes4s.studio.desktop.runtime.ProjectPort
 import fs2.{Chunk, Stream}
 import javafx.application.Platform
 import javafx.scene.Scene
+import javafx.scene.control.{ComboBox, Label}
+import javafx.scene.layout.{HBox, Priority, StackPane, VBox}
 import javafx.stage.{Stage, Window}
 
 import java.util.concurrent.CompletableFuture
@@ -400,9 +402,30 @@ object ImportWizardHost:
       services,
       () => stage.close()
     )
+    val spatial = SpatialImportHost(document, app, services, () => stage.close())
     host.loadPresets(errors => errors.foreach(e => System.err.println(e)))
-    stage.setOnHidden(_ => host.dispose())
-    val scene = Scene(host.view.node, 960, 640)
+    stage.setOnHidden(_ => { host.dispose(); spatial.dispose() })
+    val mode = ComboBox[String]()
+    mode.getItems.setAll("Timed fixations", "Spatial locations — FIGRIM bundle")
+    mode.setValue("Timed fixations")
+    mode.getStyleClass.addAll("time-select", "t11")
+    mode.setAccessibleText("Import source kind")
+    val modeLabel = Label("Import")
+    modeLabel.getStyleClass.addAll("import-label", "t11")
+    modeLabel.setLabelFor(mode)
+    val selector = HBox(10, modeLabel, mode)
+    selector.getStyleClass.add("import-toolbar")
+    val pages = StackPane(host.view.node, spatial.view.node)
+    VBox.setVgrow(pages, Priority.ALWAYS)
+    def showSpatial(value: Boolean): Unit =
+      host.view.node.setVisible(!value)
+      host.view.node.setManaged(!value)
+      spatial.view.node.setVisible(value)
+      spatial.view.node.setManaged(value)
+    showSpatial(false)
+    mode.setOnAction(_ => showSpatial(mode.getValue == "Spatial locations — FIGRIM bundle"))
+    val root  = VBox(selector, pages)
+    val scene = Scene(root, 960, 640)
     scene.getStylesheets.setAll(stylesheets*)
     scene.getRoot.getStyleClass.add("es")
     stage.setTitle(ImportWizardVM.of(host.model, document()).title)

@@ -157,7 +157,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       )
       assertEquals(tally, c)
       // Groups are labelled by the values the inventory attribute takes.
-      assertEquals(report.cells.flatMap(_.group).toSet, rows.map(_.response).toSet)
+      assertEquals(report.cells.flatMap(_.group).toSet, rows.flatMap(_.response).toSet)
       result.participants.foreach { p =>
         val mine = rows.filter(_.query.participant == p.participant)
         assertEquals(mine.size, p.requested, p.participant)
@@ -252,15 +252,16 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assertEquals(events.count(_.isInstanceOf[JobEvent.Finished]), 1)
       val progress =
         events.collect { case JobEvent.Advanced(p) => p } ++ out.flatMap(_.progress)
-      progress.foreach { p =>
+      val timedProgress = progress.map(ProtocolSamples.timed)
+      timedProgress.foreach { p =>
         assertEquals(p.meter.kind, p.segment.kind)
         assertEquals(p.meter.unit, p.segment.unit)
       }
-      val pairs = progress.map(_.totals.completedPairs)
+      val pairs = timedProgress.map(_.totals.completedPairs)
       assertEquals(pairs, pairs.sorted)
       assertEquals(
-        progress.map(_.totals.completedMaps),
-        progress.map(_.totals.completedMaps).sorted
+        timedProgress.map(_.totals.completedMaps),
+        timedProgress.map(_.totals.completedMaps).sorted
       )
       assertEquals(progress.map(_.step), progress.map(_.step).sorted)
       assert(out.exists(_.isInstanceOf[JobOutcome.Completed]), out)

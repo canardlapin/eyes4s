@@ -17,7 +17,7 @@
 package eyes4s.studio.core.execution
 
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.artifacts.NativeBindingFacts
+import eyes4s.studio.core.artifacts.{NativeBindingFacts, LocationBindingFacts}
 import eyes4s.studio.core.backend.ProtocolCodecs.portableLong
 import io.circe.Codec
 
@@ -51,30 +51,29 @@ final case class Meter(unit: CountUnit, done: Long, total: MeterTotal)
   * 44,845 pairs"). `report` is the backend's value, unchanged, for the
   * freshness grammar (`SessionFacts.progress`).
   */
-final case class ExecutionProgress(report: JobProgress) derives CanEqual, Codec.AsObject:
-  def step: Long        = report.step
-  def stage: StageKind  = report.segment.kind
-  def segment: Segment  = report.segment
-  def stageMeter: Meter =
-    Meter(report.meter.unit, report.meter.done, MeterTotal.of(report.meter.total))
-  def pairs: Meter =
-    Meter(
-      CountUnit.Pairs,
-      report.totals.completedPairs,
-      MeterTotal.of(report.totals.totalPairs)
-    )
-  def maps: Meter =
-    Meter(CountUnit.Maps, report.totals.completedMaps, MeterTotal.of(report.totals.totalMaps))
+final case class ExecutionProgress(report: JobProgressValue) derives CanEqual, Codec.AsObject:
+  def step: Long = report.step
+
+  def timed: Option[JobProgress] = report match
+    case value: JobProgress     => Some(value)
+    case _: LocationJobProgress => None
+
+  def locations: Option[LocationJobProgress] = report match
+    case _: JobProgress             => None
+    case value: LocationJobProgress => Some(value)
 
   /** Run-wide units completed so far; never decreases along a job. */
-  def completedUnits: Long = report.totals.completedMaps + report.totals.completedPairs
+  def completedUnits: Long = report match
+    case value: JobProgress         => value.totals.completedMaps + value.totals.completedPairs
+    case value: LocationJobProgress => value.completedMaps + value.completedQueries
 
   /** Whether this report may follow `previous`: a later step that has not
     * lost units. A report that fails this is dropped, so progress never
     * moves back.
     */
   def follows(previous: ExecutionProgress): Boolean =
-    step > previous.step && completedUnits >= previous.completedUnits
+    report.job == previous.report.job && report.run == previous.report.run &&
+      step > previous.step && completedUnits >= previous.completedUnits
 
 // ---------------------------------------------------------------------------
 // Jobs
@@ -100,7 +99,12 @@ enum JobPhase derives CanEqual, Codec.AsObject:
     * completion arrived, or, with no progress, when the backend accepted a
     * submission that a newer intent had already replaced.
     */
-  case Superseded(current: Option[RunStamp], last: Option[ExecutionProgress])
+  case Superseded(current: Option[ExecutionStamp], last: Option[ExecutionProgress])
+
+  /** Computed results retain their archive even when a newer intent supersedes display. */
+  def hasCompletedResult: Boolean = this match
+    case Succeeded(_) | Superseded(_, Some(_)) => true
+    case _                                     => false
 
   def isTerminal: Boolean = this match
     case Queued | Running(_) | Cancelling(_) => false
@@ -119,14 +123,14 @@ enum JobPhase derives CanEqual, Codec.AsObject:
 /** One backend job as the service tracks it: the run it produces and the
   * stamp it was submitted with.
   */
-final case class ExecutionJob(id: JobId, run: RunId, stamp: RunStamp, phase: JobPhase)
+final case class ExecutionJob(id: JobId, run: RunId, stamp: ExecutionStamp, phase: JobPhase)
     derives CanEqual,
       Codec.AsObject
 
 /** A completed run the user may now choose to Show ("Run 8 ready — Show").
   * Completion never promotes it by itself (S8.8).
   */
-final case class RunReady(job: JobId, run: RunId, stamp: RunStamp)
+final case class RunReady(job: JobId, run: RunId, stamp: ExecutionStamp)
     derives CanEqual,
       Codec.AsObject:
   def label: String = s"${run.label.capitalize} ready"
@@ -143,6 +147,7 @@ enum ExecutionEvent derives CanEqual, Codec.AsObject:
     * stay in the artifact transport, not the progress stream.
     */
   case ArtifactsStored(job: JobId, facts: NativeBindingFacts)
+  case LocationArtifactsStored(job: JobId, facts: LocationBindingFacts)
 
   /** Artifact delivery failed; computation remains successfully completed. */
   case ArtifactsRefused(job: JobId, run: RunId, diagnostic: StudioDiagnostic)
@@ -163,7 +168,7 @@ enum ExecutionError derives CanEqual:
     * requested; the job was cancelled.
     */
   case StampMismatch(
-      requested: RunStamp,
+      requested: ExecutionStamp,
       job: JobId,
       revision: AnalysisRevision,
       dataset: DatasetRevision

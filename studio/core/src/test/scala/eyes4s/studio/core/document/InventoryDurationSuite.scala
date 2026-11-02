@@ -25,7 +25,7 @@ class InventoryDurationSuite extends munit.FunSuite:
   private def ok[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private def name(value: String)              = ok(ColumnName.of(value))
   private val base                             = DocumentSamples.t1
-  private val data                             = base.datasets.last
+  private val data                             = base.timedDatasets.last
   private val original    = data.inventory.getOrElse(fail("missing inventory"))
   private val declaration = ok(InventoryDurationColumn.of(name("elapsed"), TimeUnit.Seconds))
   private val mapping     = ok(InventoryMapping.withDuration(original, Some(declaration)))
@@ -132,7 +132,7 @@ class InventoryDurationSuite extends munit.FunSuite:
   }
 
   test("all journal carriers require version8; old readers cannot silently lose timing") {
-    val sample   = ok(History.start(base).apply(revise)).history.document.datasets.last
+    val sample   = ok(History.start(base).apply(revise)).history.document.timedDatasets.last
     val imported = Command.ImportSources(
       sample.parent,
       sample.sources,
@@ -172,7 +172,7 @@ class InventoryDurationSuite extends munit.FunSuite:
       StudioDocument.scienceDigest(base)
     )
     assertNotEquals(
-      DatasetRevisionSpec.contentDigest(live.document.datasets.last),
+      DatasetRevisionSpec.contentDigest(live.document.timedDatasets.last),
       DatasetRevisionSpec.contentDigest(data)
     )
     assertEquals(live.document.presentation, base.presentation)

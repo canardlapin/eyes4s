@@ -175,3 +175,44 @@ class RecipeFormServiceSuite extends munit.FunSuite:
       Some(request.recipe.copy(initialFixations = InitialFixationChoice.KeepAll))
     )
   }
+
+  test(
+    "phase controls offer admitted names and refuse a saved phase spelling absent from the data"
+  ) {
+    val work                   = TrialDurationNativeFixture.prepared(None)
+    def actual(recipe: Recipe) = get(
+      RealRecipeForm.serve(
+        RecipeEditRequest(work.revision, work.dataset, recipe),
+        work.admitted.screen,
+        work.admitted.input,
+        work.admitted.evidence.inventory
+      )
+    )
+    val served    = actual(work.recipe)
+    val (view, _) = get(served.decoded)
+    val phases    = view.fields.find(_.id.value == "phases").getOrElse(fail("no phases field"))
+    phases.kind match
+      case eyes4s.plan.FieldKind.Group(parts, _) =>
+        parts.foreach { part =>
+          assertEquals(
+            part.kind,
+            eyes4s.plan.FieldKind.Choice(
+              eyes4s.plan.ChoiceSource.Fixed(
+                Vector(
+                  eyes4s.plan.ChoiceOption("Encoding", "Encoding"),
+                  eyes4s.plan.ChoiceOption("Retrieval", "Retrieval")
+                )
+              )
+            )
+          )
+        }
+      case other => fail(s"phase fields are $other")
+    val refused =
+      actual(work.recipe.copy(phases = work.recipe.phases.copy(focal = Phase("Retrieval1"))))
+    assertEquals(refused.accepted, None)
+    assert(
+      refused.problems.exists(p =>
+        p.message.contains("Retrieval1") && p.message.contains("declared in this dataset")
+      )
+    )
+  }

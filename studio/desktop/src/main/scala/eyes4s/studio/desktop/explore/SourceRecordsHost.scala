@@ -57,8 +57,9 @@ object RecordSources:
   * virtualised list: only the visible rows have cells, and a page is read
   * when its rows come into view. The pane is one focus stop with a row
   * cursor; 'Show raw record' is the one control inside it. It follows the
-  * model and the selection, and reads pages from `source` and a selected
-  * fixation's record from `locate`. Use on the JavaFX thread.
+  * displayed trial, anchors the whole-source table at that trial's first
+  * admitted record, and reads pages from `source` after `locate` confirms
+  * the anchor. Use on the JavaFX thread.
   */
 final class SourceRecordsHost(
     model: () => AppModel,
@@ -265,11 +266,11 @@ final class SourceRecordsHost(
           size,
           a => Platform.runLater(() => dispatch(SourceRecordsIntent.PageRead(r, page, ask, a)))
         )
-      case SourceRecordsEffect.Locate(r, trial) =>
+      case SourceRecordsEffect.Locate(r, trial, ask) =>
         locate.fixations(
           r,
           trial,
-          a => Platform.runLater(() => dispatch(SourceRecordsIntent.Located(r, trial, a)))
+          a => Platform.runLater(() => dispatch(SourceRecordsIntent.Located(r, trial, ask, a)))
         )
       case SourceRecordsEffect.App(i) => app(i)
     }

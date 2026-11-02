@@ -39,7 +39,10 @@ class ExecutionArtifactsSuite extends munit.CatsEffectSuite:
     get(
       NativeBindingFacts.of(
         job.run,
-        job.stamp.copy(
+        (job.stamp match
+          case value: RunStamp => value
+          case other           => fail(s"expected timed fixture, got $other")
+        ).copy(
           plan = CoreBinding.Bound(get(CanonicalDigest.parse[StudyPlanArtifact]("11" * 32))),
           input = CoreBinding.Bound(get(CanonicalDigest.parse[StudyInputArtifact]("22" * 32)))
         ),
@@ -167,7 +170,9 @@ class ExecutionArtifactsSuite extends munit.CatsEffectSuite:
     yield ()
   }
 
-  test("cancelled, failed and superseded jobs never invoke artifact delivery") {
+  test(
+    "cancelled and failed jobs refuse delivery; completed superseded results retain storage"
+  ) {
     Vector("cancelled", "failed", "superseded").traverse_ { mode =>
       for
         fake  <- FakeStudyBackend.create[IO](StoryMoment.T2)
@@ -184,8 +189,10 @@ class ExecutionArtifactsSuite extends munit.CatsEffectSuite:
             for
               collecting <- events
                 .takeThrough {
-                  case ExecutionEvent.Changed(job) => !job.phase.isTerminal
-                  case _                           => true
+                  case ExecutionEvent.Changed(job) if mode != "superseded" =>
+                    !job.phase.isTerminal
+                  case event if mode == "superseded" => !artifact(event)
+                  case _                             => true
                 }
                 .compile
                 .toVector
@@ -199,8 +206,9 @@ class ExecutionArtifactsSuite extends munit.CatsEffectSuite:
               found <- collecting.joinWithNever
               count <- calls.get
             yield
-              assertEquals(count, 0)
-              assert(!found.exists(artifact))
+              assertEquals(count, if mode == "superseded" then 1 else 0)
+              assertEquals(found.exists(artifact), mode == "superseded")
+              assert(!found.exists(_.isInstanceOf[ExecutionEvent.Ready]))
           }
       yield ()
     }

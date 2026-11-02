@@ -31,7 +31,7 @@ import eyes4s.plan.{
   UnmatchedFocalPolicy
 }
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, Phase}
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
 import Recipe.given
 
 // ---------------------------------------------------------------------------
@@ -967,11 +967,55 @@ final case class StudioFields(preset: Preset, name: RevisionName, description: S
   * exactly the recipe (`RecipeChange` over `StudyPlan.structuralDiff`) when
   * the real backend configures or reopens it.
   */
+sealed trait AnalysisDefinition derives CanEqual:
+  def id: AnalysisRevision
+  def dataset: DatasetRevision
+  def revisionName: RevisionName
+  def description: String
+  def kind: StudyKind
+
+object AnalysisDefinition:
+  given Codec.AsObject[AnalysisDefinition] = Codec.AsObject.from(
+    Decoder.instance(c =>
+      c.get[Option[String]]("kind").flatMap {
+        case None              => c.as[AnalysisRevisionSpec]
+        case Some("locations") => c.as[LocationAnalysisRevision]
+        case Some(other) => Left(DecodingFailure(s"unknown analysis kind: $other", c.history))
+      }
+    ),
+    Encoder.AsObject.instance {
+      case timed: AnalysisRevisionSpec =>
+        summon[Encoder.AsObject[AnalysisRevisionSpec]].encodeObject(timed)
+      case locations: LocationAnalysisRevision =>
+        summon[Encoder.AsObject[LocationAnalysisRevision]]
+          .encodeObject(locations)
+          .add("kind", Json.fromString("locations"))
+    }
+  )
+
+final case class LocationRecipe(
+    profile: LocationProfile,
+    input: CoreBinding[LocationInputArtifact]
+) derives CanEqual,
+      Codec.AsObject
+
+final case class LocationAnalysisRevision(
+    id: AnalysisRevision,
+    dataset: DatasetRevision,
+    plan: CoreBinding[LocationPlanArtifact],
+    recipe: LocationRecipe,
+    revisionName: RevisionName,
+    description: String
+) extends AnalysisDefinition derives CanEqual, Codec.AsObject:
+  def kind: StudyKind = StudyKind.Locations
+
 final case class AnalysisRevisionSpec(
     id: AnalysisRevision,
     dataset: DatasetRevision,
     plan: CoreBinding[StudyPlanArtifact],
     recipe: Recipe,
     studio: StudioFields
-) derives CanEqual,
-      Codec.AsObject
+) extends AnalysisDefinition derives CanEqual, Codec.AsObject:
+  def revisionName: RevisionName = studio.name
+  def description: String        = studio.description
+  def kind: StudyKind            = StudyKind.Timed

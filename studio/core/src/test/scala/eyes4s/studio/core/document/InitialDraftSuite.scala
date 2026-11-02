@@ -32,8 +32,8 @@ import io.circe.syntax.*
 class InitialDraftSuite extends munit.FunSuite:
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private val sample                            = get(StoryMoments.t2)
-  private val data  = sample.datasets.last.copy(id = DatasetRevision(1), parent = None)
-  private val saved = sample.analyses.last
+  private val data  = sample.timedDatasets.last.copy(id = DatasetRevision(1), parent = None)
+  private val saved = sample.timedAnalyses.last
   private val empty = get(
     StudioDocument.of(
       Vector(data),
@@ -53,7 +53,7 @@ class InitialDraftSuite extends munit.FunSuite:
     "first working recipe creates no saved base and SaveAndRun creates the first revision and run"
   ) {
     val before = initial
-    assertEquals(before.analyses, Vector.empty)
+    assertEquals(before.timedAnalyses, Vector.empty)
     assertEquals(before.runs, Vector.empty)
     assertEquals(before.draft.flatMap(_.savedBase), None)
     assertEquals(
@@ -62,11 +62,11 @@ class InitialDraftSuite extends munit.FunSuite:
     )
     val decoded   = get(before.asJson.as[StudioDocument])
     val completed = get(Reducer.run(decoded, Command.SaveAndRun(None)))
-    assertEquals(completed.document.analyses.map(_.id), Vector(AnalysisRevision(1)))
+    assertEquals(completed.document.timedAnalyses.map(_.id), Vector(AnalysisRevision(1)))
     assertEquals(completed.document.runs.map(_.id), Vector(RunId(1)))
     assertEquals(completed.document.draft, None)
-    assertEquals(completed.document.analyses.head.recipe, saved.recipe)
-    assertEquals(completed.document.analyses.head.studio, saved.studio)
+    assertEquals(completed.document.timedAnalyses.head.recipe, saved.recipe)
+    assertEquals(completed.document.timedAnalyses.head.studio, saved.studio)
     assertEquals(
       completed.effects,
       Vector(Effect.RequestRun(RunId(1), AnalysisRevision(1), data.id), Effect.Persist)
@@ -157,7 +157,7 @@ class InitialDraftSuite extends munit.FunSuite:
     assert(
       StudioDocument
         .of(
-          empty.datasets,
+          empty.timedDatasets,
           Vector.empty,
           Some(wrong),
           Vector.empty,
@@ -171,8 +171,8 @@ class InitialDraftSuite extends munit.FunSuite:
     assert(
       StudioDocument
         .of(
-          sample.datasets,
-          sample.analyses,
+          sample.timedDatasets,
+          sample.timedAnalyses,
           initial.draft,
           Vector.empty,
           Vector.empty,
@@ -200,7 +200,7 @@ class InitialDraftSuite extends munit.FunSuite:
     val working  = get(Draft.initial(id, data.id, invalid, custom))
     val document = get(
       StudioDocument.of(
-        empty.datasets,
+        empty.timedDatasets,
         Vector.empty,
         Some(working),
         Vector.empty,
@@ -212,8 +212,8 @@ class InitialDraftSuite extends munit.FunSuite:
     )
     val decoded   = get(StudioDocument.decode(get(StudioDocument.encode(document))))
     val completed = get(Reducer.run(decoded, Command.SaveAndRun(None))).document
-    assertEquals(completed.analyses.head.recipe, invalid)
-    assertEquals(completed.analyses.head.studio, custom)
+    assertEquals(completed.timedAnalyses.head.recipe, invalid)
+    assertEquals(completed.timedAnalyses.head.studio, custom)
   }
 
   test(

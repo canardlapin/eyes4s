@@ -999,4 +999,4 @@ object DiagnosticSamples:
     ),
     generated[ScanpathComparisonError]("ScanpathComparisonError"),
     generated[RevisitError]("RevisitError")
-  )
+  ) ++ LocationDiagnosticSamples.all

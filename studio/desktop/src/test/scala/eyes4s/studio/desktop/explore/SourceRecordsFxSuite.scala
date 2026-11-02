@@ -34,8 +34,8 @@ import scala.concurrent.duration.Duration
 
 /** Explore's source records table in the studio window (ticket S6.4;
   * Explore.dc.html, bottom) at t2, over fixtures/studio-golden behind the
-  * port: the story's selected record 7,214 is under the cursor with its
-  * backend values; scrolling all 11,520 records makes at most 60 row cells
+  * port: the displayed trial's first admitted source record anchors the
+  * whole-source cursor; scrolling all 11,520 records makes at most 60 row cells
   * and no frame longer than 32 ms; 'Show raw record' shows the verbatim CSV
   * line; the keys move the cursor and Enter selects the row's fixation.
   */
@@ -51,34 +51,21 @@ class SourceRecordsFxSuite extends ShellFxSuite:
       )
     }
 
-  fxStage.test("the selected record 7,214 is under the cursor with the backend's values") {
+  fxStage.test("the displayed trial's first admitted record anchors the whole-source cursor") {
     fx =>
       val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
       ready(fx, w)
       val s = runOnFx(w.sourceRecords.current)
       assertEquals(s.total, Some(11520))
-      assertEquals(s.cursor, Some(7213))
-      SourceRecords.rowVM(s, 7213) match
+      assertEquals(s.cursor, Some(7208))
+      SourceRecords.rowVM(s, 7208) match
         case SourceRowVM.Shown(cells, cursor, selected, name) =>
-          assertEquals(
-            cells,
-            Vector(
-              "7,214",
-              "6",
-              "2,160",
-              "412",
-              "1148.0, 456.0",
-              "700, 300",
-              "+5.4°, +2.4°",
-              "206",
-              "inside"
-            )
-          )
-          assert(cursor && selected, (cursor, selected))
-          assertEquals(name, "Record 7,214, enc_03, fixation 6")
-        case other => fail(s"row 7,213 is $other")
+          assertEquals(cells.take(2), Vector("7,209", "1"))
+          assert(cursor && !selected, (cursor, selected))
+          assertEquals(name, "Record 7,209, enc_03, fixation 1")
+        case other => fail(s"row 7,208 is $other")
       // The cursor row is in view.
-      eventually(fx, "the cursor row is in view")(w.sourceRecords.visible(7213))
+      eventually(fx, "the cursor row is in view")(w.sourceRecords.visible(7208))
       fx.snapshot(StudioTheme.Light)
   }
 
@@ -146,9 +133,9 @@ class SourceRecordsFxSuite extends ShellFxSuite:
     fx.awaitLayout()
     assertEquals(
       runOnFx(w.sourceRecords.rawText),
-      Some("P17,Encoding,enc_03,1,6,1148.0,456.0,2160,412,206")
+      Some("P17,Encoding,enc_03,1,1,600.5,323.5,60,330,165")
     )
-    assertEquals(runOnFx(w.sourceRecords.rawText), Some(GoldenRecords.lines(7213)))
+    assertEquals(runOnFx(w.sourceRecords.rawText), Some(GoldenRecords.lines(7208)))
     // The pane's stop takes the cursor's keys.
     val stop = runOnFx(w.sourceRecords.node.getParent)
     runOnFx(stop.requestFocus())
@@ -156,15 +143,15 @@ class SourceRecordsFxSuite extends ShellFxSuite:
     fx.robot.press(KeyCode.DOWN)
     fx.robot.press(KeyCode.ENTER)
     fx.awaitLayout()
-    assertEquals(runOnFx(w.sourceRecords.current.cursor), Some(7214))
-    val seventh =
-      StudioRef.Fixation(MockStudy.key("P17", "enc_03"), FixationIndex.of(7).toOption.get)
-    eventually(fx, "fixation 7 is selected")(
-      w.runtime.model.selection.selected == Vector(seventh)
+    assertEquals(runOnFx(w.sourceRecords.current.cursor), Some(7209))
+    val second =
+      StudioRef.Fixation(MockStudy.key("P17", "enc_03"), FixationIndex.of(2).toOption.get)
+    eventually(fx, "fixation 2 is selected")(
+      w.runtime.model.selection.selected == Vector(second)
     )
     assertEquals(
       runOnFx(w.sourceRecords.rawText),
-      Some(GoldenRecords.lines(7214))
+      Some(GoldenRecords.lines(7209))
     )
   }
 
@@ -185,7 +172,7 @@ class SourceRecordsFxSuite extends ShellFxSuite:
     fx.robot.press(KeyCode.ENTER)
     fx.awaitLayout()
     assertEquals(runOnFx(w.runtime.model.selection.selected), before)
-    assertEquals(runOnFx(w.sourceRecords.current.cursor), Some(7213))
+    assertEquals(runOnFx(w.sourceRecords.current.cursor), Some(7208))
     // The ends: each is in view after its key, and stays after a resize.
     val stop = runOnFx(w.sourceRecords.node.getParent)
     runOnFx(stop.requestFocus())

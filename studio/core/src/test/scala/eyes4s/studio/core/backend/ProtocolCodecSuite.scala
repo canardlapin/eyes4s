@@ -35,6 +35,29 @@ import io.circe.syntax.*
 class ProtocolCodecSuite extends munit.FunSuite:
   import ProtocolSamples.*
 
+  test("location progress is checked and tagged while timed progress remains untagged") {
+    val location = LocationJobProgress.of(JobId(9), RunId(10), 3, 2, 4, 1, 2).toOption.get
+    assertEquals(
+      LocationJobProgress.of(JobId(9), RunId(10), 3, 5, 4, 1, 2),
+      Left(ProgressError.BeyondTotal("completedMaps", 5, ProgressTotal.Exact(4)))
+    )
+    assertEquals(
+      LocationJobProgress.of(JobId(9), RunId(10), -1, 2, 4, 1, 2),
+      Left(ProgressError.Negative("step", -1))
+    )
+    val encoded = (location: JobProgressValue).asJson
+    assertEquals(encoded.hcursor.get[String]("kind"), Right("locations"))
+    assertEquals(encoded.as[JobProgressValue], Right(location))
+    assert(Json.obj("kind" -> Json.fromString("other")).as[JobProgressValue].isLeft)
+    assert(!progress.asJson.hcursor.downField("kind").succeeded)
+    val state = JobState.Running(location)
+    assertEquals(state.asJson.as[JobState], Right(state))
+    val event = JobEvent.Advanced(location)
+    assertEquals(event.asJson.as[JobEvent], Right(event))
+    val outcome = JobOutcome.Cancelled(JobId(9), RunId(10), Some(location))
+    assertEquals(outcome.asJson.as[JobOutcome], Right(outcome))
+  }
+
   test("by-design statuses and result accounting round-trip with coordinated peers") {
     val diagnostic               = ProtocolSamples.diagnostic
     val eligibility: Eligibility = Eligibility.ByDesign(diagnostic)
@@ -68,7 +91,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     val row = PreviewRow(
       query,
       "beach-042",
-      Response("Remembered"),
+      Some(Response("Remembered")),
       Some(matched),
       Some(19),
       Eligibility.Eligible,
@@ -77,6 +100,10 @@ class ProtocolCodecSuite extends munit.FunSuite:
       Vector(DeclaredReferenceAdmission(matched, TrialDisposition.NoFixations))
     )
     assertEquals(row.asJson.as[PreviewRow], Right(row))
+    assertEquals(
+      row.copy(response = None).asJson.as[PreviewRow],
+      Right(row.copy(response = None))
+    )
     assertEquals(row.eligibility, Eligibility.Eligible)
     val declared = Vector(DeclaredReferenceAdmission(matched, TrialDisposition.NoFixations))
     val noMatch  = row.copy(
@@ -90,13 +117,15 @@ class ProtocolCodecSuite extends munit.FunSuite:
     val queryRow = QueryRow(
       query,
       "beach-042",
-      Response("Remembered"),
+      Some(Response("Remembered")),
       None,
       None,
       QueryStatus.NoMatch(diagnostic),
       declared
     )
     assertEquals(queryRow.asJson.as[QueryRow], Right(queryRow))
+    val undeclared = queryRow.copy(response = None)
+    assertEquals(undeclared.asJson.as[QueryRow], Right(undeclared))
     val old = Json.obj(
       "version" -> ProtocolVersion(1, 20).asJson,
       "id"      -> Json.fromInt(101),
@@ -118,7 +147,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
     assertEquals(responses.size, 23)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 38)
+    assertEquals(errors.size, 41)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -428,7 +457,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 22))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 24))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

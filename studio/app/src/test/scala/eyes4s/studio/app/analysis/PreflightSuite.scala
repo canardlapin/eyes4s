@@ -38,10 +38,11 @@ class PreflightSuite extends munit.FunSuite:
   private def ok[E, A](e: Either[E, A]): A = e.fold(err => fail(s"$err"), identity)
 
   private val model: AppModel = StoryModels.t2Analysis
-  private val stamp: RunStamp = AppModel.stampOf(model.document, rev5, r3)
-  private val id              = PreviewId(1L)
-  private val candidates      = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
-  private val counts          = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
+  private val stamp: RunStamp =
+    eyes4s.studio.app.StoryModels.timedStampOf(model.document, rev5, r3)
+  private val id         = PreviewId(1L)
+  private val candidates = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
+  private val counts     = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
 
   private val warning = StudioDiagnostic(
     "study-finding.unmatched-focal",

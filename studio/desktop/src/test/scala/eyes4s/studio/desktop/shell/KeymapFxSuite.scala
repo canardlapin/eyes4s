@@ -316,6 +316,16 @@ class KeymapFxSuite extends ShellFxSuite:
     val trials = boot(fx, StoryModels.t2DataTrials)
     assertEquals(runOnFx(trials.host.active), Some("data.trials"))
     reached ++= tour(fx, trials)
+    runOnFx(trials.close())
+    val spatial = boot(
+      fx,
+      eyes4s.studio.app.AppModel
+        .open(eyes4s.studio.desktop.importing.SpatialFixture.document, None)
+    )
+    (1 to 4).foreach { n =>
+      fx.robot.press(KeyCode.valueOf(s"DIGIT$n"), shortcut)
+      reached ++= tour(fx, spatial)
+    }
     val declared = StudioLayouts.spec.all
       .filterNot(_ == StudioLayouts.dataFirstRun) // shown only before any dataset
       .flatMap(_.panes.map(_.id.value))

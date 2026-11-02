@@ -29,7 +29,10 @@ class BaselineExportsSuite extends munit.FunSuite:
     ResultFamily.ReportParticipants,
     ResultFamily.ReportContrasts,
     ResultFamily.FixationAoiMetrics,
-    ResultFamily.FixationAoiTransitions
+    ResultFamily.FixationAoiTransitions,
+    ResultFamily.LocationTriples,
+    ResultFamily.LocationHistograms,
+    ResultFamily.LocationSummary
   )
   private def cells(t: ResultTable, name: String) =
     t.rows.map(_(t.columns.indexWhere(_.name == name)))

@@ -115,8 +115,7 @@ class SourcesFxSuite extends ShellFxSuite:
     assertEquals(runOnFx(v.missingTitle.getText), "2 image files missing")
     assertEquals(
       runOnFx(v.missingBody.getText),
-      "forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; " +
-        "P24 enc_05, enc_18) are drawn as missing asset, never as blank. Gaze and scores are unaffected."
+      "Images are unavailable for 4 trials. Gaze and scores are unaffected."
     )
     assertEquals(
       runOnFx((v.repair.getText, v.showTrials.getText)),
@@ -259,10 +258,12 @@ class SourcesFxSuite extends ShellFxSuite:
     }
     assertEquals(runOnFx(repair.map(_.getAccessibleText)), Vector("Repair fixations.csv…"))
     assert(runOnFx(w.sources.focusStops).map(_.name).contains("Repair fixations.csv…"))
-    val before = runOnFx(w.runtime.model.document.datasets.size)
+    val before = runOnFx(w.runtime.model.document.timedDatasets.size)
     runOnFx(repair.head.fire())
-    eventually(fx, "the pending revision")(w.runtime.model.document.datasets.size == before + 1)
-    val spec = runOnFx(w.runtime.model.document.datasets.last)
+    eventually(fx, "the pending revision")(
+      w.runtime.model.document.timedDatasets.size == before + 1
+    )
+    val spec = runOnFx(w.runtime.model.document.timedDatasets.last)
     assertEquals(spec.parent, Some(r3))
     assertEquals(spec.decision, AdmissionDecision.Pending)
     assertEquals(spec.sources.fixations.map(_.bytes), Some(ByteDigest.sha256(other)))

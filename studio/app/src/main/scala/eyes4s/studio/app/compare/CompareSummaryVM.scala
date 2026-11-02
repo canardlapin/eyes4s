@@ -436,7 +436,9 @@ object CompareSummaryVM:
         Vector(
           PlotValue.Text(q.query.label),
           PlotValue.Text(q.item),
-          PlotValue.Text(q.response.label),
+          PlotValue.Text(
+            q.response.fold(SummaryText(SummaryTextId.ResponseNotDeclared))(_.label)
+          ),
           PlotValue.Text(status)
         ) ++ scores
       )

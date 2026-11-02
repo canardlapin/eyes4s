@@ -206,8 +206,8 @@ class InventoryJoinSuite extends CatsEffectSuite:
     val stored   = spec.copy(inventory = None, decision = AdmissionDecision.Pending)
     val unmapped = ok(
       StudioDocument.of(
-        t1.datasets.map(d => if d.id == r3 then stored else d),
-        t1.analyses,
+        t1.timedDatasets.map(d => if d.id == r3 then stored else d),
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,
@@ -268,8 +268,8 @@ class InventoryJoinSuite extends CatsEffectSuite:
     val orphan        = spec.copy(sources = fixationsOnly, decision = AdmissionDecision.Pending)
     assertEquals(
       StudioDocument.of(
-        t1.datasets.map(d => if d.id == r3 then orphan else d),
-        t1.analyses,
+        t1.timedDatasets.map(d => if d.id == r3 then orphan else d),
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,

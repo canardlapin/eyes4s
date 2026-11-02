@@ -44,7 +44,7 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
       "P01,Retrieval,ret_01,1,item-a,Remembered,image,item-a.png\n"
   lazy val sample   = get(StoryMoments.t2)
   lazy val prepared =
-    val original = sample.datasets.last
+    val original = sample.timedDatasets.last
     val byRole   = Map(SourceRole.Fixations -> fixes, SourceRole.Trials -> trials)
     val sources  = get(
       Sources.of(
@@ -61,7 +61,7 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
       AssetRegistry.of(spec.id, sources.trials.get.bytes, spec.geometry.screen, Vector.empty)
     )
     val admitted = get(RealAdmission.admit(spec, fixes, trials, assets))
-    val recipe   = sample.analyses.last.recipe.copy(
+    val recipe   = sample.timedAnalyses.last.recipe.copy(
       grid = get(GridSize.of(8, 8)),
       scales = get(ScaleSet.of(Vector(get(Sigma.of(1)), get(Sigma.of(2)))))
     )
@@ -83,7 +83,7 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
           prepared.dataset,
           CoreBinding.unbound,
           prepared.recipe,
-          sample.analyses.last.studio.copy(preset = Preset.Custom)
+          sample.timedAnalyses.last.studio.copy(preset = Preset.Custom)
         )
       ),
       None,
@@ -214,8 +214,8 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
     val wrong   = get(CanonicalDigest.parse[ResultArchiveArtifact]("ab" * 32))
     val changed = get(
       StudioDocument.of(
-        document.datasets,
-        document.analyses,
+        document.timedDatasets,
+        document.timedAnalyses,
         None,
         Vector(ref.copy(archive = CoreBinding.Bound(wrong))),
         Vector.empty,
@@ -269,46 +269,44 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
       assertEquals(jobs, Vector.empty)
   }
 
-  test("genuinely absent native storage retains ordinary recomputation and probes only once") {
+  test("absent storage refuses repeated reads without sources or a scientific job") {
     for
       loads <- Ref.of[IO, Int](0)
+      raw   <- Ref.of[IO, Int](0)
       source = new NativeArtifactSource[IO]:
         def load(ref: RunRef, budget: NativeArtifactBudget) =
           loads.update(_ + 1).as(Right(None))
-      inputs = new DatasetSources[IO]:
-        def bytes(dataset: DatasetRevisionSpec, source: Source) = IO.pure(
-          Some(
-            IArray.from(
-              (if source.role == SourceRole.Fixations then fixes else trials).getBytes(UTF_8)
-            )
-          )
-        )
-        def assets(dataset: DatasetRevisionSpec) = IO.pure(
-          Some(
-            get(
-              AssetRegistry.of(
-                dataset.id,
-                dataset.sources.trials.get.bytes,
-                dataset.geometry.screen,
-                Vector.empty
-              )
-            )
-          )
-        )
-      _ <- RealStudyBackend.resource[IO](document, inputs, Some(source)).use { backend =>
+      _ <- RealStudyBackend.resource[IO](document, denied(raw), Some(source)).use { backend =>
         reads(backend).use { local =>
           for
-            summary <- local.result(run).map(get)
-            again   <- local.result(run).map(get)
-            held    <- backend.held(run).map(get)
-            jobs    <- backend.jobs
-            count   <- loads.get
+            first       <- local.result(run)
+            again       <- local.result(run)
+            jobs        <- backend.jobs
+            count       <- loads.get
+            sourceReads <- raw.get
           yield
-            assertEquals(again, summary)
-            assert(held.origin.isInstanceOf[RealStudyBackend.RunOrigin.Recomputed])
-            assertEquals(jobs.size, 1)
+            assertEquals(first, Left(BackendError.ResultArchiveUnavailable(run)))
+            assertEquals(again, first)
+            assertEquals(jobs, Vector.empty)
             assertEquals(count, 1)
+            assertEquals(sourceReads, 0)
         }
+      }
+    yield ()
+  }
+
+  test("no archive provider refuses a completed-result read without reading inputs") {
+    for
+      raw <- Ref.of[IO, Int](0)
+      _   <- RealStudyBackend.resource[IO](document, denied(raw)).use { backend =>
+        for
+          result <- backend.result(run)
+          jobs   <- backend.jobs
+          count  <- raw.get
+        yield
+          assertEquals(result, Left(BackendError.ResultArchiveUnavailable(run)))
+          assertEquals(jobs, Vector.empty)
+          assertEquals(count, 0)
       }
     yield ()
   }
@@ -354,8 +352,10 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
   test("cold same-ID unit alias is refused once without source reads or scientific jobs") {
     val changed = get(
       StudioDocument.of(
-        document.datasets.map(s => s.copy(units = DeclaredUnits(Some(TimeUnit.Microseconds)))),
-        document.analyses,
+        document.timedDatasets.map(s =>
+          s.copy(units = DeclaredUnits(Some(TimeUnit.Microseconds)))
+        ),
+        document.timedAnalyses,
         document.draft,
         document.runs,
         document.reporting,

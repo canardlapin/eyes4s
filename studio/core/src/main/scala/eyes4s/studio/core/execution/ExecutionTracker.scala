@@ -22,7 +22,7 @@ import eyes4s.studio.core.backend.*
   * generation that recorded it. Every submission and every requirement
   * change takes a new generation.
   */
-final case class Requested(stamp: RunStamp, generation: Long) derives CanEqual
+final case class Requested(stamp: ExecutionStamp, generation: Long) derives CanEqual
 
 /** The execution service's state, as a pure value: the tracked jobs and the
   * latest intent. [[ExecutionService]] holds one in a `Ref` and publishes the
@@ -66,7 +66,7 @@ sealed abstract case class ExecutionTracker private (
   def job(id: JobId): Either[ExecutionError, ExecutionJob] =
     jobs.find(_.id == id).toRight(ExecutionError.UnknownJob(id, jobs.map(_.id)))
 
-  def requestedStamp: Option[RunStamp] = requested.map(_.stamp)
+  def requestedStamp: Option[ExecutionStamp] = requested.map(_.stamp)
 
   /** Drop settled jobs beyond the latest few of each revision. */
   private def evicted: ExecutionTracker =
@@ -87,7 +87,7 @@ sealed abstract case class ExecutionTracker private (
   /** Record the intent to submit `stamp`, before the backend is asked. The
     * returned generation goes to [[track]] with the backend's answer.
     */
-  def intend(stamp: RunStamp): (ExecutionTracker, Long) =
+  def intend(stamp: ExecutionStamp): (ExecutionTracker, Long) =
     val next = generation + 1
     (copy(requested = Some(Requested(stamp, next)), generation = next), next)
 
@@ -96,7 +96,7 @@ sealed abstract case class ExecutionTracker private (
     * stamp will settle as `Superseded`, and submissions still awaiting the
     * backend are superseded when they arrive.
     */
-  def require(stamp: RunStamp): ExecutionTracker = intend(stamp)._1
+  def require(stamp: ExecutionStamp): ExecutionTracker = intend(stamp)._1
 
   /** Track a job the backend accepted for the intent of `generation`. If a
     * newer intent was recorded since, the job is `Superseded` at once (the
@@ -105,7 +105,7 @@ sealed abstract case class ExecutionTracker private (
     */
   def track(
       status: JobStatus,
-      stamp: RunStamp,
+      stamp: ExecutionStamp,
       generation: Long
   ): Either[ExecutionError, Step[ExecutionJob]] =
     if jobs.exists(_.id == status.job) then Left(ExecutionError.AlreadyTracked(status.job))
@@ -171,7 +171,7 @@ sealed abstract case class ExecutionTracker private (
     }
 
   /** The later of the job's last report and the outcome's. */
-  private def latest(j: ExecutionJob, reported: Option[JobProgress]) =
+  private def latest(j: ExecutionJob, reported: Option[JobProgressValue]) =
     (j.phase.lastReport, reported.map(ExecutionProgress(_))) match
       case (Some(a), Some(b)) => Some(if b.follows(a) then b else a)
       case (a, b)             => a.orElse(b)

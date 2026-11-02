@@ -29,6 +29,14 @@ enum DocumentError derives CanEqual:
   case FamilyDraftIdentity(found: AnalysisFamilyId, expected: AnalysisFamilyId)
   case FamilyOwnership(error: AnalysisFamilyError)
   case InitialDraftWithFamilies(draft: AnalysisRevision, families: Vector[AnalysisFamilyId])
+  case SourceKinds(expected: String, found: Vector[SourceRole])
+  case LocationInputMismatch(
+      analysis: AnalysisRevision,
+      dataset: DatasetRevision,
+      expected: String,
+      found: String
+  )
+  case KindMismatch(referrer: String, expected: StudyKind, found: StudyKind)
   case Blank(field: String)
   case BadPath(path: String, reason: String)
   case BadDigest(field: String, value: String, reason: String)
@@ -157,6 +165,12 @@ enum DocumentError derives CanEqual:
       s"Initial ${draft.label} requires implicit legacy ownership; explicit families are $families."
     case PresetWithoutDefaults(preset, dataset) =>
       s"Preset $preset declares no initial recipe for ${dataset.label}."
+    case SourceKinds(expected, found) =>
+      s"Expected $expected sources; found ${found.map(_.label).mkString(", ")}."
+    case LocationInputMismatch(analysis, dataset, expected, found) =>
+      s"${analysis.label} on ${dataset.label} binds input $found; admission binds $expected."
+    case KindMismatch(referrer, expected, found) =>
+      s"$referrer requires $expected data, but refers to $found data."
     case Blank(field)           => s"$field is blank."
     case BadPath(path, reason)  => s"Source path '$path' is refused: $reason."
     case BadDigest(f, v, r)     => s"$f '$v' is not a SHA-256 digest: $r"

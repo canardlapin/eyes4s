@@ -19,12 +19,13 @@ package eyes4s.studio.core.command
 import eyes4s.codec.CanonicalDigest
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.assets.{AssetFile, AssetRef}
-import eyes4s.studio.core.artifacts.NativeBindingFacts
+import eyes4s.studio.core.artifacts.{NativeBindingFacts, LocationBindingFacts}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.AdmissionDecision.coreDecision
 import eyes4s.studio.core.document.DigestJson.given
-import io.circe.{Codec, Encoder}
+import io.circe.{Codec, Decoder, DecodingFailure, Encoder}
+import io.circe.syntax.*
 
 /** The four kinds of change (DESIGN_SPEC section 8), tagged the same
   * everywhere. Only `ViewOnly` commands leave the science untouched.
@@ -257,6 +258,55 @@ enum Command derives CanEqual:
     * archive's typed facts, separate from the recipe's parsed source identity.
     */
   case BindCompletedArtifacts(facts: NativeBindingFacts)
+  case BindLocationCompletedArtifacts(facts: LocationBindingFacts)
+
+  /** Add an already-admitted spatial bundle. Its canonical input is the
+    * identity every saved spatial analysis on this revision must bind.
+    */
+  case AppendLocationDataset(
+      parent: Option[DatasetRevision],
+      sources: LocationBundleSources,
+      profile: LocationProfile,
+      input: CanonicalDigest[LocationInputArtifact]
+  )
+  case DiscardLocationDataset(dataset: DatasetRevision)
+  case RestoreLocationDataset(dataset: LocationDatasetRevision)
+
+  /** Save a fixed-profile spatial analysis directly into `family`. The family
+    * may be present already, or be the next normal family to create. Spatial
+    * analyses have no timed draft; both the admitted input and checked plan
+    * are bound at this boundary.
+    */
+  case SaveLocationAnalysis(
+      family: AnalysisFamily,
+      dataset: DatasetRevision,
+      plan: CanonicalDigest[LocationPlanArtifact],
+      revisionName: RevisionName,
+      description: String
+  )
+  case DiscardLocationAnalysis(analysis: AnalysisRevision)
+
+  /** Restore the exact spatial revision and analysis-family representation
+    * removed by [[DiscardLocationAnalysis]]. This is an undo payload, not a
+    * request to infer legacy ownership from the current document.
+    */
+  case RestoreLocationAnalysis(
+      analysis: LocationAnalysisRevision,
+      families: Option[AnalysisFamilyRegistry],
+      expectedFamilies: Option[AnalysisFamilyRegistry]
+  )
+
+  /** Inverse-only removal with a checked family transition. */
+  case RemoveLocationAnalysis(
+      analysis: AnalysisRevision,
+      expectedFamilies: Option[AnalysisFamilyRegistry],
+      restoredFamilies: Option[AnalysisFamilyRegistry]
+  )
+
+  /** Reserve the next ordinary run identity and dispatch it through the
+    * normal executor, which routes the saved analysis kind.
+    */
+  case ReserveLocationRun(analysis: AnalysisRevision)
 
   // --- Reporting · no rerun ------------------------------------------------
 
@@ -318,11 +368,14 @@ enum Command derives CanEqual:
     case _: (ImportSources | ReviseDataset | RestoreDataset | RestoreRepairedDataset |
           DiscardDataset | SetMapping | SetUnits | SetGeometry | SetOffScreenPolicy |
           AddCorrection | RemoveCorrection | VerifyDataset | WithdrawVerification |
-          ResumeVerification | Admit) =>
+          ResumeVerification | Admit | AppendLocationDataset | DiscardLocationDataset |
+          RestoreLocationDataset) =>
       ChangeKind.DatasetReadmit
     case _: (StartAnalysis | StartFamily | StartDraft | RestoreDraft | ChangeRecipe |
           ChangeRecipes | RebaseDraft | SaveAndRun | RecordRunOutcome | CancelRun | BindPlan |
-          BindCompletedArtifacts) =>
+          BindCompletedArtifacts | BindLocationCompletedArtifacts | SaveLocationAnalysis |
+          DiscardLocationAnalysis | RestoreLocationAnalysis | RemoveLocationAnalysis |
+          ReserveLocationRun) =>
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun
     case _: (PutReporting | RemoveReporting | CreateFigure | RestoreFigure | DeleteFigure |
@@ -335,6 +388,28 @@ enum Command derives CanEqual:
     case RelinkAsset(_, _, _) => ChangeKind.AssetsNoRerun
 
 object Command:
+  /** Undo snapshots carry their original scope because it differs from the
+    * current document after a removal. The reducer checks the expected registry
+    * before restoring it; normal document encoding still derives scope from
+    * the saved analyses.
+    */
+  private given Codec[AnalysisFamilyRegistry] = Codec.from(
+    Decoder.instance { cursor =>
+      for
+        revisions <- cursor.get[Vector[AnalysisRevision]]("revisions")
+        registry  <- AnalysisFamilyRegistry
+          .decode(cursor.value, revisions)
+          .left
+          .map(error => DecodingFailure(error.message, cursor.history))
+      yield registry
+    },
+    Encoder.instance(registry =>
+      AnalysisFamilyRegistry
+        .encode(registry)
+        .mapObject(_.add("revisions", registry.revisions.asJson))
+    )
+  )
+
   private val derived: Codec.AsObject[Command] = Codec.AsObject.derived
 
   /** An absent inventory mapping is omitted, as the dataset revision itself

@@ -50,13 +50,13 @@ class FamilyReducerSuite extends munit.FunSuite:
   ) {
     val base  = document(draft = Some(draftA))
     val saved = get(History.start(base).apply(SaveAndRun(None))).history
-    assertEquals(saved.document.analyses.map(_.id), analyses.map(_.id) :+ draftA.id)
+    assertEquals(saved.document.timedAnalyses.map(_.id), analyses.map(_.id) :+ draftA.id)
     assertEquals(saved.document.familyOf(draftA.id), Some(a))
     assertEquals(saved.document.familyOf(b4.id), Some(b))
     val nextRegistry = saved.document.analysisFamilies.get
     assertEquals(nextRegistry.owners.size, registry.owners.size + 1)
     assertEquals(nextRegistry.families, registry.families)
-    assertEquals(nextRegistry.revisions, saved.document.analyses.map(_.id))
+    assertEquals(nextRegistry.revisions, saved.document.timedAnalyses.map(_.id))
     val completed = get(
       saved.apply(RecordRunOutcome(RunId(1), RunLifecycle.Completed, CoreBinding.unbound))
     ).history

@@ -78,7 +78,7 @@ object ColumnMappingPane:
       .reverseIterator
       .collectFirst { case Place.Dataset(id) if document.dataset(id).isDefined => id }
       .flatMap(document.dataset)
-      .orElse(document.datasets.lastOption)
+      .orElse(document.timedDatasets.lastOption)
 
   /** A pane showing `shown` must reload for `model`: the revision it would
     * show now is another, or has changed.

@@ -27,6 +27,19 @@ and record the exact bytes' digest. Import checks the bytes again before storage
 a changed file must be read again. Existing preset filenames and the per-user
 directory remain compatible, and asynchronous saves preserve user action order.
 
+For spatial-only FIGRIM data, choose **Spatial locations — FIGRIM bundle** in the import
+window and select `trials.csv`, `locations.tsv`, `pairs.tsv`, `phase-ledger.tsv`
+and `location-ledger.tsv`. Import verifies and stores all five files without
+inventing onset, duration or sample counts. In Data, choose **Create analysis**;
+then run it from Analysis. The normal Results and Report screens show the saved
+query scores, descriptive summary and provenance. **Export CSV bundle…** includes
+the source ledgers and methods. Reopening restores saved results without rescoring.
+
+This spatial profile uses a fixed 1000 × 1000 pixel frame, 10 × 10 count bins and
+cosine comparisons for the supplied focal/matched/control triples. Its summary
+weights queries equally. Observer slots remain source labels; the report does not
+infer participant identity, timing, standard errors or confidence intervals.
+
 Data's **Repair…** restores the same revision when the exact original source bytes
 are supplied. Different bytes create a pending replacement revision, which must be
 admitted before analysis. Changed or missing inputs block preview and Save and Run.

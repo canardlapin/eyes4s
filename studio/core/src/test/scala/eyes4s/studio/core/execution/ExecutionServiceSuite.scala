@@ -63,7 +63,9 @@ class ExecutionServiceSuite extends CatsEffectSuite:
     case ExecutionEvent.Ready(_)   => true
     case ExecutionEvent.Changed(j) =>
       j.phase.isTerminal && !j.phase.isInstanceOf[JobPhase.Succeeded]
-    case _: ExecutionEvent.ArtifactsStored | _: ExecutionEvent.ArtifactsRefused => false
+    case _: ExecutionEvent.ArtifactsStored | _: ExecutionEvent.LocationArtifactsStored |
+        _: ExecutionEvent.ArtifactsRefused =>
+      false
 
   /** Every event, with the monotonic time it was received, up to the end. */
   private def collect(events: Stream[IO, ExecutionEvent]): IO[Timed] =
@@ -98,7 +100,10 @@ class ExecutionServiceSuite extends CatsEffectSuite:
   private def untouched(s: RunShelf): Unit =
     assertEquals((s.shown, s.pending), (Some(run7), None))
 
-  private def pairsAt(p: JobPhase): Option[Long] = p.lastReport.map(_.pairs.done)
+  private def timed(p: ExecutionProgress): JobProgress =
+    p.timed.getOrElse(fail("expected timed progress"))
+  private def pairsAt(p: JobPhase): Option[Long] =
+    p.lastReport.map(timed).map(_.totals.completedPairs)
 
   test("t3 run 8 reads 'Comparing · 21,400 / 44,845 pairs' once adopted") {
     setup(StoryMoment.T3).use { (fake, service, _) =>
@@ -111,9 +116,16 @@ class ExecutionServiceSuite extends CatsEffectSuite:
         assertEquals(adopted.run, run8)
         adopted.phase match
           case JobPhase.Running(p) =>
-            assertEquals(p.stage, StageKind.Comparing)
-            assertEquals(p.pairs, Meter(CountUnit.Pairs, Held, MeterTotal.Exact(Total)))
-            assertEquals(p.stageMeter.unit, CountUnit.Pairs)
+            assertEquals(timed(p).segment.kind, StageKind.Comparing)
+            assertEquals(
+              Meter(
+                CountUnit.Pairs,
+                timed(p).totals.completedPairs,
+                MeterTotal.of(timed(p).totals.totalPairs)
+              ),
+              Meter(CountUnit.Pairs, Held, MeterTotal.Exact(Total))
+            )
+            assertEquals(timed(p).meter.unit, CountUnit.Pairs)
           case other => fail(s"expected Running, got $other")
         assertEquals(again, Left(ExecutionError.AlreadyTracked(held.job)))
         assertEquals(busy.left.map(_.code), Left("studio-backend.already-running"))
@@ -126,12 +138,14 @@ class ExecutionServiceSuite extends CatsEffectSuite:
         collector <- collect(events).start
         job       <- ok(service.submit(stamp5))
         _         <- ok(fake.advanceToPairs(job.id, Held))
-        _         <- await(service, job.id) { case JobPhase.Running(p) => p.pairs.done == Held }
-        t0        <- IO.monotonic
-        answered  <- ok(service.cancel(job.id))
-        out       <- collector.joinWithNever
-        late      <- fake.advanceToPairs(job.id, Held + 1)
-        runs      <- fake.runs
+        _         <- await(service, job.id) { case JobPhase.Running(p) =>
+          timed(p).totals.completedPairs == Held
+        }
+        t0       <- IO.monotonic
+        answered <- ok(service.cancel(job.id))
+        out      <- collector.joinWithNever
+        late     <- fake.advanceToPairs(job.id, Held + 1)
+        runs     <- fake.runs
       yield
         val (settledAt, last) = out.last
         assert(
@@ -193,7 +207,10 @@ class ExecutionServiceSuite extends CatsEffectSuite:
         phases(out).last match
           case JobPhase.Superseded(current, last) =>
             assertEquals(current, Some(stamp5Changed))
-            assertEquals(last.map(_.pairs.done), Some(fake.totalPairs(rev5)))
+            assertEquals(
+              last.map(timed).map(_.totals.completedPairs),
+              Some(fake.totalPairs(rev5))
+            )
           case other => fail(s"expected Superseded, got $other")
         assert(!out.exists(_._2.isInstanceOf[ExecutionEvent.Ready]), out)
         untouched(shelf(out))
@@ -307,7 +324,9 @@ class ExecutionServiceSuite extends CatsEffectSuite:
     setup(StoryMoment.T2).use { (fake, service, events) =>
       def to(id: JobId, pairs: Long) =
         ok(fake.advanceToPairs(id, pairs)) >>
-          await(service, id) { case JobPhase.Running(p) => p.pairs.done == pairs }
+          await(service, id) { case JobPhase.Running(p) =>
+            timed(p).totals.completedPairs == pairs
+          }
       for
         collector <- collect(events).start
         job       <- ok(service.submit(stamp5))
@@ -331,7 +350,7 @@ class ExecutionServiceSuite extends CatsEffectSuite:
           reports.map(_.completedUnits)
         )
         assertEquals(
-          reports.map(_.pairs.done).filter(_ > 0).take(3),
+          reports.map(timed).map(_.totals.completedPairs).filter(_ > 0).take(3),
           Vector(5000L, Held, 30000L)
         )
         assert(ps.last.isInstanceOf[JobPhase.Succeeded], ps.last)
@@ -383,7 +402,9 @@ class ExecutionServiceSuite extends CatsEffectSuite:
             job <- ok(service.submit(stamp5))
             _   <- List(1000L, 5000L, Held).traverse_ { p =>
               ok(fake.advanceToPairs(job.id, p)) >>
-                await(service, job.id) { case JobPhase.Running(q) => q.pairs.done == p }
+                await(service, job.id) { case JobPhase.Running(q) =>
+                  timed(q).totals.completedPairs == p
+                }
             }
             _       <- ok(service.cancel(job.id)).timeout(1.second)
             settled <- await(service, job.id) { case JobPhase.Cancelled(_) => true }

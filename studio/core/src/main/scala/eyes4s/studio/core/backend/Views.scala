@@ -336,7 +336,10 @@ final case class DeclaredReferenceAdmission(trial: TrialKey, disposition: TrialD
 final case class PreviewRow(
     query: TrialKey,
     item: String,
-    response: Response,
+    /** The inventory response as declared. A missing declaration stays
+      * missing on the wire; it is not a response level.
+      */
+    response: Option[Response],
     matched: Option[TrialKey],
     controls: Option[Int],
     eligibility: Eligibility,
@@ -365,7 +368,7 @@ object PreviewRow:
     new PreviewRow(
       query,
       item,
-      response,
+      Some(response),
       Option.when(eligibility == Eligibility.Eligible)(matched),
       controls,
       eligibility
@@ -497,7 +500,10 @@ enum QueryStatus derives CanEqual, Codec.AsObject:
 final case class QueryRow(
     query: TrialKey,
     item: String,
-    response: Response,
+    /** The inventory response as declared. A missing declaration stays
+      * missing on the wire; it is not a response level.
+      */
+    response: Option[Response],
     matched: Option[TrialKey],
     controls: Option[Int],
     status: QueryStatus,
@@ -521,7 +527,7 @@ object QueryRow:
     val reference = status match
       case QueryStatus.NoMatch(_) | QueryStatus.ByDesign(_) | QueryStatus.NotAdmitted(_) => None
       case _ => Some(matched)
-    new QueryRow(query, item, response, reference, controls, status)
+    new QueryRow(query, item, Some(response), reference, controls, status)
 
 final case class QueryPage(run: RunId, page: PageInfo, rows: Vector[QueryRow])
     derives CanEqual,

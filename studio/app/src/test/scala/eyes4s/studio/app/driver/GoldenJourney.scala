@@ -357,8 +357,9 @@ object GoldenJourney:
       await(session, "run 6 comparing")(
         _.model.jobs.jobs.exists(j =>
           j.run == run6 && (j.phase match
-            case JobPhase.Running(p) => p.pairs.done == fixture.pairRowsPerScale
-            case _                   => false)
+            case JobPhase.Running(p) =>
+              p.timed.exists(_.totals.completedPairs == fixture.pairRowsPerScale)
+            case _ => false)
         )
       ),
       check("jobs chip: Run 6 · Comparing · 8,969 / 35,876 pairs")(d =>

@@ -41,7 +41,7 @@ object BundleSamples:
     */
   def inputsFor(document: StudioDocument): Vector[InputEntry] =
     document.datasets
-      .flatMap(_.sources.entries)
+      .flatMap(_.sourceFiles)
       .distinctBy(s => (s.role, s.bytes))
       .map { s =>
         val length = s.role match
@@ -77,7 +77,10 @@ object BundleSamples:
     )
     doc(
       StudioDocument.of(
-        document.datasets.map(_.copy(sources = sources)),
+        document.datasets.map {
+          case d: DatasetRevisionSpec     => d.copy(sources = sources)
+          case d: LocationDatasetRevision => d
+        },
         document.analyses,
         document.draft,
         document.runs,

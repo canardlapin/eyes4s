@@ -143,7 +143,7 @@ class ReviseDatasetSuite extends munit.FunSuite:
           )
         )
     )
-    val r4 = reimport.history.document.datasets.last
+    val r4 = reimport.history.document.timedDatasets.last
     assertEquals(
       r4.attributes.core,
       Vector(
@@ -224,11 +224,12 @@ class ReviseDatasetSuite extends munit.FunSuite:
       r3spec.inventory
     )
     val chosen = ok(History.start(t2).apply(reimport(Some(choice))))
-    val r4     = chosen.history.document.datasets.last
+    val r4     = chosen.history.document.timedDatasets.last
     assertEquals((r4.parent, r4.admission), (Some(r3), choice))
     // One undo removes the whole re-admit.
     assertEquals(ok(chosen.history.undo).history.document, t2)
-    val inherited = ok(History.start(t2).apply(reimport(None))).history.document.datasets.last
+    val inherited =
+      ok(History.start(t2).apply(reimport(None))).history.document.timedDatasets.last
     assertEquals(inherited.admission, r3spec.admission)
   }
 
@@ -264,7 +265,7 @@ class ReviseDatasetSuite extends munit.FunSuite:
       withoutOccurrence(r3spec.inventory)
     )
     val imported = ok(History.start(t2).apply(importOne)).history.document
-    val r4       = imported.datasets.last.id
+    val r4       = imported.timedDatasets.last.id
     assertEquals(
       History.start(imported).apply(VerifyDataset(r4)).left.map(_.message),
       Left(
@@ -315,8 +316,8 @@ class ReviseDatasetSuite extends munit.FunSuite:
     // An unmapped trials file is refused the same way.
     val unmapped = StudioDocument
       .of(
-        t1.datasets.map(d => if d.id == r3 then d.copy(inventory = None) else d),
-        t1.analyses,
+        t1.timedDatasets.map(d => if d.id == r3 then d.copy(inventory = None) else d),
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,

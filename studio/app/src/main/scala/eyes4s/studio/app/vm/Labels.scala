@@ -114,13 +114,9 @@ final class Labels(model: AppModel, messages: Messages):
   def sourceFile(role: SourceRole): String =
     val dataset = doc.presentation.shownRun
       .flatMap(doc.run)
-      .flatMap(r => doc.dataset(r.dataset))
+      .flatMap(r => doc.datasetDefinition(r.dataset))
       .orElse(doc.datasets.lastOption)
-    val source = dataset.flatMap(d =>
-      role match
-        case SourceRole.Fixations => d.sources.fixations
-        case SourceRole.Trials    => d.sources.trials
-    )
+    val source = dataset.flatMap(_.sourceFiles.find(_.role == role))
     source.fold(role.label)(_.path.value.split('/').last)
 
   /** "σ 2°", from the run's recipe; "scale 2" when the run is unknown. */

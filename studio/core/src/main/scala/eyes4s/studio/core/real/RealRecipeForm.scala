@@ -62,8 +62,10 @@ object RealRecipeForm:
       form = StudyForm[Unit2D.Px](
         StudyFormContext(screen, Some(RealPlan.WindowFrame), RealPlan.GridName)
       )
+      phases = (input.trials.rows.map(_.key.phase) ++
+        inventory.toVector.flatMap(_.trials.map(_.identity.phase))).distinct.sorted
       views <- form.views
-        .traverse(withoutAssignments)
+        .traverse(v => withoutAssignments(v).flatMap(withPhaseChoices(_, phases)))
         .leftMap(e => refused(e.message))
       view <- FormView.of(StudyCodecDefinitions.studyV4, views).leftMap(e => refused(e.message))
       declared <- request.recipe.expectedUnmatched.traverse(rule =>
@@ -107,12 +109,27 @@ object RealRecipeForm:
             .parse(addAssignments(raw))
             .leftMap(_.toVector.map(e => RecipeProblem(e.field.value, e.message)))
             .flatMap(fromStudy(request.recipe, _))
-      accepted = parsed.flatMap { recipe =>
-        RealPlan
-          .plan(request.revision, recipe, screen, input, inventory)
-          .leftMap(e => Vector(RecipeProblem("recipe", e.message)))
-          .map((plan, _) => (recipe, plan))
-      }
+      accepted = parsed
+        .flatMap { recipe =>
+          val absent = Vector(recipe.phases.focal.label, recipe.phases.reference.label)
+            .filterNot(phases.contains)
+          Either.cond(
+            phases.isEmpty || absent.isEmpty,
+            recipe,
+            Vector(
+              RecipeProblem(
+                "phases",
+                s"Phases ${absent.mkString(", ")} are not declared in this dataset. Available phases: ${phases.mkString(", ")}."
+              )
+            )
+          )
+        }
+        .flatMap { recipe =>
+          RealPlan
+            .plan(request.revision, recipe, screen, input, inventory)
+            .leftMap(e => Vector(RecipeProblem("recipe", e.message)))
+            .map((plan, _) => (recipe, plan))
+        }
       encodedView   <- FormCodecs.view.encode(view).leftMap(e => refused(e.message))
       encodedValues <- FormCodecs.values.encode(raw).leftMap(e => refused(e.message))
       result     = accepted.toOption
@@ -146,6 +163,38 @@ object RealRecipeForm:
       difference.toOption.flatten.getOrElse(Vector.empty),
       difference.left.toOption.map(_.message)
     )
+
+  /** Resolve the library's input-derived phase choices from admitted and declared trials in this dataset. */
+  private def withPhaseChoices(
+      view: FieldView,
+      phases: Vector[String]
+  ): Either[DescriptorError, FieldView] =
+    if view.id.value != "phases" || phases.isEmpty then Right(view)
+    else
+      view.kind match
+        case FieldKind.Group(parts, rule) =>
+          parts
+            .traverse { part =>
+              part.kind match
+                case FieldKind.Choice(ChoiceSource.FromInput(InputDomain.Phases)) =>
+                  FieldView.of(
+                    part.id,
+                    part.version,
+                    part.meaning,
+                    FieldKind.Choice(ChoiceSource.Fixed(phases.map(p => ChoiceOption(p, p))))
+                  )
+                case _ => Right(part)
+            }
+            .flatMap(parts =>
+              FieldView.of(
+                view.id,
+                view.version,
+                view.meaning,
+                FieldKind.Group(parts, rule),
+                view.default
+              )
+            )
+        case _ => Right(view)
 
   /** Assignments are derived from the dataset, not edited alongside the rule. */
   private def withoutAssignments(view: FieldView): Either[DescriptorError, FieldView] =

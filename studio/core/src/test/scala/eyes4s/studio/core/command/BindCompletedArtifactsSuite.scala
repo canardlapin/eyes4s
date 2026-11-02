@@ -45,9 +45,9 @@ class BindCompletedArtifactsSuite extends munit.ScalaCheckSuite:
       )
     )
   private def document(
-      analyses: Vector[AnalysisRevisionSpec] = base.analyses,
+      analyses: Vector[AnalysisRevisionSpec] = base.timedAnalyses,
       runs: Vector[RunRef] = base.runs,
-      datasets: Vector[DatasetRevisionSpec] = base.datasets
+      datasets: Vector[DatasetRevisionSpec] = base.timedDatasets
   ): StudioDocument = get(
     StudioDocument.of(
       datasets,
@@ -124,7 +124,7 @@ class BindCompletedArtifactsSuite extends munit.ScalaCheckSuite:
   ) {
     val otherPlan = get(CanonicalDigest.parse[StudyPlanArtifact]("4" * 64))
     val wrongPlan = document(analyses =
-      base.analyses.map(a =>
+      base.timedAnalyses.map(a =>
         if a.id == facts.revision then a.copy(plan = CoreBinding.Bound(otherPlan)) else a
       )
     )
@@ -137,7 +137,7 @@ class BindCompletedArtifactsSuite extends munit.ScalaCheckSuite:
     )
     val otherSource = get(SemanticIdentity.of("ffeeddccbbaa9988"))
     val wrongSource = document(analyses =
-      base.analyses.map(a =>
+      base.timedAnalyses.map(a =>
         if a.id == facts.revision then a.copy(recipe = a.recipe.copy(input = Some(otherSource)))
         else a
       )
@@ -163,7 +163,7 @@ class BindCompletedArtifactsSuite extends munit.ScalaCheckSuite:
 
   test("declared fixation source identity must match verified source before any binding") {
     def declared(source: SemanticIdentity): StudioDocument = document(datasets =
-      base.datasets.map(dataset =>
+      base.timedDatasets.map(dataset =>
         if dataset.id == facts.dataset then
           dataset.copy(sources =
             get(
@@ -284,7 +284,7 @@ class BindCompletedArtifactsSuite extends munit.ScalaCheckSuite:
       get(CommandJournal.replay(base, journal)).history.document,
       bound.history.document
     )
-    val changed = document(datasets = base.datasets.map { s =>
+    val changed = document(datasets = base.timedDatasets.map { s =>
       if s.id == facts.dataset then s.copy(units = DeclaredUnits(Some(TimeUnit.Microseconds)))
       else s
     })

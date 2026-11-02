@@ -40,7 +40,7 @@ class ReadInputSuite extends SessionConformance:
   private val document  = BundleSamples.withSources(withoutJobs(t1), fixations, trials)
 
   private def source(role: SourceRole) =
-    document.datasets.last.sources.entries.find(_.role == role).get
+    document.timedDatasets.last.sources.entries.find(_.role == role).get
 
   test("an imported source reads back byte for byte; one not imported is Missing") {
     bundle.use { views =>

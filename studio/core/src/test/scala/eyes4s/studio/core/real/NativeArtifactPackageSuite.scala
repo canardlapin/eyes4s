@@ -40,7 +40,7 @@ class NativeArtifactPackageSuite extends munit.FunSuite:
       "P01,Retrieval,ret_01,1,item-a,Remembered,image,item-a.png\n"
   private lazy val prepared =
     val sample   = get(StoryMoments.t2)
-    val original = sample.datasets.last
+    val original = sample.timedDatasets.last
     val byRole   = Map(SourceRole.Fixations -> fixations, SourceRole.Trials -> inventory)
     val sources  = get(
       Sources.of(
@@ -54,7 +54,7 @@ class NativeArtifactPackageSuite extends munit.FunSuite:
       AssetRegistry.of(spec.id, sources.trials.get.bytes, spec.geometry.screen, Vector.empty)
     )
     val admitted = get(RealAdmission.admit(spec, fixations, inventory, assets))
-    val recipe   = sample.analyses.last.recipe.copy(
+    val recipe   = sample.timedAnalyses.last.recipe.copy(
       grid = get(GridSize.of(8, 8)),
       scales = get(ScaleSet.of(Vector(get(Sigma.of(1)), get(Sigma.of(2)))))
     )

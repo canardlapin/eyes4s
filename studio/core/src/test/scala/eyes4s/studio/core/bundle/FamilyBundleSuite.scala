@@ -30,7 +30,7 @@ class FamilyBundleSuite extends munit.CatsEffectSuite:
     BundleSamples.withSources(document(draft = Some(draftA)), fixations, trials)
   private val inputBytes = Map(SourceRole.Fixations -> fixations, SourceRole.Trials -> trials)
   private val inputs     =
-    value.datasets.flatMap(_.sources.entries).distinctBy(_.role).map { source =>
+    value.timedDatasets.flatMap(_.sources.entries).distinctBy(_.role).map { source =>
       get(
         InputEntry.of(
           InputKind.Source(source.role),
@@ -118,7 +118,7 @@ class FamilyBundleSuite extends munit.CatsEffectSuite:
     val stored = get(get(ProjectManifest.codec).encode(encoded.manifest))
     assertEquals(stored.hcursor.downField("schema").get[Int]("version"), Right(3))
     val raw = stored.hcursor.get[Json]("value").toOption.get
-    ladder.versions.dropRight(1).foreach { version =>
+    ladder.versions.filter(_.version < 3).foreach { version =>
       assert(ladder.readAt(version, raw).isLeft)
       assert(ladder.writeAt(version, encoded.manifest).isLeft)
     }

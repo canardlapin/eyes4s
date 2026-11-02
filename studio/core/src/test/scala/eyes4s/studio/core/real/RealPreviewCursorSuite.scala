@@ -38,7 +38,8 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       withReference: Boolean,
       focalOutsideWindow: Boolean = false,
       mixed: Boolean = false,
-      declareReference: Boolean = true
+      declareReference: Boolean = true,
+      missingFocalResponse: Boolean = false
   ): AdmittedDataset =
     val original = get(document.dataset(StoryMoments.r3).toRight("no dataset"))
     val displays = get(GoldenAssets.rows)
@@ -80,7 +81,9 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         selected
           .map { row =>
             val response =
-              if mixed && (row == lure || row == absent) then "Lure" else "Remembered"
+              if missingFocalResponse && row == focal then ""
+              else if mixed && (row == lure || row == absent) then "Lure"
+              else "Remembered"
             s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},${row.item},$response,${row.kind},${row.file}"
           }
           .mkString("\n") + "\n"
@@ -188,6 +191,91 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       assert(scored.scales.forall(_.estimation.exists { (key, outcome) =>
         RealResults.key(key) == row.query && outcome.isLeft
       }))
+  }
+
+  test("an undeclared focal response remains a preview and completed-result row") {
+    val missing  = admitPair(true, missingFocalResponse = true)
+    val prepared =
+      get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, recipe, missing))
+    for
+      service <- RealPreview.create[IO]
+      opening <- service.begin(prepared, onePage).take(1).compile.toVector
+      id = get(opening.head) match
+        case PreviewEvent.Initial(id, _, _) => id
+        case event                          => fail(s"expected Initial, got $event")
+      events <- finish(service, id)
+      page   <- service.rows(prepared.revision, get(PageRequest.of(0, 10)))
+      ready = events.collectFirst { case PreviewEvent.Ready(value) => value }.get
+      accepted <- service.accept(ready)(_ => IO.pure(Right(ready.stamp)))
+    yield
+      val preview = get(page).rows
+      assertEquals(preview.size, 1)
+      assertEquals(preview.head.response, None)
+      val held = RealStudyBackend.RealRun(
+        get(accepted),
+        get(get(accepted).work.run),
+        RealStudyBackend.RunOrigin.Computed
+      )
+      val rows = get(get(RealResults.of(RunId(93), held)).queryRows)
+      assertEquals(rows.size, 1)
+      assertEquals(rows.head.response, None)
+      val baselineWork =
+        get(RealPrepared.of(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
+      val baseline = RealStudyBackend.RealRun(
+        baselineWork,
+        get(baselineWork.work.run),
+        RealStudyBackend.RunOrigin.Computed
+      )
+      val baselineRows = get(get(RealResults.of(RunId(94), baseline)).queryRows)
+      assertEquals(rows.head.status, baselineRows.head.status)
+  }
+
+  test("an unavailable focal phase is a preflight blocker and cannot be submitted") {
+    val absentPhase = recipe.copy(phases = recipe.phases.copy(focal = Phase("Retrieval1")))
+    val prepared    =
+      get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, absentPhase, admitted))
+    for
+      service <- RealPreview.create[IO]
+      opening <- service.begin(prepared, onePage).take(1).compile.toVector
+      id = get(opening.head) match
+        case PreviewEvent.Initial(id, _, _) => id
+        case other                          => fail(s"expected Initial, got $other")
+      events <- finish(service, id)
+      ready = events
+        .collectFirst { case PreviewEvent.Ready(value) => value }
+        .getOrElse(fail("no receipt"))
+      submission <- service.accept(ready)(_ => IO.pure(Right(ready.stamp)))
+    yield
+      assertEquals(ready.counts.eligiblePairs, 0L)
+      assert(ready.diagnostics.exists(_.code == "studio-backend.no-executable-pairs"))
+      assert(
+        submission.left.toOption.exists(_.isInstanceOf[BackendError.NoExecutablePairs]),
+        submission
+      )
+  }
+
+  test("an oversized map archive is a preflight blocker before any maps are allocated") {
+    val oversized = recipe.copy(grid = get(eyes4s.studio.core.document.GridSize.of(4096, 4096)))
+    val prepared  =
+      get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, oversized, admitted))
+    for
+      service <- RealPreview.create[IO]
+      opening <- service.begin(prepared, onePage).take(1).compile.toVector
+      id = get(opening.head) match
+        case PreviewEvent.Initial(id, _, _) => id
+        case other                          => fail(s"expected Initial, got $other")
+      events <- finish(service, id)
+      ready = events
+        .collectFirst { case PreviewEvent.Ready(value) => value }
+        .getOrElse(fail("no receipt"))
+      submission <- service.accept(ready)(_ => IO.pure(Right(ready.stamp)))
+    yield
+      assert(ready.counts.eligiblePairs > 0L)
+      assert(ready.diagnostics.exists(_.code == "studio-backend.archive-density-capacity"))
+      assert(
+        submission.left.toOption.exists(_.isInstanceOf[BackendError.ArchiveDensityCapacity]),
+        submission
+      )
   }
 
   test("cardinality diagnostics spend work without claiming schedule visits") {
@@ -429,7 +517,13 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         assertEquals(row.matched, None)
         assertEquals(row.controls, None)
         assertEquals(row.declaredReferences, Vector.empty)
-        val prepared = get(accepted)
+        assert(
+          accepted.left.toOption.exists(_.isInstanceOf[BackendError.NoExecutablePairs]),
+          accepted
+        )
+        // The native interpreter still preserves by-design classifications;
+        // Studio refuses launching this zero-work study.
+        val prepared = get(RealPrepared.fromCounts(configured, get(configured.work.counts)))
         assert(prepared.work eq configured.work)
         val held = RealStudyBackend.RealRun(
           prepared,
@@ -471,7 +565,11 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       assertEquals(initial.candidates.byDesignQueries.map(_.value), Some(0))
       assertEquals(ready.counts.unmatchedQueries.value, 1)
       assert(get(rows).rows.head.eligibility.isInstanceOf[Eligibility.NoMatch])
-      val prepared = get(accepted)
+      assert(
+        accepted.left.toOption.exists(_.isInstanceOf[BackendError.NoExecutablePairs]),
+        accepted
+      )
+      val prepared = get(RealPrepared.fromCounts(configured, get(configured.work.counts)))
       val held     = RealStudyBackend.RealRun(
         prepared,
         get(prepared.work.run),

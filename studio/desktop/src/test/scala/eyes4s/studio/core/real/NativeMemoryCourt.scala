@@ -82,7 +82,7 @@ object NativeMemoryCourt:
         (fixes.result(), trials.result())
       }
       val sample   = get(StoryMoments.t2)
-      val original = sample.datasets.last
+      val original = sample.timedDatasets.last
       val byRole   = Map(SourceRole.Fixations -> csv._1, SourceRole.Trials -> csv._2)
       val sources  = get(
         Sources.of(
@@ -99,7 +99,7 @@ object NativeMemoryCourt:
         AssetRegistry.of(spec.id, sources.trials.get.bytes, spec.geometry.screen, Vector.empty)
       )
       val admitted = phase("admission")(get(RealAdmission.admit(spec, csv._1, csv._2, assets)))
-      val recipe   = sample.analyses.last.recipe.copy(
+      val recipe   = sample.timedAnalyses.last.recipe.copy(
         grid = get(GridSize.of(nx, ny)),
         scales = get(ScaleSet.of(Vector(1.0, 1.5, 2.0, 2.5).map(s => get(Sigma.of(s)))))
       )
@@ -114,7 +114,7 @@ object NativeMemoryCourt:
         spec.id,
         CoreBinding.Bound(pkg.facts.planCanonical),
         prepared.recipe.copy(input = Some(pkg.facts.source)),
-        sample.analyses.last.studio.copy(preset = Preset.Custom)
+        sample.timedAnalyses.last.studio.copy(preset = Preset.Custom)
       )
       val ref = RunRef(
         RunId(1),
@@ -185,7 +185,14 @@ object NativeMemoryCourt:
       val pkg      = phase("verify-native-package")(get(NativeArtifactPackage.verify(files)))
       val ref      = document.runs.head
       val restored = phase("source-free-restore")(
-        get(NativeArtifactRestore.of(pkg, ref, document.analyses.head, document.datasets.head))
+        get(
+          NativeArtifactRestore.of(
+            pkg,
+            ref,
+            document.timedAnalyses.head,
+            document.timedDatasets.head
+          )
+        )
       )
       require(restored.origin == RealStudyBackend.RunOrigin.Restored(pkg.manifestAddress))
       println(

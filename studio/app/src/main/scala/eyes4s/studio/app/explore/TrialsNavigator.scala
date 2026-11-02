@@ -121,7 +121,7 @@ object TrialsNavigator:
 
   /** The dataset revision Explore shows: the latest admitted one. */
   def shown(model: AppModel): Option[DatasetRevisionSpec] =
-    model.document.datasets.filter(_.decision.isAdmitted).maxByOption(_.id.number)
+    model.document.timedDatasets.filter(_.decision.isAdmitted).maxByOption(_.id.number)
 
   /** The trial Explore's trail is on, if any: the trial of its last place
     * (a trial, or a fixation or record within one).

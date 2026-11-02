@@ -139,9 +139,9 @@ object NativeHeadlessSession:
       reads <- NativeReads.resource[IO](backend, raw.navigator, sync, Some(raw.awaitRestore))
       completion = artifactSink.map(sink =>
         (job: eyes4s.studio.core.execution.ExecutionJob) =>
-          NativeArtifactDelivery.store(raw, sink, job.run)
+          NativeArtifactDelivery.storeCompletion(raw, sink, job.run)
       )
-      service <- ExecutionService.resource[IO](backend, artifacts = completion)
+      service <- ExecutionService.resource[IO](backend, completions = completion)
       events  <- service.subscribe
       queue   <- Resource.eval(Queue.unbounded[IO, ExecutionEvent])
       _       <- events.evalMap(queue.offer).compile.drain.background

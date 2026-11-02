@@ -16,7 +16,7 @@
 
 package eyes4s.studio.desktop.project
 
-import cats.effect.IO
+import cats.effect.{Deferred, IO}
 import cats.effect.unsafe.IORuntime
 import cats.syntax.all.*
 import eyes4s.studio.app.{AppModel, ClockTime, Intent, PlatformDialog, ProjectName}
@@ -69,7 +69,8 @@ final class ProjectLifecycleHost(
     initialRecent: RecentProjects = RecentProjects.empty,
     preferencesLog: String => Unit = message => System.err.println(message),
     newProjectTheme: () => Theme = () => Theme.Light,
-    initialLayouts: Vector[eyes4s.studio.core.document.SavedLayout] = Vector.empty
+    initialLayouts: Vector[eyes4s.studio.core.document.SavedLayout] = Vector.empty,
+    examplePreparation: Option[ProjectSession[IO] => IO[Either[String, Unit]]] = None
 )(using runtime: IORuntime)
     extends PlatformDialogs:
   private final class Candidate(
@@ -145,7 +146,30 @@ final class ProjectLifecycleHost(
       }
     )
 
-  private val arriving = ConcurrentHashMap[ProjectOperationId, Candidate]()
+  private val arriving     = ConcurrentHashMap[ProjectOperationId, Candidate]()
+  private val preparations = ConcurrentHashMap[ProjectOperationId, Deferred[IO, Unit]]()
+
+  private def stopPreparation(id: ProjectOperationId): Unit =
+    Option(preparations.get(id)).foreach(_.complete(()).void.unsafeRunAndForget())
+
+  private def prepareExample(
+      id: ProjectOperationId,
+      session: ProjectSession[IO]
+  ): IO[Either[String, Unit]] =
+    Deferred[IO, Unit].flatMap { stop =>
+      (IO(preparations.put(id, stop)).void >>
+        IO.defer {
+          if stopped.get || !ticket.get.contains(id) then stop.complete(()).void
+          else IO.unit
+        } >>
+        IO.race(
+          stop.get,
+          examplePreparation.fold(ExamplePreparation.prepare(session))(_(session))
+        ).flatMap {
+          case Left(_)       => session.close.void.as(Left("Example preparation cancelled."))
+          case Right(result) => IO.pure(result)
+        }).guarantee(IO(preparations.remove(id, stop)).void)
+    }
 
   def window: Option[StudioWindow] = current.map(_.window)
   def busy: Boolean                = state.busy
@@ -174,7 +198,10 @@ final class ProjectLifecycleHost(
     )
   )
 
-  private def later(body: => Unit): Unit          = FxPlatform.runLater(() => body)
+  private def later(body: => Unit): Unit = FxPlatform.runLater(() => body)
+  private val examplePreparationTitle    = "Preparing example results… — Eyes Studio"
+  private def restoreStageTitle(): Unit  =
+    stage.setTitle(current.fold("Eyes Studio")(_.window.title))
   private def release(candidate: Candidate): Unit =
     candidate.release.unsafeRunAsync {
       case Left(e) if !stopped.get => later(prompts.failed("Close project", e.getMessage))
@@ -396,6 +423,7 @@ final class ProjectLifecycleHost(
       case Some(scene) => scene.setRoot(live.window.root)
       case None        => stage.setScene(Scene(live.window.root, 1440.0, 900.0))
     live.window.bind(stage)
+    stage.setTitle(live.window.title)
     replaced(live.window)
     old.foreach(dispose)
     live.project match
@@ -415,6 +443,7 @@ final class ProjectLifecycleHost(
       .flatMap(n => ProjectName.of(n.stripSuffix(".eyes")).left.map(_.message))
 
   private def acquire(
+      operationId: ProjectOperationId,
       action: ProjectOperation,
       path: HostPath,
       source: Option[(AppModel, Option[Candidate])],
@@ -444,19 +473,22 @@ final class ProjectLifecycleHost(
       )
       loaded <- cats.data.EitherT(action match
         case ProjectOperation.OpenExample =>
-          (for
-            example <- cats.data.EitherT(eyes4s.studio.desktop.platform.BundledExample.source)
-            lock    <- cats.data.EitherT(store.acquire(owner).map(_.left.map(_.message)))
-            _       <- cats.data.EitherT(
-              eyes4s.studio.core.fixture.ExampleProject
-                .openCopy(example, store, lock)
-                .map(_.left.map(_.message))
-                .guarantee(store.release(lock).void)
-            )
-            opened <- cats.data.EitherT(
-              ProjectSession.open[IO](store, owner).map(_.left.map(_.message))
-            )
-          yield (opened.session, Option.empty[Recovery], Vector.empty[String])).value
+          IO.uncancelable { poll =>
+            (for
+              example <- cats.data.EitherT(eyes4s.studio.desktop.platform.BundledExample.source)
+              lock    <- cats.data.EitherT(store.acquire(owner).map(_.left.map(_.message)))
+              _       <- cats.data.EitherT(
+                eyes4s.studio.core.fixture.ExampleProject
+                  .openCopy(example, store, lock)
+                  .map(_.left.map(_.message))
+                  .guarantee(store.release(lock).void)
+              )
+              opened <- cats.data.EitherT(
+                ProjectSession.open[IO](store, owner).map(_.left.map(_.message))
+              )
+              _ <- cats.data.EitherT(poll(prepareExample(operationId, opened.session)))
+            yield (opened.session, Option.empty[Recovery], Vector.empty[String])).value
+          }
         case ProjectOperation.New =>
           freshProject(freshTheme)
             .map(_.document)
@@ -535,8 +567,7 @@ final class ProjectLifecycleHost(
     val source     = current.map(live => (live.window.runtime.model, live.project))
     val freshTheme = newProjectTheme()
     if action == ProjectOperation.Quit && state.busy then
-      replaceState(state.operation.fold(state)(o => state.cancel(o._1)))
-      clearCandidate()
+      state.operation.foreach(o => cancel(o._1))
     val (next, id) = state.begin(action)
     replaceState(next)
     id match
@@ -547,6 +578,7 @@ final class ProjectLifecycleHost(
             "Finish the current project operation first."
           )
       case Some(operationId) =>
+        if action == ProjectOperation.OpenExample then stage.setTitle(examplePreparationTitle)
         installedActions.update(operationId, installed)
         action match
           case ProjectOperation.Close | ProjectOperation.Quit => admit(operationId)
@@ -571,7 +603,7 @@ final class ProjectLifecycleHost(
                   present.flatMap {
                     case Left(reason) => IO.pure(Left(reason))
                     case Right(_)     =>
-                      acquire(action, path, source, freshTheme).map(_.map(Some(_)))
+                      acquire(operationId, action, path, source, freshTheme).map(_.map(Some(_)))
                   }
               }
               .unsafeRunAsync {
@@ -613,7 +645,10 @@ final class ProjectLifecycleHost(
 
   private def cancel(id: ProjectOperationId): Unit =
     if state.owns(id) then
+      val wasPreparingExample = state.operation.exists(_._2 == ProjectOperation.OpenExample)
       replaceState(state.cancel(id))
+      stopPreparation(id)
+      if wasPreparingExample then restoreStageTitle()
       installedActions.remove(id): Unit
       clearCandidate()
 
@@ -626,6 +661,7 @@ final class ProjectLifecycleHost(
     action match
       case ProjectLifecycleAction.Ignored  => ()
       case ProjectLifecycleAction.KeepOpen =>
+        restoreStageTitle()
         installedActions.remove(id): Unit
         clearCandidate()
       case ProjectLifecycleAction.Ask(facts) =>
@@ -754,6 +790,7 @@ final class ProjectLifecycleHost(
   def shutdown(): Unit =
     if stopped.compareAndSet(false, true) then
       replaceState(state.shutdown)
+      preparations.keySet.asScala.toVector.foreach(stopPreparation)
       clearCandidate()
       arriving.values.asScala.foreach(release)
       arriving.clear()

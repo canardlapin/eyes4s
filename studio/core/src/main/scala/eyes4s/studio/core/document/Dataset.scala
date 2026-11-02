@@ -93,11 +93,16 @@ object CoreBinding:
 
 /** What an imported file is to the dataset. */
 enum SourceRole derives CanEqual, Codec.AsObject:
-  case Fixations, Trials
+  case Fixations, Trials, LocationTrials, Locations, LocationPairs, PhaseLedger, LocationLedger
 
   def label: String = this match
-    case Fixations => "fixations"
-    case Trials    => "trial inventory"
+    case Fixations      => "fixations"
+    case Trials         => "trial inventory"
+    case LocationTrials => "location trial metadata"
+    case Locations      => "spatial observations"
+    case LocationPairs  => "explicit comparison triples"
+    case PhaseLedger    => "phase ledger"
+    case LocationLedger => "location ledger"
 
 /** The name a source was imported under: relative, `/`-separated, with no
   * empty, `.` or `..` segment. It is not where the bundle keeps the bytes:
@@ -184,6 +189,11 @@ object Sources:
   def of(entries: Vector[Source]): Either[DocumentError, Sources] =
     val roles = entries.map(_.role)
     for
+      _ <- Either.cond(
+        roles.forall(r => r == SourceRole.Fixations || r == SourceRole.Trials),
+        (),
+        DocumentError.SourceKinds("timed fixations", roles)
+      )
       _ <- SourceRole.values.toVector.traverse_ { role =>
         val paths = entries.filter(_.role == role).map(_.path.value)
         Either.cond(paths.size <= 1, (), DocumentError.DuplicateSource(role, paths))
@@ -682,6 +692,93 @@ object AdmissionDecision:
   * S5.4 with a trials source and no inventory mapping loads; it needs a
   * re-map before it is committed ([[DatasetRevisionSpec.inventoryMapped]]).
   */
+enum StudyKind derives CanEqual, Codec.AsObject:
+  case Timed, Locations
+
+sealed trait DatasetDefinition derives CanEqual:
+  def id: DatasetRevision
+  def parent: Option[DatasetRevision]
+  def sourceFiles: Vector[Source]
+  def isAdmitted: Boolean
+  def kind: StudyKind
+
+object DatasetDefinition:
+  given Codec.AsObject[DatasetDefinition] = Codec.AsObject.from(
+    Decoder.instance(c =>
+      c.get[Option[String]]("kind").flatMap {
+        case None              => c.as[DatasetRevisionSpec]
+        case Some("locations") => c.as[LocationDatasetRevision]
+        case Some(other) => Left(DecodingFailure(s"unknown dataset kind: $other", c.history))
+      }
+    ),
+    Encoder.AsObject.instance {
+      case timed: DatasetRevisionSpec =>
+        summon[Encoder.AsObject[DatasetRevisionSpec]].encodeObject(timed)
+      case locations: LocationDatasetRevision =>
+        summon[Encoder.AsObject[LocationDatasetRevision]]
+          .encodeObject(locations)
+          .add("kind", Json.fromString("locations"))
+    }
+  )
+
+/** The initial spatial profile has fixed pixel geometry and explicit imported triples. */
+enum LocationProfile derives CanEqual, Codec.AsObject:
+  case FigrimV1
+
+sealed abstract case class LocationBundleSources private (entries: Vector[Source])
+    derives CanEqual
+
+object LocationBundleSources:
+  val roles: Vector[SourceRole] = Vector(
+    SourceRole.LocationTrials,
+    SourceRole.Locations,
+    SourceRole.LocationPairs,
+    SourceRole.PhaseLedger,
+    SourceRole.LocationLedger
+  )
+  def of(entries: Vector[Source]): Either[DocumentError, LocationBundleSources] =
+    for
+      _ <- Either.cond(
+        entries.map(_.role).sortBy(_.ordinal) == roles.sortBy(_.ordinal),
+        (),
+        DocumentError.SourceKinds(
+          "FIGRIM locations (exactly five source roles)",
+          entries.map(_.role)
+        )
+      )
+      _ <- entries.groupBy(_.path).toVector.sortBy(_._1.value).traverse_ { (path, sharing) =>
+        Either.cond(
+          sharing.size == 1,
+          (),
+          DocumentError.SharedPath(path.value, sharing.map(_.role))
+        )
+      }
+    yield new LocationBundleSources(entries.sortBy(_.role.ordinal)) {}
+  given Codec[LocationBundleSources] = DocumentCodecs.validated(of, _.entries)
+
+sealed trait LocationInputArtifact
+sealed trait LocationPlanArtifact
+
+import DigestJson.given
+
+enum LocationAdmissionDecision derives CanEqual, Codec.AsObject:
+  case Pending
+  case Admitted(input: CanonicalDigest[LocationInputArtifact])
+  def isAdmitted: Boolean = this match
+    case Pending     => false
+    case Admitted(_) => true
+
+final case class LocationDatasetRevision(
+    id: DatasetRevision,
+    parent: Option[DatasetRevision],
+    sources: LocationBundleSources,
+    profile: LocationProfile,
+    decision: LocationAdmissionDecision
+) extends DatasetDefinition derives CanEqual, Codec.AsObject:
+  def sourceFiles: Vector[Source] = sources.entries
+  def isAdmitted: Boolean         = decision.isAdmitted
+  def kind: StudyKind             = StudyKind.Locations
+
 final case class DatasetRevisionSpec(
     id: DatasetRevision,
     parent: Option[DatasetRevision],
@@ -693,7 +790,10 @@ final case class DatasetRevisionSpec(
     decision: AdmissionDecision,
     attributes: DeclaredAttributes = DeclaredAttributes.empty,
     inventory: Option[InventoryMapping] = None
-) derives CanEqual
+) extends DatasetDefinition derives CanEqual:
+  def sourceFiles: Vector[Source] = sources.entries
+  def isAdmitted: Boolean         = decision.isAdmitted
+  def kind: StudyKind             = StudyKind.Timed
 
 object DatasetRevisionSpec:
   private val derived: Codec.AsObject[DatasetRevisionSpec] = Codec.AsObject.derived

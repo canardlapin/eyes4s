@@ -107,7 +107,7 @@ class StoryMomentsSuite extends munit.FunSuite:
 
   test("sources carry the golden fixture's real SHA-256 and no invented identity") {
     val t2      = doc(StoryMoments.t2)
-    val sources = t2.datasets.map(_.sources)
+    val sources = t2.timedDatasets.map(_.sources)
     assertEquals(sources.distinct.size, 1)
     assertEquals(
       sources.head.entries.map(_.path.value),
@@ -116,5 +116,5 @@ class StoryMomentsSuite extends munit.FunSuite:
     assertEquals(sources.head.fixations.map(_.bytes.hex), Some(GoldenInventory.fixationsSha256))
     assertEquals(sources.head.trials.map(_.bytes.hex), Some(GoldenInventory.trialsSha256))
     assert(sources.head.entries.forall(_.semantic.isEmpty))
-    assert(t2.analyses.forall(_.plan == CoreBinding.unbound[StudyPlanArtifact]))
+    assert(t2.timedAnalyses.forall(_.plan == CoreBinding.unbound[StudyPlanArtifact]))
   }

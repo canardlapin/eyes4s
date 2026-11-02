@@ -27,7 +27,7 @@ import io.circe.Codec
   */
 enum RunIntent derives CanEqual, Codec.AsObject:
   /** Save & run: submit a run of the stamp's revision. */
-  case Run(stamp: RunStamp)
+  case Run(stamp: ExecutionStamp)
   case Cancel(job: JobId)
 
   /** Promote a ready run to the shown run: the only way it changes. */
@@ -38,7 +38,7 @@ enum RunIntent derives CanEqual, Codec.AsObject:
 
 /** Work a pure update asks the runtime to do, as data. */
 enum ExecutionEffect derives CanEqual, Codec.AsObject:
-  case Submit(stamp: RunStamp)
+  case Submit(stamp: ExecutionStamp)
 
   /** Submit the exact prepared design a ready preview names (E2E-05): the
     * backend runs the snapshot it retained for the receipt, or refuses a
@@ -48,11 +48,11 @@ enum ExecutionEffect derives CanEqual, Codec.AsObject:
   case Cancel(job: JobId)
 
   /** The document's requested stamp changed without a submission. */
-  case Require(stamp: RunStamp)
+  case Require(stamp: ExecutionStamp)
 
 object ExecutionEffect:
   /** The stamp a submission asks results for, if the effect submits. */
-  def submitted(effect: ExecutionEffect): Option[RunStamp] = effect match
+  def submitted(effect: ExecutionEffect): Option[ExecutionStamp] = effect match
     case Submit(stamp)           => Some(stamp)
     case SubmitPreview(ready, _) => Some(ready.stamp)
     case Cancel(_)               => None
@@ -81,13 +81,13 @@ object ExecutionEffect:
 sealed abstract case class RunShelf private (
     shown: Option[RunId],
     pending: Option[RunReady],
-    required: Option[RunStamp]
+    required: Option[ExecutionStamp]
 ) derives CanEqual:
 
   private def copy(
       shown: Option[RunId] = this.shown,
       pending: Option[RunReady],
-      required: Option[RunStamp] = this.required
+      required: Option[ExecutionStamp] = this.required
   ): RunShelf =
     RunShelf(shown, pending, required)
 
@@ -100,7 +100,7 @@ sealed abstract case class RunShelf private (
     case _ => this
 
   /** The requested stamp is now `stamp`. */
-  def require(stamp: RunStamp): RunShelf =
+  def require(stamp: ExecutionStamp): RunShelf =
     copy(pending = pending.filter(_.stamp == stamp), required = Some(stamp))
 
   /** Reconcile the presentation with the document, including undo/redo.
@@ -119,7 +119,7 @@ object RunShelf:
   private def apply(
       shown: Option[RunId],
       pending: Option[RunReady],
-      required: Option[RunStamp]
+      required: Option[ExecutionStamp]
   ): RunShelf =
     new RunShelf(shown, pending, required) {}
 

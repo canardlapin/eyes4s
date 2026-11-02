@@ -177,8 +177,14 @@ object ProtocolPins:
       """{"ResultRecomputationFailed":{"run":8,"job":1,"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]}}""",
     "error.ResultReadClosed" ->
       """{"ResultReadClosed":{"run":8,"job":1}}""",
+    "error.ResultArchiveUnavailable" ->
+      """{"ResultArchiveUnavailable":{"run":8}}""",
+    "error.NoExecutablePairs" ->
+      """{"NoExecutablePairs":{"revision":4,"focalPhase":"Retrieval1","requestedQueries":0,"eligibleQueries":0,"pairRows":0}}""",
     "error.RegistryRefused" ->
       """{"RegistryRefused":{"locus":{"Revision":{"revision":4}},"reason":"Saved recipe changed."}}""",
+    "error.ArchiveDensityCapacity" ->
+      """{"ArchiveDensityCapacity":{"revision":4,"maps":100,"cellsPerMap":400,"limit":20000}}""",
     "error.UnknownReference" ->
       """{"UnknownReference":{"run":7,"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}}}}""",
     "error.UnknownRevision" ->
@@ -372,7 +378,7 @@ object ProtocolPins:
     "total.Unknown" ->
       """{"Unknown":{}}""",
     "envelope.restored" ->
-      """{"version":{"major":1,"minor":22},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
+      """{"version":{"major":1,"minor":24},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
     "error.ArchiveRestoreRefused" ->
       """{"ArchiveRestoreRefused":{"run":8,"cause":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "error.ResultRestoring" ->

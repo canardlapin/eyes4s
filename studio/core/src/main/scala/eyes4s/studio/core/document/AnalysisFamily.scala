@@ -267,5 +267,7 @@ object LegacyAnalysisFamily:
       case Some(_) => document.familyOf(revision)
       case None    =>
         Option.when(
-          document.analysis(revision).isDefined || document.draft.exists(_.id == revision)
+          document.analysisDefinition(revision).isDefined || document.draft.exists(
+            _.id == revision
+          )
         )(AnalysisFamilyId.Legacy)

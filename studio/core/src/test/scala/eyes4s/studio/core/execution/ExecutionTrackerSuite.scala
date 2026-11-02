@@ -199,15 +199,25 @@ class ExecutionTrackerSuite extends munit.ScalaCheckSuite:
     assertEquals(MeterTotal.of(ProgressTotal.Exact(44845L)), MeterTotal.Exact(44845L))
     assertEquals(MeterTotal.of(ProgressTotal.AtMost(457L)), MeterTotal.AtMost(457L))
     val p = ExecutionProgress(report(JobId(1), RunId(8), 3L, 21400L, ProgressTotal.Unknown))
-    assertEquals(p.pairs, Meter(CountUnit.Pairs, 21400L, MeterTotal.Counting))
-    assertEquals(p.stageMeter.total, MeterTotal.Counting)
+    assertEquals(
+      p.timed.map(t =>
+        Meter(CountUnit.Pairs, t.totals.completedPairs, MeterTotal.of(t.totals.totalPairs))
+      ),
+      Some(Meter(CountUnit.Pairs, 21400L, MeterTotal.Counting))
+    )
+    assertEquals(p.timed.map(t => MeterTotal.of(t.meter.total)), Some(MeterTotal.Counting))
   }
 
   test("an explicit Counting total retains stage and run-wide counting meters") {
     assertEquals(MeterTotal.of(ProgressTotal.Counting), MeterTotal.Counting)
     val p = ExecutionProgress(report(JobId(1), RunId(8), 3L, 21400L, ProgressTotal.Counting))
-    assertEquals(p.pairs, Meter(CountUnit.Pairs, 21400L, MeterTotal.Counting))
-    assertEquals(p.stageMeter.total, MeterTotal.Counting)
+    assertEquals(
+      p.timed.map(t =>
+        Meter(CountUnit.Pairs, t.totals.completedPairs, MeterTotal.of(t.totals.totalPairs))
+      ),
+      Some(Meter(CountUnit.Pairs, 21400L, MeterTotal.Counting))
+    )
+    assertEquals(p.timed.map(t => MeterTotal.of(t.meter.total)), Some(MeterTotal.Counting))
   }
 
   test("tracking the same job twice is refused, naming it") {

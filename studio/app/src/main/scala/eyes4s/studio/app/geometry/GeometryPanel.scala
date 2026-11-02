@@ -226,7 +226,7 @@ object GeometryPanel:
           id
       }
       .flatMap(document.dataset)
-      .orElse(document.datasets.lastOption)
+      .orElse(document.timedDatasets.lastOption)
 
   /** The trial and record the app's selection names, if any. */
   def focus(model: AppModel): (Option[TrialKey], Option[Int]) =

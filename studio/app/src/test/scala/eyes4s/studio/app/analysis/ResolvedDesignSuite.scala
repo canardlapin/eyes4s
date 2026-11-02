@@ -38,8 +38,9 @@ class ResolvedDesignSuite extends munit.FunSuite:
   private def ok[E, A](e: Either[E, A]): A = e.fold(err => fail(s"$err"), identity)
 
   private val model: AppModel = StoryModels.t2Analysis
-  private val stamp: RunStamp = AppModel.stampOf(model.document, rev5, r3)
-  private val id              = PreviewId(1L)
+  private val stamp: RunStamp =
+    eyes4s.studio.app.StoryModels.timedStampOf(model.document, rev5, r3)
+  private val id = PreviewId(1L)
 
   private val candidates = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
   private val counts     = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0, Some(3)))
@@ -515,7 +516,10 @@ class ResolvedDesignSuite extends munit.FunSuite:
       case _                                               => false
     })
     assertEquals(ran.jobs.shelf.required, Some(ready.stamp))
-    assertEquals(AppModel.stampOf(ran.document, rev5, r3), ready.stamp)
+    assertEquals(
+      eyes4s.studio.app.StoryModels.timedStampOf(ran.document, rev5, r3),
+      ready.stamp
+    )
     // A prepared design is submitted once.
     assertEquals(ran.prepared, None)
   }
@@ -663,8 +667,8 @@ class ResolvedDesignSuite extends munit.FunSuite:
     )
     val document = ok(
       eyes4s.studio.core.document.StudioDocument.of(
-        d.datasets,
-        d.analyses,
+        d.timedDatasets,
+        d.timedAnalyses,
         d.draft,
         d.runs :+ laterRun,
         d.reporting,

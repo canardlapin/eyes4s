@@ -302,7 +302,34 @@ object RunTotals:
       .forProduct4("completedMaps", "totalMaps", "completedPairs", "totalPairs")(of)
       .emap(_.left.map(_.message))
 
-/** One progress report of a job: eyes4s `RunProgress` with the UI-D meter.
+/** Shared identity of a job's typed progress report. Timed and location runs
+  * deliberately retain distinct count grammars.
+  */
+sealed trait JobProgressValue derives CanEqual:
+  def job: JobId
+  def run: RunId
+  def step: Long
+
+object JobProgressValue:
+  given Codec.AsObject[JobProgressValue] = Codec.AsObject.from(
+    Decoder.instance(c =>
+      c.get[Option[String]]("kind").flatMap {
+        case None              => c.as[JobProgress]
+        case Some("locations") => c.as[LocationJobProgress]
+        case Some(other)       =>
+          Left(DecodingFailure(s"unknown job progress kind: $other", c.history))
+      }
+    ),
+    Encoder.AsObject.instance {
+      case timed: JobProgress => summon[Encoder.AsObject[JobProgress]].encodeObject(timed)
+      case locations: LocationJobProgress =>
+        summon[Encoder.AsObject[LocationJobProgress]]
+          .encodeObject(locations)
+          .add("kind", Json.fromString("locations"))
+    }
+  )
+
+/** One timed progress report: eyes4s `RunProgress` with the UI-D meter.
   * The meter's kind and unit are the segment's.
   */
 sealed abstract case class JobProgress private (
@@ -312,7 +339,7 @@ sealed abstract case class JobProgress private (
     segment: Segment,
     meter: StageMeter,
     totals: RunTotals
-) derives CanEqual
+) extends JobProgressValue derives CanEqual
 
 object JobProgress:
   private def apply(
@@ -346,6 +373,94 @@ object JobProgress:
   given Decoder[JobProgress] =
     Decoder
       .forProduct6("job", "run", "step", "segment", "meter", "totals")(of)
+      .emap(_.left.map(_.message))
+
+/** One spatial location run report. Counts are maps and explicit comparison
+  * queries; there are no implicit pair, scale or participant placeholders.
+  */
+sealed abstract case class LocationJobProgress private (
+    job: JobId,
+    run: RunId,
+    step: Long,
+    completedMaps: Long,
+    totalMaps: Long,
+    completedQueries: Long,
+    totalQueries: Long
+) extends JobProgressValue derives CanEqual
+
+object LocationJobProgress:
+  private def apply(
+      job: JobId,
+      run: RunId,
+      step: Long,
+      completedMaps: Long,
+      totalMaps: Long,
+      completedQueries: Long,
+      totalQueries: Long
+  ): LocationJobProgress =
+    new LocationJobProgress(
+      job,
+      run,
+      step,
+      completedMaps,
+      totalMaps,
+      completedQueries,
+      totalQueries
+    ) {}
+
+  def of(
+      job: JobId,
+      run: RunId,
+      step: Long,
+      completedMaps: Long,
+      totalMaps: Long,
+      completedQueries: Long,
+      totalQueries: Long
+  ): Either[ProgressError, LocationJobProgress] =
+    for
+      _ <- Counted.check("step", step, ProgressTotal.Unknown)
+      _ <- Counted.check("totalMaps", totalMaps, ProgressTotal.Unknown)
+      _ <- Counted.check("totalQueries", totalQueries, ProgressTotal.Unknown)
+      _ <- Counted.check("completedMaps", completedMaps, ProgressTotal.Exact(totalMaps))
+      _ <- Counted.check(
+        "completedQueries",
+        completedQueries,
+        ProgressTotal.Exact(totalQueries)
+      )
+    yield LocationJobProgress(
+      job,
+      run,
+      step,
+      completedMaps,
+      totalMaps,
+      completedQueries,
+      totalQueries
+    )
+
+  given Encoder.AsObject[LocationJobProgress] =
+    Encoder.forProduct7(
+      "job",
+      "run",
+      "step",
+      "completedMaps",
+      "totalMaps",
+      "completedQueries",
+      "totalQueries"
+    )(p =>
+      (p.job, p.run, p.step, p.completedMaps, p.totalMaps, p.completedQueries, p.totalQueries)
+    )
+
+  given Decoder[LocationJobProgress] =
+    Decoder
+      .forProduct7(
+        "job",
+        "run",
+        "step",
+        "completedMaps",
+        "totalMaps",
+        "completedQueries",
+        "totalQueries"
+      )(of)
       .emap(_.left.map(_.message))
 
 // ---------------------------------------------------------------------------
@@ -520,19 +635,19 @@ object StudioDiagnostic:
   * `Completed`; `Cancelled` and `Failed` carry the last progress, if any.
   */
 enum JobOutcome derives CanEqual, Codec.AsObject:
-  case Completed(job: JobId, run: RunId, last: JobProgress)
-  case Cancelled(job: JobId, run: RunId, last: Option[JobProgress])
+  case Completed(job: JobId, run: RunId, last: JobProgressValue)
+  case Cancelled(job: JobId, run: RunId, last: Option[JobProgressValue])
   case Failed(
       job: JobId,
       run: RunId,
       diagnostics: Vector[StudioDiagnostic],
-      last: Option[JobProgress]
+      last: Option[JobProgressValue]
   )
 
   def job: JobId
   def run: RunId
 
-  def progress: Option[JobProgress] = this match
+  def progress: Option[JobProgressValue] = this match
     case Completed(_, _, last) => Some(last)
     case Cancelled(_, _, last) => last
     case Failed(_, _, _, last) => last
@@ -542,12 +657,12 @@ enum JobOutcome derives CanEqual, Codec.AsObject:
   * always last.
   */
 enum JobEvent derives CanEqual, Codec.AsObject:
-  case Advanced(progress: JobProgress)
+  case Advanced(progress: JobProgressValue)
   case Finished(outcome: JobOutcome)
 
 enum JobState derives CanEqual, Codec.AsObject:
   case Queued
-  case Running(progress: JobProgress)
+  case Running(progress: JobProgressValue)
   case Finished(outcome: JobOutcome)
 
 final case class JobStatus(

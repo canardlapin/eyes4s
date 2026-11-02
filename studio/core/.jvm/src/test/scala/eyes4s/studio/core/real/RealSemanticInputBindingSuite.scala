@@ -41,8 +41,8 @@ class RealSemanticInputBindingSuite extends CatsEffectSuite:
   )
   private def document(recipe: Recipe): StudioDocument = get(
     StudioDocument.of(
-      original.datasets,
-      original.analyses.map(a =>
+      original.timedDatasets,
+      original.timedAnalyses.map(a =>
         if a.id == StoryMoments.rev4 then a.copy(recipe = recipe) else a
       ),
       original.draft,

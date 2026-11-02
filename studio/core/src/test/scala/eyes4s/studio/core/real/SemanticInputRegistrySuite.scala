@@ -25,8 +25,8 @@ class SemanticInputRegistrySuite extends munit.FunSuite:
   private val source                            = get(SemanticIdentity.of("00112233445566ff"))
   private def document(recipe: Recipe): StudioDocument = get(
     StudioDocument.of(
-      original.datasets,
-      original.analyses.map(a =>
+      original.timedDatasets,
+      original.timedAnalyses.map(a =>
         if a.id == StoryMoments.rev4 then a.copy(recipe = recipe) else a
       ),
       original.draft,

@@ -102,7 +102,7 @@ class FamilyFreshnessSuite extends munit.FunSuite:
   test("an unrelated draft never produces a recipe or rebase comparison with the shown run") {
     val unrelated = get(Draft.against(draftA.id, b4, None, Vector(change)))
     assertEquals(derive(Vector(first), Some(unrelated)).banner, None)
-    val otherData = DocumentSamples.t2.datasets.head.id
+    val otherData = DocumentSamples.t2.timedDatasets.head.id
     val rebased   = get(Draft.against(draftA.id, b4, Some(otherData), Vector.empty))
     assertEquals(derive(Vector(first), Some(rebased)).banner, None)
     val ownRebase = get(Draft.against(draftA.id, a1, Some(otherData), Vector.empty))
@@ -117,12 +117,12 @@ class FamilyFreshnessSuite extends munit.FunSuite:
   }
 
   test("dataset movement remains project-wide, independent of family ownership") {
-    val old      = first.copy(dataset = DocumentSamples.t2.datasets.head.id)
+    val old      = first.copy(dataset = DocumentSamples.t2.timedDatasets.head.id)
     val original = document(Vector(old), shown = Some(old.id))
     val coherent = get(
       StudioDocument.of(
-        original.datasets,
-        original.analyses.map(spec =>
+        original.timedDatasets,
+        original.timedAnalyses.map(spec =>
           if spec.id == a1.id then spec.copy(dataset = old.dataset) else spec
         ),
         original.draft,

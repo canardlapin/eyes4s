@@ -184,7 +184,10 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         assertEquals(revised.mapping.column(ColumnRole.Occurrence), None)
         assertEquals(revised.attributes.columns.map(_.value), Vector("occurrence"))
         // One command: no new revision, and one undo step.
-        assertEquals(after.document.datasets.map(_.id), before.document.datasets.map(_.id))
+        assertEquals(
+          after.document.timedDatasets.map(_.id),
+          before.document.timedDatasets.map(_.id)
+        )
         assertEquals(
           AppModel.update(after, Intent.Undo(HistoryStack.Science))._1.document,
           before.document
@@ -232,7 +235,7 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         fx.robot.click(w.columnMapping.wizard.view.commit)
         fx.awaitLayout()
         val after = runOnFx(w.runtime.model)
-        assertEquals(after.document.datasets.map(_.id), Vector(r2, r3, r4))
+        assertEquals(after.document.timedDatasets.map(_.id), Vector(r2, r3, r4))
         assertEquals(after.document.dataset(r4).flatMap(_.parent), Some(r2))
         // The Data selection moved to r4, and the pane shows r4 as it is.
         assertEquals(ColumnMappingPane.selected(after).map(_.id), Some(r4))
@@ -245,7 +248,10 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         // Committing again changes nothing: no r5.
         fx.robot.click(w.columnMapping.wizard.view.commit)
         fx.awaitLayout()
-        assertEquals(runOnFx(w.runtime.model.document.datasets.map(_.id)), Vector(r2, r3, r4))
+        assertEquals(
+          runOnFx(w.runtime.model.document.timedDatasets.map(_.id)),
+          Vector(r2, r3, r4)
+        )
         assertEquals(
           runOnFx(w.columnMapping.wizard.model.problem),
           Some(WizardProblem.NoChange(r4))
@@ -575,7 +581,10 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       val after = runOnFx(w.runtime.model)
       assertEquals(after.document.dataset(r3).map(_.geometry.image.width), Some(1000))
       assertEquals(after.history.science.done.size, before.history.science.done.size + 1)
-      assertEquals(after.document.datasets.map(_.id), before.document.datasets.map(_.id))
+      assertEquals(
+        after.document.timedDatasets.map(_.id),
+        before.document.timedDatasets.map(_.id)
+      )
       dispatch(fx, w, Intent.Undo(HistoryStack.Science))
       loaded(fx, w, r3)
       assertEquals(runOnFx(w.runtime.model.document), before.document)

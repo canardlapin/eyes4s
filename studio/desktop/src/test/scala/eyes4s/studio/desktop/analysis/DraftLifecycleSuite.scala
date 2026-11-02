@@ -75,11 +75,11 @@ class DraftLifecycleSuite extends ShellFxSuite:
     }
     eventually(fx, "immutable revision") { w.runtime.model.document.draft.isEmpty }
     val saved = runOnFx(w.runtime.model.document)
-    assertEquals(saved.analyses.size, original.analyses.size + 1)
-    assertEquals(saved.analyses.last.recipe, edited.draftRecipe.get)
-    assertEquals(saved.analyses.last.studio.description, "Declared grid comparison")
+    assertEquals(saved.timedAnalyses.size, original.timedAnalyses.size + 1)
+    assertEquals(saved.timedAnalyses.last.recipe, edited.draftRecipe.get)
+    assertEquals(saved.timedAnalyses.last.studio.description, "Declared grid comparison")
     assertEquals(saved.runs.take(original.runs.size), original.runs)
-    assertEquals(saved.runs.last.analysis, saved.analyses.last.id)
+    assertEquals(saved.runs.last.analysis, saved.timedAnalyses.last.id)
     assertEquals(saved.runs.size, original.runs.size + 1)
   }
 

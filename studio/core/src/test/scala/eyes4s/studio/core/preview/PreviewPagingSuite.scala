@@ -255,7 +255,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
           .flatMap(_.fold(e => IO.raiseError(new AssertionError(e.message)), IO.pure))
         outcome <- ok(fake.complete(job.id))
       yield assertEquals(
-        outcome.progress.map(_.totals.totalPairs),
+        outcome.progress.map(ProtocolSamples.timed).map(_.totals.totalPairs),
         Some(ProgressTotal.Exact(44845L))
       )
     }

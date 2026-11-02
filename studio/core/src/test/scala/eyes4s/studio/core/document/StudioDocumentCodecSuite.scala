@@ -135,7 +135,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
         Json.obj(
           "schema" -> Json.obj(
             "name"    -> "studio.document".asJson,
-            "version" -> 13.asJson
+            "version" -> 14.asJson
           )
         )
       )
@@ -144,9 +144,9 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   }
 
   test("a pinned document upcasts through a later CR3 ladder version") {
-    // A hypothetical version 13 that adds a `notes` member. Version 3 expresses
+    // A hypothetical version 14 that adds a `notes` member. Version 3 expresses
     // every value of t1, so the codec still writes version 3 for it (it records
-    // an admission policy, S5.6); `lift` rewrites it as version 13 with the same
+    // an admission policy, S5.6); `lift` rewrites it as version 14 with the same
     // meaning.
     val current                            = StudioDocument.ladder.toOption.get
     val next: SchemaLadder[StudioDocument] =
@@ -164,13 +164,13 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     val lifted = next.lift(pinned)
     assertEquals(
       lifted.map(_.hcursor.downField("schema").downField("version").as[Int]),
-      Right(Right(13))
+      Right(Right(14))
     )
     assertEquals(lifted.flatMap(next.codec.decode), Right(DocumentSamples.t1))
     assertEquals(next.codec.encode(DocumentSamples.t1), Right(pinned))
     assertEquals(
       next.versions.map(v => (v.name, v.version)),
-      (1 to 13).toVector.map(("studio.document", _))
+      (1 to 14).toVector.map(("studio.document", _))
     )
   }
 
@@ -188,8 +188,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     val t1 = DocumentSamples.t1
     StudioDocument
       .of(
-        t1.datasets.map(f),
-        t1.analyses,
+        t1.timedDatasets.map(f),
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,
@@ -208,8 +208,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     val t1 = t1WithoutPolicy
     StudioDocument
       .of(
-        t1.datasets.map(_.copy(inventory = None)),
-        t1.analyses,
+        t1.timedDatasets.map(_.copy(inventory = None)),
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,
@@ -223,10 +223,10 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   private def version(json: Either[?, Json]) =
     json.map(_.hcursor.downField("schema").downField("version").as[Int])
 
-  test("a version-1 document from before S5.4 loads, and lifts to version 12 unchanged") {
+  test("a version-1 document from before S5.4 loads, and lifts to version 13 unchanged") {
     assertEquals(
       ladder.versions.map(v => (v.name, v.version)),
-      (1 to 12).toVector.map(("studio.document", _))
+      (1 to 13).toVector.map(("studio.document", _))
     )
     assertEquals(ladder.versions.head, ids.document)
     val v1 = io.circe.parser.parse(DocumentPins.t1BeforeInventory).toOption.get
@@ -235,7 +235,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(StudioDocument.encode(t1WithoutInventory), Right(v1))
     // The upcast is the identity on the payload; only the schema moves.
     val lifted = ladder.lift(v1)
-    assertEquals(version(lifted), Right(Right(12)))
+    assertEquals(version(lifted), Right(Right(13)))
     assertEquals(
       lifted.map(_.hcursor.downField("value").focus),
       Right(v1.hcursor.downField("value").focus)
@@ -284,18 +284,18 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
       .getOrElse(Vector.empty)
       .map(_.hcursor.downField("decision").downField("Admitted").downField("policy").focus)
 
-  test("a version-2 document from before S5.6 loads, and lifts to version 12 unchanged") {
+  test("a version-2 document from before S5.6 loads, and lifts to version 13 unchanged") {
     val v2 = io.circe.parser.parse(DocumentPins.t1BeforePolicy).toOption.get
     assertEquals(version(Right(v2)), Right(Right(2)))
     assertEquals(StudioDocument.decode(v2), Right(t1WithoutPolicy))
     assertEquals(
-      t1WithoutPolicy.datasets.map(_.decision.admittedUnder),
+      t1WithoutPolicy.timedDatasets.map(_.decision.admittedUnder),
       Vector(None, None)
     )
     // It re-encodes to its own version-2 bytes: nothing in it needs version 3.
     assertEquals(StudioDocument.encode(t1WithoutPolicy), Right(v2))
     val lifted = ladder.lift(v2)
-    assertEquals(version(lifted), Right(Right(12)))
+    assertEquals(version(lifted), Right(Right(13)))
     assertEquals(
       lifted.map(_.hcursor.downField("value").focus),
       Right(v2.hcursor.downField("value").focus)
@@ -346,8 +346,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
 
   private val imagery = StudioDocument
     .of(
-      DocumentSamples.t1.datasets,
-      DocumentSamples.t1.analyses.map(a =>
+      DocumentSamples.t1.timedDatasets,
+      DocumentSamples.t1.timedAnalyses.map(a =>
         a.copy(studio = a.studio.copy(preset = Preset.PerceptionImagery))
       ),
       DocumentSamples.t1.draft,
@@ -372,13 +372,13 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   test("a document whose only PerceptionImagery revision is an earlier one is version 5") {
     // Every revision counts, not only the latest.
     val base = DocumentSamples.t2
-    assert(base.analyses.size >= 2, base.analyses.size)
+    assert(base.timedAnalyses.size >= 2, base.timedAnalyses.size)
     val earlier = StudioDocument
       .of(
-        base.datasets,
-        base.analyses.head.copy(studio =
-          base.analyses.head.studio.copy(preset = Preset.PerceptionImagery)
-        ) +: base.analyses.tail,
+        base.timedDatasets,
+        base.timedAnalyses.head.copy(studio =
+          base.timedAnalyses.head.studio.copy(preset = Preset.PerceptionImagery)
+        ) +: base.timedAnalyses.tail,
         base.draft,
         base.runs,
         base.reporting,
@@ -518,7 +518,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
       Left(DocumentError.PlacementOffScreen(image, screen))
     )
     val t2   = DocumentSamples.t2
-    val rev4 = t2.analyses(1)
+    val rev4 = t2.timedAnalyses(1)
     val base = rev4.recipe
     assertEquals(
       Draft.of(AnalysisRevision(5), rev4.id, None, Vector.empty),
@@ -539,8 +539,8 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
         .between(AnalysisRevision(4), rev4, base.copy(grid = right(GridSize.of(8, 8))))
         .flatMap(d =>
           StudioDocument.of(
-            t2.datasets,
-            t2.analyses,
+            t2.timedDatasets,
+            t2.timedAnalyses,
             Some(d),
             t2.runs,
             t2.reporting,
@@ -558,7 +558,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(core.map(RecipeField.of(_).core), core)
     assertEquals(RecipeField.values.toVector.map(_.core), core)
     val t2    = DocumentSamples.t2
-    val base  = t2.analyses(1).recipe
+    val base  = t2.timedAnalyses(1).recipe
     val other = DocumentSamples.all.collect {
       case s if s.name.startsWith("change.") => s.value
     }
@@ -574,7 +574,7 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
   test("a draft may rebase onto a newly admitted dataset, never onto its own or a draft") {
     val t2     = DocumentSamples.t2
     val t1     = DocumentSamples.t1
-    val rev3   = t2.analyses(0)
+    val rev3   = t2.timedAnalyses(0)
     val r2     = DatasetRevision(2)
     val r3     = DatasetRevision(3)
     val rebase = Draft.between(AnalysisRevision(5), rev3, rev3.recipe, Some(r3))
@@ -586,11 +586,11 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     // In t1, r3 is still pending admission.
     assertEquals(
       Draft
-        .between(AnalysisRevision(4), t1.analyses(0), t1.analyses(0).recipe, Some(r3))
+        .between(AnalysisRevision(4), t1.timedAnalyses(0), t1.timedAnalyses(0).recipe, Some(r3))
         .flatMap(d =>
           StudioDocument.of(
-            t1.datasets,
-            t1.analyses,
+            t1.timedDatasets,
+            t1.timedAnalyses,
             Some(d),
             t1.runs,
             t1.reporting,

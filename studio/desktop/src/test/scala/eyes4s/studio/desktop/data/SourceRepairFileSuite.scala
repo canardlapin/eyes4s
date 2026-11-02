@@ -180,8 +180,8 @@ class SourceRepairFileSuite extends munit.CatsEffectSuite:
             }.get
             _        <- port.session.perform(JournalEntry.Apply(command)).map(get)
             replaced <- port.session.document
-            next = replaced.datasets.last
-            _    = assertEquals(replaced.datasets.head, ready.datasets.head)
+            next = replaced.timedDatasets.last
+            _    = assertEquals(replaced.timedDatasets.head, ready.timedDatasets.head)
             _    = assertEquals(next.parent, Some(dataset))
             _    = assertEquals(next.decision, AdmissionDecision.Pending)
             _    = assertEquals(
@@ -198,7 +198,7 @@ class SourceRepairFileSuite extends munit.CatsEffectSuite:
               None
             )
             verified <- admit(port, next.id)
-            _ = assert(verified.datasets.last.decision.isAdmitted)
+            _ = assert(verified.timedDatasets.last.decision.isAdmitted)
             _ <- port.session.perform(JournalEntry.Apply(Command.RebaseDraft(next.id))).map(get)
             rebased  <- port.session.document
             runnable <- checked(port, rebased)
@@ -211,7 +211,9 @@ class SourceRepairFileSuite extends munit.CatsEffectSuite:
           for
             restored <- port.session.document
             _ = assertEquals(restored, saved)
-            raw <- port.session.readInput(source(restored, restored.datasets.last.id)).map(get)
+            raw <- port.session
+              .readInput(source(restored, restored.timedDatasets.last.id))
+              .map(get)
           yield assertEquals(Array.from(raw).toVector, Array.from(replacement).toVector)
         }
       yield ()
@@ -224,7 +226,7 @@ class SourceRepairFileSuite extends munit.CatsEffectSuite:
       open(root).use { port =>
         for
           document <- port.session.document
-          spec = document.datasets.head
+          spec = document.timedDatasets.head
           registry <- DatasetSourceHosts
             .stored(port)
             .assets(spec)

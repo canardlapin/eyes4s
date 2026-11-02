@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.real
 
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.assets.AssetRegistry
@@ -222,8 +222,10 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     )
     val document = get(
       StudioDocument.of(
-        t2.datasets.map(d => if d.id == StoryMoments.r3 then d.copy(sources = sources) else d),
-        t2.analyses,
+        t2.timedDatasets.map(d =>
+          if d.id == StoryMoments.r3 then d.copy(sources = sources) else d
+        ),
+        t2.timedAnalyses,
         t2.draft,
         t2.runs,
         t2.reporting,
@@ -260,8 +262,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       eyes4s.studio.core.document.DefinitionRef.fromCore(eyes4s.plan.DefinitionId.trials)
     val unsupported = get(
       StudioDocument.of(
-        t2.datasets,
-        t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
+        t2.timedDatasets,
+        t2.timedAnalyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
         t2.draft,
         t2.runs,
         t2.reporting,
@@ -293,7 +295,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       // The document's runs, in the states the fake reports at t2.
       assertEquals(runs, fake)
       assertEquals(jobs, Vector.empty)
-      assertLayoutRefused(run7, StoryMoments.rev4)
+      assertEquals(run7, Left(BackendError.ResultArchiveUnavailable(StoryMoments.run7)))
       assertEquals(events.map(_.left.map(_.code)), Vector(Left("studio-backend.unavailable")))
   }
 
@@ -346,12 +348,12 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals(status.state, JobState.Queued)
       assertEquals(again, Left(BackendError.AlreadyRunning(StoryMoments.rev5, status.job)))
       val last = out match
-        case Some(JobOutcome.Completed(_, _, p)) => p
+        case Some(JobOutcome.Completed(_, _, p)) => ProtocolSamples.timed(p)
         case other                               => fail(s"expected Completed, got $other")
       assertEquals(last.totals.completedPairs, preview.pairRows)
       assertEquals(last.totals.totalPairs, ProgressTotal.Exact(preview.pairRows))
       assertEquals(last.totals.totalMaps, ProgressTotal.Exact(last.totals.completedMaps))
-      val advanced = events.collect { case JobEvent.Advanced(p) => p }
+      val advanced = events.collect { case JobEvent.Advanced(p) => ProtocolSamples.timed(p) }
       assert(advanced.nonEmpty, events)
       // Every report's meter is eyes4s's, in the unit of its stage, and the
       // run totals carry the latest map and pair meters.
@@ -433,82 +435,63 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     assertEquals(result, None)
   }
 
-  // ------------------------------------------------------------------ recomputation (slice 5)
+  // ------------------------------------------------------------------ explicit execution (slice 5)
 
-  /** trialLayout with run 7's archive bound to `digest`. */
-  private def bound(digest: String): StudioDocument =
-    val archive = eyes4s.studio.core.document.CoreBinding.Bound(
-      get(
-        eyes4s.codec.CanonicalDigest
-          .parse[eyes4s.studio.core.document.ResultArchiveArtifact](digest)
-      )
-    )
-    val t = trialLayout
-    get(
-      StudioDocument.of(
-        t.datasets,
-        t.analyses,
-        t.draft,
-        t.runs.map(r => if r.id == StoryMoments.run7 then r.copy(archive = archive) else r),
-        t.reporting,
-        t.figures,
-        t.presentation,
-        t.jobs
-      )
-    )
-
-  /** Ask for `run`'s result, then wait for the job that recomputes it. */
-  private def recompute(real: RealStudyBackend[IO], run: RunId) =
+  /** Submit rev4 for the prepared document, then await its recorded run 7. */
+  private def submitRun7(real: RealStudyBackend[IO]) =
     for
-      first <- real.held(run)
-      jobs  <- real.jobs
-      job = jobs.find(_.run == run).getOrElse(fail(s"no job for $run: $jobs"))
-      _     <- ok(real.subscribe(job.job)).flatMap(_.compile.drain)
-      out   <- ok(real.outcome(job.job))
-      after <- real.held(run)
-    yield (first, job, out, after)
+      status <- ok(real.submit(StoryMoments.rev4))
+      _ = assertEquals(status.run, StoryMoments.run7)
+      _    <- ok(real.subscribe(status.job)).flatMap(_.compile.drain)
+      out  <- ok(real.outcome(status.job))
+      held <- real.held(StoryMoments.run7).map(get)
+    yield (status, out, held)
 
   test(
-    "a document run is recomputed as a visible job, kept, and marked with the eyes4s release"
+    "an explicitly submitted document run is kept as a computed native result"
   ) {
     for
-      real   <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      before <- real.runs
-      (first, job, out, after) <- recompute(real, StoryMoments.run7)
-      again                    <- real.held(StoryMoments.run7)
-      jobs                     <- real.jobs
-      runs                     <- real.runs
+      real <- RealStudyBackend.create[IO](
+        RealBackendConformanceSuite.beforeRun7(trialLayout),
+        RealBackendConformanceSuite.golden
+      )
+      (status, out, held) <- submitRun7(real)
+      again               <- real.held(StoryMoments.run7)
+      jobs                <- real.jobs
+      runs                <- real.runs
     yield
       assertEquals(
-        first,
-        Left(BackendError.ResultPending(StoryMoments.run7, job.job))
-      )
-      assertEquals(
-        (job.run, job.revision, job.dataset),
+        (status.run, status.revision, status.dataset),
         (StoryMoments.run7, StoryMoments.rev4, StoryMoments.r3)
       )
       assert(out.exists(_.isInstanceOf[JobOutcome.Completed]), out)
-      val held = after.getOrElse(fail(s"no result: $after"))
       assertEquals(
         held.origin,
-        RealStudyBackend.RunOrigin.Recomputed(
-          eyes4s.studio.core.engine.StudioBuild.eyes4sBaseVersion
-        )
+        RealStudyBackend.RunOrigin.Computed
       )
       assertEquals(held.prepared.revision, StoryMoments.rev4)
-      // Kept: no second job, and the run's state is untouched.
-      assert(again.isRight, again)
-      assertEquals(jobs.map(_.job), Vector(job.job))
-      assertEquals(runs, before)
+      assertEquals(again, Right(held))
+      assertEquals(jobs.map(_.job), Vector(status.job))
+      assertEquals(
+        runs.last,
+        RunSummary(StoryMoments.run7, StoryMoments.rev4, StoryMoments.r3, RunState.Completed)
+      )
   }
 
-  test("a run without a result is NoResult, and a run whose revision cannot run says why") {
+  test("a run without an archive is unavailable without source preparation") {
     for
-      real      <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      calls <- Ref.of[IO, Int](0)
+      sources = new DatasetSources[IO]:
+        def bytes(dataset: DatasetRevisionSpec, source: Source) = calls.update(_ + 1).as(None)
+        def assets(dataset: DatasetRevisionSpec)                = calls.update(_ + 1).as(None)
+      real      <- RealStudyBackend.create[IO](trialLayout, sources)
       cancelled <- real.held(StoryMoments.run6)
       r2        <- real.held(StoryMoments.run5)
+      saved     <- real.held(StoryMoments.run7)
+      result    <- real.result(StoryMoments.run7)
       unknown   <- real.held(RunId(99))
       jobs      <- real.jobs
+      reads     <- calls.get
     yield
       assertEquals(
         cancelled,
@@ -519,49 +502,12 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           )
         )
       )
-      // run 5 is on r2, which declares no time units.
-      assertEquals(r2, Left(BackendError.Unavailable(DiagnosticLocus.Field("time units"))))
+      assertEquals(r2, Left(BackendError.ResultArchiveUnavailable(StoryMoments.run5)))
+      assertEquals(saved, Left(BackendError.ResultArchiveUnavailable(StoryMoments.run7)))
+      assertEquals(result, Left(BackendError.ResultArchiveUnavailable(StoryMoments.run7)))
       assertEquals(unknown.left.map(_.code), Left("studio-backend.unknown-run"))
       assertEquals(jobs, Vector.empty)
-  }
-
-  test(
-    "a recomputed result is checked against the run's recorded digest: equal is served, different refused naming both"
-  ) {
-    val wrong = "ab" * 32
-    for
-      plain <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      (_, _, _, served) <- recompute(plain, StoryMoments.run7)
-      held   = served.getOrElse(fail(s"no result: $served"))
-      digest = get(held.prepared.digest(held.result))
-      matching <- RealStudyBackend.create[IO](bound(digest), RealBackendConformanceSuite.golden)
-      (_, _, _, same) <- recompute(matching, StoryMoments.run7)
-      tampered <- RealStudyBackend.create[IO](bound(wrong), RealBackendConformanceSuite.golden)
-      (_, job, out, bad) <- recompute(tampered, StoryMoments.run7)
-      again              <- tampered.held(StoryMoments.run7)
-      jobs               <- tampered.jobs
-    yield
-      assert(same.isRight, same)
-      val refused = BackendError.ResultDigestMismatch(
-        StoryMoments.run7,
-        get(ByteDigest.parse(wrong)),
-        get(ByteDigest.parse(digest))
-      )
-      assertEquals(bad, Left(refused))
-      assertEquals(
-        out,
-        Some(
-          JobOutcome.Failed(
-            job.job,
-            StoryMoments.run7,
-            Vector(refused.diagnostic),
-            out.flatMap(_.progress)
-          )
-        )
-      )
-      // The refusal is kept: no second recomputation.
-      assertEquals(again, Left(refused))
-      assertEquals(jobs.size, 1)
+      assertEquals(reads, 0)
   }
 
   // ------------------------------------------------------------------ results against SCORES.json
@@ -626,8 +572,12 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     assert(math.abs(obtained - stored) <= ScoresTolerance, s"$what: $obtained vs $stored")
 
   test("native result and paged query rows preserve every golden outcome and scale score") {
-    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use {
-      backend =>
+    RealStudyBackend
+      .resource[IO](
+        RealBackendConformanceSuite.beforeRun7(trialLayout),
+        RealBackendConformanceSuite.golden
+      )
+      .use { backend =>
         for
           submitted <- backend.submit(StoryMoments.rev4).map(get)
           events    <- backend.subscribe(submitted.job).map(get).flatMap(_.compile.toVector)
@@ -650,6 +600,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
               case _ => IO.pure(Vector.empty[(Inspection, Inspection)])
           }
         yield
+          assertEquals(submitted.run, StoryMoments.run7)
           assert(events.exists(_.isInstanceOf[JobEvent.Finished]))
           val rows = pages.flatMap(_.rows)
           assertEquals(rows.size, 480)
@@ -710,15 +661,18 @@ class RealStudyBackendSuite extends CatsEffectSuite:
                 assert(pinned.status.startsWith("failed:"), pinned.status)
                 assertEquals(diagnostics.size, 4)
           }
-    }
+      }
   }
 
   test("run 7's inspected contrasts and matched pair rows are SCORES.json's, at every scale") {
     val (queries, perScale) = scores
     for
-      real <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      (_, _, out, _) <- recompute(real, StoryMoments.run7)
-      inspected      <- queries.traverse(q =>
+      real <- RealStudyBackend.create[IO](
+        RealBackendConformanceSuite.beforeRun7(trialLayout),
+        RealBackendConformanceSuite.golden
+      )
+      (_, out, _) <- submitRun7(real)
+      inspected   <- queries.traverse(q =>
         (0 until 4).toVector.traverse(i =>
           real.inspect(StoryMoments.run7, ResultAddress.ContrastRow(i, q.key))
         )
@@ -916,8 +870,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     val t      = trialLayout
     val strict = get(
       StudioDocument.of(
-        t.datasets,
-        t.analyses.map(a =>
+        t.timedDatasets,
+        t.timedAnalyses.map(a =>
           a.copy(recipe =
             a.recipe.copy(
               offWindow = Some(OffWindowChoice.FailTrial),
@@ -964,51 +918,50 @@ class RealStudyBackendSuite extends CatsEffectSuite:
   }
 
   test("provenance runs from the run to the items eyes4s holds, and refuses one it does not") {
-    for
-      real <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      _    <- recompute(real, StoryMoments.run7)
-      row  <- real
-        .pairRows(StoryMoments.run7, 2, get(PageRequest.of(0, 1)))
-        .map(get(_).rows.head)
-      pair = ResultAddress.PairRow(2, row.design, row.query, row.reference)
-      trail   <- real.provenance(StoryMoments.run7, pair).map(get(_).trail)
-      map     <- real.provenance(StoryMoments.run7, ResultAddress.Estimation(2, row.reference))
-      reduced <- real.provenance(
-        StoryMoments.run7,
-        ResultAddress.Reduction(2, PairDesign.Control, row.query)
-      )
-      swapped <- real.provenance(
-        StoryMoments.run7,
-        ResultAddress.PairRow(2, row.design, row.reference, row.query)
-      )
-      beyond <- real.provenance(StoryMoments.run7, ResultAddress.ContrastRow(9, row.query))
-    yield
-      assertEquals(
-        trail,
-        Vector(
-          ProvenanceStep.Run(StoryMoments.run7),
-          ProvenanceStep.Recomputed(eyes4s.studio.core.engine.StudioBuild.eyes4sBaseVersion),
-          ProvenanceStep.Analysis(StoryMoments.rev4),
-          ProvenanceStep.Dataset(StoryMoments.r3),
-          ProvenanceStep.Scale(2, "2°"),
-          ProvenanceStep.Design(PairDesign.Matched),
-          ProvenanceStep.Trial(
-            row.query,
-            trail.collect { case ProvenanceStep.Trial(k, i) if k == row.query => i }.head
-          ),
-          ProvenanceStep.Trial(row.reference, row.referenceItem)
+    RealBackendConformanceSuite.computedResource(trialLayout).use { real =>
+      for
+        row <- real
+          .pairRows(StoryMoments.run7, 2, get(PageRequest.of(0, 1)))
+          .map(get(_).rows.head)
+        pair = ResultAddress.PairRow(2, row.design, row.query, row.reference)
+        trail <- real.provenance(StoryMoments.run7, pair).map(get(_).trail)
+        map   <- real.provenance(StoryMoments.run7, ResultAddress.Estimation(2, row.reference))
+        reduced <- real.provenance(
+          StoryMoments.run7,
+          ResultAddress.Reduction(2, PairDesign.Control, row.query)
         )
-      )
-      assertEquals(
-        map.map(_.trail.last),
-        Right(ProvenanceStep.Trial(row.reference, row.referenceItem))
-      )
-      assertEquals(
-        reduced.map(_.trail.takeRight(2).head),
-        Right(ProvenanceStep.Design(PairDesign.Control))
-      )
-      assertEquals(swapped.left.map(_.code), Left("studio-backend.unknown-reference"))
-      assertEquals(beyond.left.map(_.code), Left("studio-backend.unknown-scale"))
+        swapped <- real.provenance(
+          StoryMoments.run7,
+          ResultAddress.PairRow(2, row.design, row.reference, row.query)
+        )
+        beyond <- real.provenance(StoryMoments.run7, ResultAddress.ContrastRow(9, row.query))
+      yield
+        assertEquals(
+          trail,
+          Vector(
+            ProvenanceStep.Run(StoryMoments.run7),
+            ProvenanceStep.Analysis(StoryMoments.rev4),
+            ProvenanceStep.Dataset(StoryMoments.r3),
+            ProvenanceStep.Scale(2, "2°"),
+            ProvenanceStep.Design(PairDesign.Matched),
+            ProvenanceStep.Trial(
+              row.query,
+              trail.collect { case ProvenanceStep.Trial(k, i) if k == row.query => i }.head
+            ),
+            ProvenanceStep.Trial(row.reference, row.referenceItem)
+          )
+        )
+        assertEquals(
+          map.map(_.trail.last),
+          Right(ProvenanceStep.Trial(row.reference, row.referenceItem))
+        )
+        assertEquals(
+          reduced.map(_.trail.takeRight(2).head),
+          Right(ProvenanceStep.Design(PairDesign.Control))
+        )
+        assertEquals(swapped.left.map(_.code), Left("studio-backend.unknown-reference"))
+        assertEquals(beyond.left.map(_.code), Left("studio-backend.unknown-scale"))
+    }
   }
 
   // ------------------------------------------------------------------ review-s37b
@@ -1019,8 +972,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     val t     = trialLayout
     val moved = get(
       StudioDocument.of(
-        t.datasets,
-        t.analyses,
+        t.timedDatasets,
+        t.timedAnalyses,
         t.draft,
         t.runs.map(r =>
           if r.id == StoryMoments.run7 then r.copy(dataset = StoryMoments.r2) else r
@@ -1089,10 +1042,9 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         ReportingWeight.ParticipantMeans
       )
     )
-    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+    RealBackendConformanceSuite.computedResource(trialLayout).use { real =>
       for
-        (_, _, _, completed) <- recompute(real, StoryMoments.run7)
-        held = get(completed)
+        held <- real.held(StoryMoments.run7).map(get)
         core = held.prepared.admitted.input.trials.rows
           .find(r =>
             r.key.participant == "P17" && r.key.phase == "Retrieval" && r.key.trial == "ret_07"
@@ -1209,10 +1161,9 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       specification(filters = Vector(keep)),
       specification(filters = Vector(window, keep))
     )
-    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+    RealBackendConformanceSuite.computedResource(trialLayout).use { real =>
       for
-        (_, _, _, completed) <- recompute(real, StoryMoments.run7)
-        held   = get(completed)
+        held <- real.held(StoryMoments.run7).map(get)
         p      = held.prepared
         name   = get(CovariateName.of("response"))
         levels = get(Levels.of(Vector("Forgotten", "Remembered")))
@@ -1345,9 +1296,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       )
     )
     val query = TrialKey("P17", Phase.Retrieval, "ret_07", 1)
-    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+    RealBackendConformanceSuite.computedResource(trialLayout).use { real =>
       for
-        _      <- recompute(real, StoryMoments.run7)
         before <- allPairRows(real, StoryMoments.run7, 2)
         report <- real.report(StoryMoments.run7, hitsOnly, 2).map(get)
         after  <- allPairRows(real, StoryMoments.run7, 2)

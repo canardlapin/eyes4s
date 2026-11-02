@@ -34,7 +34,7 @@ class ExpectedUnmatchedDocumentSuite extends munit.FunSuite:
     assertEquals(edited.document.draftContext.flatMap(_.recipe.expectedUnmatched), Some(rule))
     assertEquals(get(edited.undo).history.document, sample)
     val saved = get(Reducer.run(edited.document, Command.SaveAndRun(None))).document
-    assertEquals(saved.analyses.last.recipe.expectedUnmatched, Some(rule))
+    assertEquals(saved.timedAnalyses.last.recipe.expectedUnmatched, Some(rule))
     assertEquals(get(StudioDocument.decode(get(StudioDocument.encode(saved)))), saved)
   }
 
@@ -64,7 +64,7 @@ class ExpectedUnmatchedDocumentSuite extends munit.FunSuite:
   test(
     "recipes without a selection keep their legacy shape; invalid declarations refuse decoding"
   ) {
-    val recipe = sample.analyses.last.recipe
+    val recipe = sample.timedAnalyses.last.recipe
     assert(!recipe.asJson.hcursor.downField("expectedUnmatched").succeeded)
     assertEquals(get(recipe.asJson.as[Recipe]), recipe)
     val malformed = recipe.asJson.mapObject(

@@ -34,10 +34,13 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
     History.start(get(StoryMoments.t2)).apply(Command.SaveAndRun(None))
   ).history.document
   private lazy val run   = requested.runs.last
-  private lazy val stamp = AppModel.stampOf(requested, run.analysis, run.dataset)
-  private val jobId      = JobId(37)
+  private lazy val stamp =
+    eyes4s.studio.app.StoryModels.timedStampOf(requested, run.analysis, run.dataset)
+  private val jobId                       = JobId(37)
   private def progress: ExecutionProgress =
-    val report = StoryModels.run8Progress(44845L).report
+    val report = StoryModels.run8Progress(44845L).report match
+      case value: JobProgress     => value
+      case _: LocationJobProgress => fail("expected timed progress")
     ExecutionProgress(
       get(
         JobProgress.of(jobId, run.id, report.step, report.segment, report.meter, report.totals)
@@ -59,7 +62,7 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
       ),
       get(SemanticIdentity.of("0123456789abcdef")),
       get(CanonicalDigest.parse[ResultArchiveArtifact]("33" * 32)),
-      requested.analyses.last.recipe
+      requested.timedAnalyses.last.recipe
     )
   )
   private def stored(model: AppModel, value: NativeBindingFacts = facts, id: JobId = jobId) =
@@ -199,7 +202,10 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
     val (bound, effects) = stored(ready)
     assertEquals(bound.jobs, ready.jobs)
     assertEquals(bound.jobs.shelf.required, Some(identity))
-    assertEquals(bound.jobs.ready.map(_.stamp.input), Some(identity.input))
+    assertEquals(
+      bound.jobs.ready.map(r => StoryModels.timedStamp(r.stamp).input),
+      Some(identity.input)
+    )
     assertEquals(
       bound.document.run(run.id).map(_.archive),
       Some(CoreBinding.Bound(facts.result))
@@ -231,7 +237,7 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
     "late stored facts bind their own older completed run without replacing the newer request or Ready"
   ) {
     val complete = observed(JobPhase.Succeeded(progress))
-    val recipe   = complete.document.analyses.last.recipe
+    val recipe   = complete.document.timedAnalyses.last.recipe
     val changed  = AppModel
       .update(
         complete,
@@ -240,10 +246,11 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
         )
       )
       ._1
-    val newer       = AppModel.update(changed, Intent.Dispatch(Command.SaveAndRun(None)))._1
-    val newRun      = newer.document.runs.last
-    val newStamp    = AppModel.stampOf(newer.document, newRun.analysis, newRun.dataset)
-    val oldReport   = progress.report
+    val newer    = AppModel.update(changed, Intent.Dispatch(Command.SaveAndRun(None)))._1
+    val newRun   = newer.document.runs.last
+    val newStamp = eyes4s.studio.app.StoryModels
+      .timedStampOf(newer.document, newRun.analysis, newRun.dataset)
+    val oldReport   = progress.timed.getOrElse(fail("expected timed progress"))
     val newProgress = ExecutionProgress(
       get(
         JobProgress.of(

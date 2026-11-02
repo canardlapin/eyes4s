@@ -24,3 +24,9 @@ trait NativeArtifactProvider[F[_]]:
       run: RunId,
       budget: NativeArtifactBudget = NativeArtifactBudget.Default
   ): F[Either[NativeArtifactError, NativeArtifactPackage]]
+
+  def nativeCompletion(
+      run: RunId,
+      budget: NativeArtifactBudget = NativeArtifactBudget.Default
+  )(using F: cats.Functor[F]): F[Either[NativeArtifactError, NativeCompletion]] =
+    F.map(nativeArtifacts(run, budget))(_.map(NativeCompletion.Timed.apply))

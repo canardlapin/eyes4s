@@ -53,15 +53,15 @@ class StudioSchemaIdsSuite extends munit.FunSuite:
   test("the document and science codecs are built on those ids") {
     val ids = StudioSchemaIds.ids.toOption.get
     // Ladders retain their initial ids. Expected-unmatched selection and explicit
-    // cross coordinates advance the document and science codecs to versions 12 and 8.
+    // cross coordinates advance the document and science codecs to versions 13 and 9.
     assertEquals(StudioDocument.ladder.map(_.versions.head), Right(ids.document))
     assertEquals(
       StudioDocument.codec.map(c => (c.schema.name, c.schema.version)),
-      Right((ids.document.name, 12))
+      Right((ids.document.name, 13))
     )
     assertEquals(ScienceContent.ladder.map(_.versions.head), Right(ids.science))
     assertEquals(
       ScienceContent.codec.map(c => (c.schema.name, c.schema.version)),
-      Right((ids.science.name, 8))
+      Right((ids.science.name, 9))
     )
   }

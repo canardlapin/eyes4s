@@ -45,8 +45,8 @@ class ReportingContrastSuite extends munit.FunSuite:
     val d = DocumentSamples.t1
     ok(
       StudioDocument.of(
-        d.datasets,
-        d.analyses,
+        d.timedDatasets,
+        d.timedAnalyses,
         d.draft,
         d.runs,
         Vector(

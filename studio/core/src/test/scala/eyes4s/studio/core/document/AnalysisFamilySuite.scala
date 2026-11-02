@@ -173,7 +173,7 @@ class AnalysisFamilySuite extends munit.FunSuite:
 
   test("legacy membership is independent of revision names and uses existing pinned science") {
     val document = get(StoryMoments.t2)
-    val ids      = document.analyses.map(_.id) ++ document.draft.toVector.map(_.id)
+    val ids      = document.timedAnalyses.map(_.id) ++ document.draft.toVector.map(_.id)
     assertEquals(
       ids.map(LegacyAnalysisFamily.familyOf(document, _)),
       Vector.fill(ids.size)(Some(a))
@@ -187,15 +187,15 @@ class AnalysisFamilySuite extends munit.FunSuite:
     val reopened = get(StudioDocument.decode(legacy))
     assertEquals(get(StudioDocument.encode(reopened)), legacy)
     assertEquals(
-      reopened.analyses.map(value => LegacyAnalysisFamily.familyOf(reopened, value.id)),
-      Vector.fill(reopened.analyses.size)(Some(a))
+      reopened.timedAnalyses.map(value => LegacyAnalysisFamily.familyOf(reopened, value.id)),
+      Vector.fill(reopened.timedAnalyses.size)(Some(a))
     )
-    val renamed = document.analyses.map(value =>
+    val renamed = document.timedAnalyses.map(value =>
       value.copy(studio = value.studio.copy(name = get(RevisionName.of("Renamed"))))
     )
     val changed = get(
       StudioDocument.of(
-        document.datasets,
+        document.timedDatasets,
         renamed,
         document.draft,
         document.runs,
@@ -228,9 +228,9 @@ class AnalysisFamilySuite extends munit.FunSuite:
     )
     assertEquals(LegacyAnalysisFamily.familyOf(empty, AnalysisRevision(1)), None)
     val sample = get(StoryMoments.t2)
-    val data   = sample.datasets.last
+    val data   = sample.timedDatasets.last
       .copy(id = eyes4s.studio.core.backend.DatasetRevision(1), parent = None)
-    val source  = sample.analyses.last
+    val source  = sample.timedAnalyses.last
     val initial = get(Draft.initial(AnalysisRevision(1), data.id, source.recipe, source.studio))
     val document = get(
       StudioDocument.of(
@@ -245,6 +245,6 @@ class AnalysisFamilySuite extends munit.FunSuite:
       )
     )
     assertEquals(LegacyAnalysisFamily.familyOf(document, initial.id), Some(a))
-    assertEquals(document.analyses, Vector.empty)
+    assertEquals(document.timedAnalyses, Vector.empty)
     assertEquals(LegacyAnalysisFamily.familyOf(document, AnalysisRevision(2)), None)
   }

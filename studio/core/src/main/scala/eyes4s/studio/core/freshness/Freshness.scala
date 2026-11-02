@@ -248,8 +248,8 @@ final case class Freshness(
 object Freshness:
 
   def of(document: StudioDocument, session: SessionFacts): Freshness =
-    val latestAnalysis = document.latestAnalysis.map(_.id)
-    val latestData     = document.latestAdmitted.map(_.id)
+    val latestAnalysis = document.analyses.lastOption.map(_.id)
+    val latestData     = document.datasets.findLast(_.isAdmitted).map(_.id)
     val completed      = document.runs.filter(_.state == RunLifecycle.Completed)
 
     def standingOf(run: RunRef): RunStanding = run.state match
@@ -263,7 +263,14 @@ object Freshness:
         )
         val reasons =
           successor.map(n => StaleReason.Superseded(n.id, n.analysis)) ++
-            latestData.filter(_ != run.dataset).map(StaleReason.DatasetMoved(run.dataset, _))
+            document
+              .datasetDefinition(run.dataset)
+              .flatMap(data =>
+                document.datasets.findLast(d => d.kind == data.kind && d.isAdmitted)
+              )
+              .map(_.id)
+              .filter(_ != run.dataset)
+              .map(StaleReason.DatasetMoved(run.dataset, _))
         NonEmptyVector
           .fromVector(reasons.toVector)
           .fold(RunStanding.Current)(RunStanding.Stale(_))
@@ -338,7 +345,7 @@ object Freshness:
       case None         => Vector.empty
       case Some(latest) =>
         val current = runs.collect { case RunFreshness(r, RunStanding.Current) => r.id }
-        document.datasets
+        document.timedDatasets
           .filter(d => !d.decision.isAdmitted && d.id.number > latest.number)
           .map(d => PendingDataset(d.id, current))
 

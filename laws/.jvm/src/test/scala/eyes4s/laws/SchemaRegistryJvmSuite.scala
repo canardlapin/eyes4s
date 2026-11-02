@@ -422,6 +422,18 @@ object SchemaRegistry:
       codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study result")
     ),
     Entry(
+      LocationComparisonDefinitions.plan,
+      Kind.Document,
+      Vector("location-comparison-plan-v1.json"),
+      codecLaw(() => new LocationComparisonCodecLawSuite, "location comparison plan")
+    ),
+    Entry(
+      LocationComparisonDefinitions.result,
+      Kind.Document,
+      Vector("location-comparison-result-v1.json"),
+      codecLaw(() => new LocationComparisonCodecLawSuite, "location comparison result")
+    ),
+    Entry(
       ScanpathMethodCodecDefinitions.method,
       Kind.Document,
       Vector(
@@ -1129,8 +1141,11 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
-      case ScanpathStudyDefinitions.plan         => Some(ScanpathStudyLawFixture.codec.plans)
-      case ScanpathStudyDefinitions.result       => Some(ScanpathStudyLawFixture.codec.results)
+      case ScanpathStudyDefinitions.plan      => Some(ScanpathStudyLawFixture.codec.plans)
+      case ScanpathStudyDefinitions.result    => Some(ScanpathStudyLawFixture.codec.results)
+      case LocationComparisonDefinitions.plan =>
+        Some(LocationComparisonPlanCodec.of(LocationComparisonDefinitions.plan))
+      case LocationComparisonDefinitions.result  => Some(LocationComparisonResultCodec.codec)
       case ScanpathMethodCodecDefinitions.method => Some(ScanpathMethodLawFixture.codec)
       case PointSamplingFamilyDefinitions.plan   => Some(PointFamilyCodecFixture.codec.plans)
       case PointSamplingFamilyDefinitions.result => Some(PointFamilyCodecFixture.codec.results)

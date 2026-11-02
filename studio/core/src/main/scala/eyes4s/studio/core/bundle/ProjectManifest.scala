@@ -173,13 +173,38 @@ object PartEntry:
     )
 
 /** A dataset revision's part and its column mapping's part. */
+sealed trait DatasetPartDefinition derives CanEqual:
+  def dataset: PartEntry
+
 final case class DatasetParts(dataset: PartEntry, mapping: PartEntry)
+    extends DatasetPartDefinition derives CanEqual, Codec.AsObject
+
+final case class LocationDatasetPart(dataset: PartEntry) extends DatasetPartDefinition
     derives CanEqual,
       Codec.AsObject
 
+object DatasetPartDefinition:
+  given Codec.AsObject[DatasetPartDefinition] = Codec.AsObject.from(
+    Decoder.instance(c =>
+      c.get[Option[String]]("kind").flatMap {
+        case None              => c.as[DatasetParts]
+        case Some("locations") => c.as[LocationDatasetPart]
+        case Some(other)       =>
+          Left(DecodingFailure(s"unknown dataset part kind: $other", c.history))
+      }
+    ),
+    Encoder.AsObject.instance {
+      case d: DatasetParts        => summon[Encoder.AsObject[DatasetParts]].encodeObject(d)
+      case d: LocationDatasetPart =>
+        summon[Encoder.AsObject[LocationDatasetPart]]
+          .encodeObject(d)
+          .add("kind", Json.fromString("locations"))
+    }
+  )
+
 /** The document's parts, each list in the document's own order. */
 final case class DocumentParts(
-    datasets: Vector[DatasetParts],
+    datasets: Vector[DatasetPartDefinition],
     analyses: Vector[PartEntry],
     draft: Option[PartEntry],
     runs: Vector[PartEntry],
@@ -189,12 +214,14 @@ final case class DocumentParts(
 ) derives CanEqual:
   /** Every part with the area it must lie in and a name for errors. */
   def located: Vector[(String, BundleArea, PartEntry)] =
-    datasets.flatMap(d =>
-      Vector(
-        ("dataset", BundleArea.Datasets, d.dataset),
-        ("mapping", BundleArea.Mappings, d.mapping)
-      )
-    ) ++ analyses.map(("analysis", BundleArea.Analyses, _)) ++
+    datasets.flatMap {
+      case d: DatasetParts =>
+        Vector(
+          ("dataset", BundleArea.Datasets, d.dataset),
+          ("mapping", BundleArea.Mappings, d.mapping)
+        )
+      case d: LocationDatasetPart => Vector(("dataset", BundleArea.Datasets, d.dataset))
+    } ++ analyses.map(("analysis", BundleArea.Analyses, _)) ++
       draft.map(("draft", BundleArea.Analyses, _)) ++
       runs.map(("run", BundleArea.Runs, _)) ++
       reporting.map(("reporting spec", BundleArea.Reporting, _)) ++
@@ -394,12 +421,28 @@ object ProjectManifest:
       )
 
   private def expressedByV1(m: ProjectManifest): Boolean =
-    m.parts.analysisFamilies.isEmpty &&
+    !hasLocations(m) && m.parts.analysisFamilies.isEmpty &&
       m.sharing == SharingOptions.complete && m.science == ScienceRecord.Unrecorded
+
+  private def hasLocations(m: ProjectManifest): Boolean = m.inputs.exists(i =>
+    i.kind match
+      case InputKind.Source(role) => role != SourceRole.Fixations && role != SourceRole.Trials
+      case _                      => false
+  ) || m.parts.datasets.exists {
+    case _: LocationDatasetPart => true
+    case _: DatasetParts        => false
+  }
+
+  private def beforeLocations(m: ProjectManifest): Either[CodecError, ProjectManifest] =
+    Either.cond(
+      !hasLocations(m),
+      m,
+      CodecError.Unsupported("studio project manifest", "spatial dataset parts need version 4")
+    )
 
   private def beforeFamilies(manifest: ProjectManifest): Either[CodecError, ProjectManifest] =
     Either.cond(
-      manifest.parts.analysisFamilies.isEmpty,
+      !hasLocations(manifest) && manifest.parts.analysisFamilies.isEmpty,
       manifest,
       CodecError.Unsupported("studio project manifest", "analysis family parts need version 3")
     )
@@ -435,9 +478,15 @@ object ProjectManifest:
             _.get[ScienceRecord]("science")
           ).flatMap(beforeFamilies)
         )
-        .next(_.parts.analysisFamilies.isEmpty, identity)(m =>
-          Right(CanonicalJson(writeV2(m)))
-        )(json => read(json, _.get[SharingOptions]("sharing"), _.get[ScienceRecord]("science")))
+        .next(m => !hasLocations(m) && m.parts.analysisFamilies.isEmpty, identity)(m =>
+          beforeLocations(m).map(v => CanonicalJson(writeV2(v)))
+        )(json =>
+          read(json, _.get[SharingOptions]("sharing"), _.get[ScienceRecord]("science"))
+            .flatMap(beforeLocations)
+        )
+        .next(m => !hasLocations(m), identity)(m => Right(CanonicalJson(writeV2(m))))(json =>
+          read(json, _.get[SharingOptions]("sharing"), _.get[ScienceRecord]("science"))
+        )
     }
 
   val codec: Either[CodecError, VersionedCodec[ProjectManifest]] = ladder.map(_.codec)

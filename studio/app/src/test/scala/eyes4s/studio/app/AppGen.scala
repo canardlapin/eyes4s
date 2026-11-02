@@ -69,13 +69,13 @@ object AppGen:
     AppModel.draftTrail(m.document),
     Vector(Place.Figures, Place.At(panelD)),
     Vector(Place.NewProject),
-    m.document.analyses.lastOption.toVector.flatMap(a =>
+    m.document.timedAnalyses.lastOption.toVector.flatMap(a =>
       eyes4s.studio.app.analysis.AnalysisSelection.trail(m.document, a.id)
     ),
     m.document.draft.toVector.flatMap(d =>
       eyes4s.studio.app.analysis.AnalysisSelection.trail(m.document, d.id)
     ),
-    m.document.datasets.map(d => Place.Dataset(d.id)).take(1) :+ Place.DataView(
+    m.document.timedDatasets.map(d => Place.Dataset(d.id)).take(1) :+ Place.DataView(
       DataSection.Admission
     ),
     Vector(Place.Source(SourceRole.Fixations))
@@ -235,7 +235,7 @@ object AppGen:
         Gen.oneOf(Preset.values.toSeq),
         Gen.option(
           Gen.oneOf(
-            m.document.analyses.map(_.id) ++ m.document.draft
+            m.document.timedAnalyses.map(_.id) ++ m.document.draft
               .map(_.id) :+ eyes4s.studio.core.backend.AnalysisRevision(99)
           )
         )

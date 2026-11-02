@@ -302,12 +302,12 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     // Stored before the reducer refused it: r3 with two overlapping rules.
     val stored = StudioDocument
       .of(
-        t1.datasets.map(d =>
+        t1.timedDatasets.map(d =>
           if d.id == r3 then
             d.copy(admission = d.admission.copy(corrections = Vector(flipTrial, all)))
           else d
         ),
-        t1.analyses,
+        t1.timedAnalyses,
         t1.draft,
         t1.runs,
         t1.reporting,

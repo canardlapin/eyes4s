@@ -61,7 +61,7 @@ object GoldenTrials:
   val bundle: Path  = buildRoot.resolve("fixtures/studio-bundles/example.eyes")
 
   lazy val registry: AssetRegistry =
-    val dataset = right(StoryMoments.t2).datasets.last
+    val dataset = right(StoryMoments.t2).timedDatasets.last
     right(GoldenAssets.registry(dataset))
 
   def screen: ScreenSize = registry.screen

@@ -36,8 +36,8 @@ object DocumentSamples:
   private val digest: CanonicalDigest[StudyPlanArtifact] =
     CanonicalDigest.parse[StudyPlanArtifact]("0123456789abcdef" * 4).toOption.get
 
-  private val r3: DatasetRevisionSpec    = t2.datasets(1)
-  private val rev4: AnalysisRevisionSpec = t2.analyses(1)
+  private val r3: DatasetRevisionSpec    = t2.timedDatasets(1)
+  private val rev4: AnalysisRevisionSpec = t2.timedAnalyses(1)
   private val draft: Draft               = t2.draft.get
   private val query: TrialKey            = TrialKey("P17", Phase.Retrieval, "ret_07", 1)
   private val s2: Sigma                  = right(Sigma.of(2.0))
@@ -202,8 +202,8 @@ object DocumentSamples:
       right(
         Draft.between(
           AnalysisRevision(4),
-          t1.analyses(0),
-          t1.analyses(0).recipe,
+          t1.timedAnalyses(0),
+          t1.timedAnalyses(0).recipe,
           Some(DatasetRevision(3))
         )
       )

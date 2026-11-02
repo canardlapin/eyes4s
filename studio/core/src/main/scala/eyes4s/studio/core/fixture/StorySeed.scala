@@ -94,7 +94,7 @@ object StorySeed:
     (for
       doc    <- EitherT.fromEither[F](document(moment).leftMap(SeedError.Document(moment, _)))
       assets <- EitherT.fromEither[F](
-        doc.datasets.lastOption
+        doc.timedDatasets.lastOption
           .toRight("the document has no dataset revision")
           .flatMap(GoldenAssets.registry)
           .leftMap(SeedError.Assets(moment, _))
@@ -121,8 +121,8 @@ object StorySeed:
           .as(DraftCheck.Checked(d, Vector.empty))
       }
       progress = active.flatMap(_.state match
-        case JobState.Running(p) => Vector(p)
-        case _                   => Vector.empty)
+        case JobState.Running(p: JobProgress) => Vector(p)
+        case _                                => Vector.empty)
     yield StorySeed(
       moment,
       doc,

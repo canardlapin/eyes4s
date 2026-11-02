@@ -27,8 +27,8 @@ class RealRegistrySuite extends munit.FunSuite:
   private def ok[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
   private val original                     = ok(StoryMoments.t2)
   private def document(
-      datasets: Vector[DatasetRevisionSpec] = original.datasets,
-      analyses: Vector[AnalysisRevisionSpec] = original.analyses,
+      datasets: Vector[DatasetRevisionSpec] = original.timedDatasets,
+      analyses: Vector[AnalysisRevisionSpec] = original.timedAnalyses,
       draft: Option[Draft] = original.draft,
       runs: Vector[RunRef] = original.runs
   ) = ok(
@@ -46,7 +46,7 @@ class RealRegistrySuite extends munit.FunSuite:
 
   test("fresh revisions register; same-id draft edits invalidate current work") {
     val registry = RealRegistry.of(original)
-    val base     = original.analyses.last
+    val base     = original.timedAnalyses.last
     val edited   = ok(
       Draft.between(StoryMoments.rev5, base, base.recipe.copy(grid = ok(GridSize.of(32, 24))))
     )
@@ -65,7 +65,11 @@ class RealRegistrySuite extends munit.FunSuite:
       base.studio
     )
     val extended =
-      ok(change.next.synchronize(document(analyses = original.analyses :+ saved, draft = None)))
+      ok(
+        change.next.synchronize(
+          document(analyses = original.timedAnalyses :+ saved, draft = None)
+        )
+      )
     assert(extended.next.revisions.contains(StoryMoments.rev5))
     assertEquals(extended.revisions, Set.empty[AnalysisRevision])
     assertEquals(extended.datasets, Set.empty[DatasetRevision])
@@ -74,7 +78,7 @@ class RealRegistrySuite extends munit.FunSuite:
     val bound    = saved.copy(plan = CoreBinding.Bound(digest))
     val enriched = ok(
       extended.next.synchronize(
-        document(analyses = original.analyses :+ bound, draft = None)
+        document(analyses = original.timedAnalyses :+ bound, draft = None)
       )
     )
     assertEquals(enriched.revisions, Set(StoryMoments.rev5))
@@ -82,7 +86,7 @@ class RealRegistrySuite extends munit.FunSuite:
 
   test("admitted dataset content and saved recipes cannot change under their ids") {
     val registry = RealRegistry.of(original)
-    val changed  = original.datasets.map(d =>
+    val changed  = original.timedDatasets.map(d =>
       if d.id == StoryMoments.r3 then
         d.copy(geometry =
           ok(
@@ -98,7 +102,7 @@ class RealRegistrySuite extends munit.FunSuite:
         .toOption
         .exists(_.diagnostic.subject.contains(DiagnosticLocus.Dataset(StoryMoments.r3)))
     )
-    val analyses = original.analyses.map(a =>
+    val analyses = original.timedAnalyses.map(a =>
       if a.id == StoryMoments.rev4 then
         a.copy(recipe = a.recipe.copy(grid = ok(GridSize.of(32, 24))))
       else a
@@ -110,7 +114,7 @@ class RealRegistrySuite extends munit.FunSuite:
         .toOption
         .exists(_.diagnostic.subject.contains(DiagnosticLocus.Revision(StoryMoments.rev4)))
     )
-    assertEquals(registry.revisions(StoryMoments.rev4)._2, original.analyses.last.recipe)
+    assertEquals(registry.revisions(StoryMoments.rev4)._2, original.timedAnalyses.last.recipe)
   }
 
   test("only newly synchronized Running records reserve an explicit id; ambiguity is refused") {
@@ -130,7 +134,7 @@ class RealRegistrySuite extends munit.FunSuite:
     )
     assertEquals(next.reserved(StoryMoments.rev4, StoryMoments.r3, Set(RunId(8))), Right(None))
     val removed   = ok(next.synchronize(original)).next
-    val relabeled = run8.copy(analysis = original.analyses.head.id)
+    val relabeled = run8.copy(analysis = original.timedAnalyses.head.id)
     assert(
       removed
         .synchronize(document(runs = original.runs :+ relabeled))

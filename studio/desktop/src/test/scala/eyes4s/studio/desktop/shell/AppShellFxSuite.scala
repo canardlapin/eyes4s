@@ -180,7 +180,7 @@ class AppShellFxSuite extends ShellFxSuite:
   }
 
   fxStage.test(
-    "switching perspectives retains every pane: one view per pane id, none disposed"
+    "switching timed perspectives retains every visited pane: one view per pane id, none disposed"
   ) { fx =>
     val w                = boot(fx, StoryModels.t2Compare)
     val panes            = w.host.panes
@@ -218,8 +218,15 @@ class AppShellFxSuite extends ShellFxSuite:
     val built = runOnFx(panes.creations)
     assertEquals(built.distinct, built, "a pane was built twice")
     assertEquals(runOnFx(panes.disposals), Vector.empty)
-    val declared = StudioLayouts.spec.all
-      .filterNot(_ == StudioLayouts.dataFirstRun)
+    val declared = Vector(
+      StudioLayouts.dataVerify,
+      StudioLayouts.dataTrials,
+      StudioLayouts.analysis,
+      StudioLayouts.compareQuery,
+      StudioLayouts.compareSummary,
+      StudioLayouts.explore,
+      StudioLayouts.figures
+    )
       .flatMap(_.panes.map(_.id.value))
       .distinct
     assertEquals(built.map(_.value).sorted, declared.sorted)

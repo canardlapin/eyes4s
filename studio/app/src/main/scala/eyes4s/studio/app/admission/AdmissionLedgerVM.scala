@@ -243,7 +243,7 @@ object AdmissionLedgerVM:
     spec.parent.flatMap { parent =>
       document
         .dataset(parent)
-        .toRight(DiffError.UnknownDataset(parent, document.datasets.map(_.id)))
+        .toRight(DiffError.UnknownDataset(parent, document.timedDatasets.map(_.id)))
         .flatMap(DatasetDiff.of(_, spec, status)) match
         case Left(e)     => Some(t(ChangesFailed, parent.label, e.message) -> Vector.empty)
         case Right(diff) =>
@@ -550,7 +550,7 @@ object AdmissionLedgerVM:
     */
   private def admittedStatus(model: AppModel, spec: DatasetRevisionSpec): String =
     val dataset  = spec.id
-    val previous = model.document.datasets
+    val previous = model.document.timedDatasets
       .filter(d => d.decision.isAdmitted && d.id.number < dataset.number)
       .maxByOption(_.id.number)
       .map(_.id)

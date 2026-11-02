@@ -56,7 +56,7 @@ class TrialPanelsSuite extends munit.FunSuite:
   // The golden registry's displays (embedded at build time) and three made-up
   // fixations per trial: what a content source answers, behind the port.
   private lazy val registry =
-    right(GoldenAssets.registry(right(StoryMoments.t2).datasets.last))
+    right(GoldenAssets.registry(right(StoryMoments.t2).timedDatasets.last))
   private val rev4 = AnalysisRevision(4)
   private def contentOf(
       rev: AnalysisRevision,

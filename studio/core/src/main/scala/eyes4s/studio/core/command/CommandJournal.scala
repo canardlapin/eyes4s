@@ -141,7 +141,59 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
+  private def expressedByV9(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(_: Command.BindLocationCompletedArtifacts)) =>
+      false
+    case JournalLine.Entry(
+          _,
+          JournalEntry.Apply(
+            _: Command.AppendLocationDataset | _: Command.DiscardLocationDataset |
+            _: Command.RestoreLocationDataset | _: Command.SaveLocationAnalysis |
+            _: Command.DiscardLocationAnalysis | _: Command.RestoreLocationAnalysis |
+            _: Command.RemoveLocationAnalysis | _: Command.ReserveLocationRun
+          )
+        ) =>
+      false
+    case _ => true
+  private def beforeV10(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV9(line),
+      line,
+      CodecError.Unsupported("studio journal", "spatial native bindings need version 10")
+    )
+
+  private def expressedByV10(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(
+          _,
+          JournalEntry.Apply(
+            _: Command.AppendLocationDataset | _: Command.DiscardLocationDataset |
+            _: Command.RestoreLocationDataset | _: Command.SaveLocationAnalysis |
+            _: Command.DiscardLocationAnalysis | _: Command.RestoreLocationAnalysis |
+            _: Command.RemoveLocationAnalysis | _: Command.ReserveLocationRun
+          )
+        ) =>
+      false
+    case _ => true
+  private def beforeV11(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV10(line),
+      line,
+      CodecError.Unsupported("studio journal", "spatial workflow commands need version 11")
+    )
+
   private def expressedByV8(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(_: Command.BindLocationCompletedArtifacts)) =>
+      false
+    case JournalLine.Entry(
+          _,
+          JournalEntry.Apply(
+            _: Command.AppendLocationDataset | _: Command.DiscardLocationDataset |
+            _: Command.RestoreLocationDataset | _: Command.SaveLocationAnalysis |
+            _: Command.DiscardLocationAnalysis | _: Command.RestoreLocationAnalysis |
+            _: Command.RemoveLocationAnalysis | _: Command.ReserveLocationRun
+          )
+        ) =>
+      false
     case JournalLine.Entry(_, JournalEntry.Apply(_: Command.StartFamily))      => false
     case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDraft(draft))) =>
       !draft.isNewFamily
@@ -289,7 +341,13 @@ object CommandJournal:
           .next(expressedByV7, identity)(l => beforeV9(l).map(v => CanonicalJson(v.asJson)))(
             json => read(json).flatMap(beforeV9)
           )
-          .next(expressedByV8, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(expressedByV8, identity)(l => beforeV10(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV10)
+          )
+          .next(expressedByV9, identity)(l => beforeV11(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV11)
+          )
+          .next(expressedByV10, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)

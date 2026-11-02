@@ -53,6 +53,9 @@ enum ResultFamily derives CanEqual:
   case ScanpathPairs, ScanpathQueries, ScanpathTransportDiagnostics
   case ScanpathReductions, ScanpathContrasts, ScanpathExclusions
 
+  /** Explicit location-comparison triples, pixel-grid histograms and equal-query summary. */
+  case LocationTriples, LocationHistograms, LocationSummary
+
 enum ResultColumnType derives CanEqual:
   case Utf8, JsonUtf8, Int64, Float64, Boolean
 

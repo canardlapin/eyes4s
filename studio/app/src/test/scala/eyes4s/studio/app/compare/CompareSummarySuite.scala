@@ -341,6 +341,15 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
+  test("an undeclared response has an explicit query-table placeholder") {
+    read.map { (summary, rows) =>
+      val absent = rows.head.copy(response = None)
+      val table  =
+        right(CompareSummaryVM.queryTable(run7, sigma2, summary, rows.updated(0, absent)))
+      assertEquals(table.text(0, 2), Some(SummaryText(SummaryTextId.ResponseNotDeclared)))
+    }
+  }
+
   test("a missing served report value is written as missing, never a zero") {
     loaded(t3Summary).map { s =>
       val served  = report(s)

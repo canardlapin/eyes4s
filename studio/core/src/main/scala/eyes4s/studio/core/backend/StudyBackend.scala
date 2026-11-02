@@ -26,7 +26,7 @@ import eyes4s.studio.core.document.DigestJson.given
 import cats.Functor
 import cats.syntax.functor.*
 import eyes4s.studio.core.document.ReportingSpec
-import eyes4s.studio.core.execution.RunStamp
+import eyes4s.studio.core.execution.{RunStamp, ExecutionStamp}
 import eyes4s.studio.core.preview.*
 import eyes4s.studio.core.reports.ReportRefusal
 import fs2.Stream
@@ -65,7 +65,24 @@ enum BackendError derives CanEqual, Codec.AsObject:
   case ResultRecomputationCancelled(run: RunId, job: JobId)
   case ResultRecomputationFailed(run: RunId, job: JobId, diagnostics: Vector[StudioDiagnostic])
   case ResultReadClosed(run: RunId, job: Option[JobId])
+
+  /** Passive reads never start a new scientific computation. */
+  case ResultArchiveUnavailable(run: RunId)
   case RegistryRefused(locus: DiagnosticLocus, reason: String)
+  case NoExecutablePairs(
+      revision: AnalysisRevision,
+      focalPhase: String,
+      requestedQueries: Int,
+      eligibleQueries: Long,
+      pairRows: Long
+  )
+
+  case ArchiveDensityCapacity(
+      revision: AnalysisRevision,
+      maps: Long,
+      cellsPerMap: Int,
+      limit: Long
+  )
 
   case UnknownReference(run: RunId, address: ResultAddress)
   case AlreadyRunning(revision: AnalysisRevision, job: JobId)
@@ -189,7 +206,10 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case ResultRecomputationCancelled(_, _) => "studio-backend.result-recomputation-cancelled"
     case ResultRecomputationFailed(_, _, _) => "studio-backend.result-recomputation-failed"
     case ResultReadClosed(_, _)             => "studio-backend.result-read-closed"
+    case ResultArchiveUnavailable(_)        => "studio-backend.result-archive-unavailable"
     case RegistryRefused(_, _)              => "studio-backend.registry-refused"
+    case NoExecutablePairs(_, _, _, _, _)   => "studio-backend.no-executable-pairs"
+    case ArchiveDensityCapacity(_, _, _, _) => "studio-backend.archive-density-capacity"
     case UnknownReference(_, _)             => "studio-backend.unknown-reference"
     case AlreadyRunning(_, _)               => "studio-backend.already-running"
     case UnsupportedVersion(_, _)           => "studio-backend.unsupported-version"
@@ -241,9 +261,16 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"Recomputation of ${r.label} by job ${job.number} failed: ${diagnostics.map(_.message).mkString("; ")}."
     case ResultReadClosed(r, job) =>
       s"The local read of ${r.label}${job.fold("")(j => s" waiting for job ${j.number}")} was closed."
+    case ResultArchiveUnavailable(run) =>
+      s"${run.label} has no stored result archive available. Select its saved analysis and run it again to create a new result with visible progress. Opening a result does not rerun it."
     case RegistryRefused(locus, reason) => s"Cannot synchronize ${locus.render}: $reason"
-    case UnknownReference(r, a)         => s"${r.label} has no result item: ${a.render}."
-    case AlreadyRunning(r, j)           =>
+    case NoExecutablePairs(revision, phase, requested, eligible, pairs) =>
+      s"Cannot run ${revision.label}: phase '$phase' has $requested requested queries, " +
+        s"$eligible eligible queries and $pairs pair rows. Choose an available phase and check the matching rules."
+    case ArchiveDensityCapacity(revision, maps, cells, limit) =>
+      s"${revision.label} may produce ${BigInt(maps) * cells} density cells ($maps maps × $cells cells), above the result-storage limit of $limit. Reduce grid size, scales or dataset size before running. This conservative reservation includes maps that may fail; it does not change the recipe."
+    case UnknownReference(r, a) => s"${r.label} has no result item: ${a.render}."
+    case AlreadyRunning(r, j)   =>
       s"Cannot submit ${r.label}: job ${j.number} is still running."
     case UnsupportedVersion(requested, supported) =>
       s"Protocol ${requested.render} is not supported; this backend speaks ${supported.render}."
@@ -300,7 +327,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
         )).distinct
       case ResultReadClosed(r, job) =>
         Vector(DiagnosticLocus.Run(r)) ++ job.map(DiagnosticLocus.Job(_))
-      case RegistryRefused(locus, _) => Vector(locus)
+      case ResultArchiveUnavailable(run)           => Vector(DiagnosticLocus.Run(run))
+      case RegistryRefused(locus, _)               => Vector(locus)
+      case NoExecutablePairs(revision, _, _, _, _) => Vector(DiagnosticLocus.Revision(revision))
+      case ArchiveDensityCapacity(revision, _, _, _) =>
+        Vector(DiagnosticLocus.Revision(revision))
       case UnknownReference(r, a) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a))
       case AlreadyRunning(r, j)   => Vector(DiagnosticLocus.Revision(r), DiagnosticLocus.Job(j))
       case UnsupportedVersion(_, _) => Vector.empty
@@ -399,6 +430,22 @@ trait StudyBackend[F[_]]:
 
   /** Start a run of `revision` on its dataset. */
   def submit(revision: AnalysisRevision): F[Either[BackendError, JobStatus]]
+
+  /** Native typed execution refuses unsupported scientific kinds before submission. */
+  def submitStamped(stamp: ExecutionStamp)(using
+      F: cats.Monad[F]
+  ): F[Either[BackendError, JobStatus]] = stamp match
+    case _: RunStamp => submit(stamp.revision)
+    case _           =>
+      F.pure(
+        Left(
+          BackendError.Unavailable(
+            DiagnosticLocus.Artifact(
+              s"Spatial execution for ${stamp.label} is unavailable on this backend."
+            )
+          )
+        )
+      )
 
   def jobs: F[Vector[JobStatus]]
 
@@ -635,9 +682,12 @@ object ProtocolVersion:
     * 1.21 distinguishes source-placement tallies from admission-only tallies
     * and serves focal preparation failures and control admission facts.
     * 1.22 carries native by-design preview/result statuses and distinct counts.
+    * 1.23 preserves undeclared inventory responses as absent preview/result
+    * row values rather than refusing the complete page, refuses zero executable
+    * pairs, and reports unavailable archives without read-triggered computation.
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 22)
+  val Current: ProtocolVersion = ProtocolVersion(1, 24)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

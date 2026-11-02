@@ -30,8 +30,8 @@ class RealPlanBindingSuite extends CatsEffectSuite:
     val recorded = get(CanonicalDigest.parse[StudyPlanArtifact]("0" * 64))
     val document = get(
       StudioDocument.of(
-        original.datasets,
-        original.analyses.map(a =>
+        original.timedDatasets,
+        original.timedAnalyses.map(a =>
           if a.id == StoryMoments.rev4 then a.copy(plan = CoreBinding.Bound(recorded)) else a
         ),
         original.draft,

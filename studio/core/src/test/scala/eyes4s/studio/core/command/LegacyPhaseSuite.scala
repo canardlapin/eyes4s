@@ -67,8 +67,8 @@ class LegacyPhaseSuite extends munit.FunSuite:
   }
 
   test("a document saved without phases loads with its mappings as stored") {
-    assert(loaded.datasets.nonEmpty)
-    loaded.datasets.foreach(d =>
+    assert(loaded.timedDatasets.nonEmpty)
+    loaded.timedDatasets.foreach(d =>
       assertEquals(d.mapping.missingForImport, Vector(ColumnRole.Phase), d.id.label)
     )
     // It round-trips as it is.
@@ -99,7 +99,7 @@ class LegacyPhaseSuite extends munit.FunSuite:
     ).mkString("", "\n", "\n")
     val replay   = ok(CommandJournal.replay(loaded, journal))
     val restored = replay.history.document
-    val r4       = restored.datasets.last
+    val r4       = restored.timedDatasets.last
     assertEquals(r4.id, DatasetRevision(4))
     assertEquals(r4.mapping, legacyMapping)
     // The rebuilt history commits under the import rule again: the revision

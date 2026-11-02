@@ -64,7 +64,10 @@ final class SynchronizedBackend[F[_]](
   def continuePreview(id: PreviewId, budget: PreviewBudget) = streaming(
     underlying.continuePreview(id, budget)
   )
-  def submitPreview(ready: PreviewReady)             = before(underlying.submitPreview(ready))
+  def submitPreview(ready: PreviewReady) = before(underlying.submitPreview(ready))
+  override def submitStamped(stamp: eyes4s.studio.core.execution.ExecutionStamp)(using
+      cats.Monad[F]
+  )                                                  = before(underlying.submitStamped(stamp))
   def submit(revision: AnalysisRevision)             = before(underlying.submit(revision))
   def runs                                           = underlying.runs
   def jobs                                           = underlying.jobs

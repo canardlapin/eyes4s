@@ -40,7 +40,7 @@ class SessionShareSuite extends SessionConformance:
 
   private val inputs: Vector[InputEntry] =
     Vector(SourceRole.Fixations -> fixations, SourceRole.Trials -> trials).map { (role, b) =>
-      val s = document.datasets.last.sources.entries.find(_.role == role).get
+      val s = document.timedDatasets.last.sources.entries.find(_.role == role).get
       BundleSamples.right(
         InputEntry.of(
           InputKind.Source(role),
@@ -74,7 +74,7 @@ class SessionShareSuite extends SessionConformance:
       opened  <- ok(ProjectSession.open(copy, bob))
       doc     <- opened.session.document
       back    <- opened.session.readInput(
-        document.datasets.last.sources.entries.find(_.role == SourceRole.Fixations).get
+        document.timedDatasets.last.sources.entries.find(_.role == SourceRole.Fixations).get
       )
       _ <- ok(opened.session.close)
     yield

@@ -49,9 +49,10 @@ final class PlatformImport(
     displayName(path).left.map(_.message)
 
   def chooseFile(role: SourceRole): IO[Either[String, Option[ChosenSource]]] =
-    val title = ImportText(role match
-      case SourceRole.Fixations => ImportTextId.DialogFixations
-      case SourceRole.Trials    => ImportTextId.DialogTrials)
+    val title = role match
+      case SourceRole.Fixations => ImportText(ImportTextId.DialogFixations)
+      case SourceRole.Trials    => ImportText(ImportTextId.DialogTrials)
+      case other                => s"Choose ${other.label}"
     FileKind.of(ImportText(ImportTextId.DialogFilter), Vector("csv", "tsv", "txt")) match
       case Left(e)     => IO.pure(Left(e.message))
       case Right(kind) =>

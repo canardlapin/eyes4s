@@ -60,6 +60,7 @@ final case class KeyChecks(fixations: Option[KeyCheckOf], trials: Option[KeyChec
   def of(role: SourceRole): Option[KeyCheckOf] = role match
     case SourceRole.Fixations => fixations
     case SourceRole.Trials    => trials
+    case _                    => None
 
   /** The Studio checks that block the import, on the fixation key (the one
     * the document records): it is still being checked, it cannot be checked,
@@ -173,6 +174,7 @@ object KeyChecks:
     role match
       case SourceRole.Fixations => checks.copy(fixations = fill(checks.fixations))
       case SourceRole.Trials    => checks.copy(trials = fill(checks.trials))
+      case _                    => checks
 
   /** Run a [[WizardEffect.CheckKey]] over the file's `text`, as the
     * platform does off the UI thread: one streaming pass.
